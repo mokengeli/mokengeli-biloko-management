@@ -8,6 +8,7 @@ import {
   getCurrentUser,
   clearError as clearErrorAction,
 } from "../store/authSlice";
+import authService from "@/services/authService";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -40,9 +41,16 @@ export const useAuth = () => {
   };
 
   const logoutUser = () => {
-    dispatch(logoutAction());
-    initialCheckDoneRef.current = false;
-    router.push("/auth/login");
+    try {
+      // await authService.logout();
+      dispatch(logoutAction());
+      initialCheckDoneRef.current = false;
+      // La redirection est maintenant gérée dans le service d'authentification
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // En cas d'erreur, forcer tout de même la redirection
+      router.push("/auth/login");
+    }
   };
 
   // Utiliser useCallback pour s'assurer que la référence de la fonction reste stable

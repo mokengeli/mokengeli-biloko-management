@@ -42,13 +42,18 @@ const authService = {
   // Fonction de déconnexion côté client
   logout: async () => {
     try {
-      // Si votre API a un endpoint de déconnexion, vous pouvez l'appeler ici
-      // await apiClient.post("/api/auth/logout");
+      // Appeler notre API de déconnexion pour supprimer le cookie
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
 
       // Redirection vers la page de login
       if (typeof window !== "undefined") {
         window.location.href = "/auth/login";
       }
+
+      return { success: true };
     } catch (error) {
       console.error("Logout error:", error);
       throw error;

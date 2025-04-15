@@ -1,3 +1,4 @@
+// src/components/layout/Topbar.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,7 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "./Sidebar";
 
 export default function Topbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoggingOut } = useAuth(); // Ajout de isLoggingOut
   const [scrolled, setScrolled] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
 
@@ -55,6 +56,15 @@ export default function Topbar() {
       .map((n) => n[0])
       .join("")
       .toUpperCase();
+  };
+
+  // Gestionnaire pour la déconnexion
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
 
   return (
@@ -101,27 +111,29 @@ export default function Topbar() {
             <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => (window.location.href = "/profile")}
+              onClick={() => (window.location.href = "/not-found")}
             >
               Profil
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => (window.location.href = "/settings")}
+              onClick={() => (window.location.href = "/not-found")}
             >
               Paramètres
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => {
-                try {
-                  logout();
-                } catch (error) {
-                  console.error("Error during logout:", error);
-                }
-              }}
+              onClick={handleLogout}
+              disabled={isLoggingOut}
               className="text-red-500"
             >
-              Déconnexion
+              {isLoggingOut ? (
+                <div className="flex items-center">
+                  <div className="animate-spin h-4 w-4 mr-2 border-2 border-red-500 rounded-full border-t-transparent"></div>
+                  Déconnexion...
+                </div>
+              ) : (
+                "Déconnexion"
+              )}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

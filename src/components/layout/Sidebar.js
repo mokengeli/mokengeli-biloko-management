@@ -48,8 +48,8 @@ const menuItems = [
     icon: <Package className="w-5 h-5" />,
     submenu: true,
     submenuItems: [
-      { title: "Produits", href: "/inventory/products" },
       { title: "Catégories", href: "/inventory/categories" },
+      { title: "Produits", href: "/inventory/products" },
     ],
   },
   {
@@ -85,7 +85,7 @@ const menuItems = [
 export default function Sidebar({ isMobile = false }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const { logout, isLoggingOut } = useAuth();
   const [openSubmenu, setOpenSubmenu] = useState(null);
 
   const handleLogout = async () => {
@@ -145,7 +145,12 @@ export default function Sidebar({ isMobile = false }) {
                     {item.submenuItems.map((subItem) => (
                       <Link
                         key={subItem.href}
-                        href="/not-found"
+                        href={
+                          subItem.title === "Catégories" &&
+                          item.title === "Inventaire"
+                            ? "/inventory/categories"
+                            : "/not-found"
+                        }
                         className={`block px-4 py-2 text-sm rounded-md ${
                           isActive(subItem.href)
                             ? "bg-primary/10 text-primary font-medium"
@@ -180,9 +185,19 @@ export default function Sidebar({ isMobile = false }) {
           variant="outline"
           className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
           onClick={handleLogout}
+          disabled={isLoggingOut}
         >
-          <LogOut className="h-5 w-5 mr-3" />
-          Déconnexion
+          {isLoggingOut ? (
+            <>
+              <div className="animate-spin h-4 w-4 mr-3 border-2 border-red-500 rounded-full border-t-transparent"></div>
+              Déconnexion...
+            </>
+          ) : (
+            <>
+              <LogOut className="h-5 w-5 mr-3" />
+              Déconnexion
+            </>
+          )}
         </Button>
       </div>
     </div>

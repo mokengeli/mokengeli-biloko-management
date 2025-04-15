@@ -1,21 +1,22 @@
-// src/hooks/useAuth.js - Version simplifiée
+// src/hooks/useAuth.js
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 import {
   login as loginAction,
-  logout as logoutAction,
   getCurrentUser,
   clearError as clearErrorAction,
+  prepareLogout,
+  completeLogout,
 } from "../store/authSlice";
 import authService from "@/services/authService";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { user, isAuthenticated, loading, error } = useSelector(
-    (state) => state.auth
-  );
+  const { user, isAuthenticated, loading, error, roles, permissions } =
+    useSelector((state) => state.auth);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Référence pour suivre si un appel est en cours
   const authCheckInProgressRef = useRef(false);
@@ -40,16 +41,34 @@ export const useAuth = () => {
     }
   };
 
-  const logoutUser = () => {
+  const logoutUser = async () => {
     try {
-      // await authService.logout();
-      dispatch(logoutAction());
+      setIsLoggingOut(true);
+
+      // 1. Indiquer que la déconnexion est en cours
+      dispatch(prepareLogout());
+
+      // 2. Appeler l'API pour supprimer le cookie
+      await authService.logout();
+
+      // 3. Réinitialiser l'état de vérification
       initialCheckDoneRef.current = false;
-      // La redirection est maintenant gérée dans le service d'authentification
+
+      // 4. Rediriger
+      router.push("/auth/login");
+
+      // 5. Terminer la déconnexion après redirection
+      setTimeout(() => {
+        dispatch(completeLogout());
+      }, 100);
     } catch (error) {
       console.error("Error during logout:", error);
-      // En cas d'erreur, forcer tout de même la redirection
       router.push("/auth/login");
+      setTimeout(() => {
+        dispatch(completeLogout());
+      }, 100);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -95,8 +114,11 @@ export const useAuth = () => {
   return {
     user,
     isAuthenticated,
+    roles,
+    permissions,
     loading,
     error,
+    isLoggingOut,
     login: loginUser,
     logout: logoutUser,
     checkAuthStatus,

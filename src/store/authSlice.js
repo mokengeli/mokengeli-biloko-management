@@ -43,6 +43,8 @@ export const getCurrentUser = createAsyncThunk(
 const initialState = {
   user: null,
   isAuthenticated: false,
+  roles: [],
+  permissions: [],
   loading: false,
   error: null,
 };
@@ -52,16 +54,23 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    logout: (state) => {
+    // Création d'une action de "préparation de déconnexion" qui ne vide pas encore les données
+    prepareLogout: (state) => {
+      // Marque simplement l'utilisateur comme en cours de déconnexion
+      state.isLoggingOut = true;
+      // Mais garde les données utilisateur pour éviter les erreurs durant la transition
+    },
+    completeLogout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
-      state.loading = false; // S'assurer que loading est false après déconnexion
-      authService.logout();
+      state.roles = [];
+      state.permissions = [];
+      state.loading = false;
+      state.isLoggingOut = false;
     },
     clearError: (state) => {
       state.error = null;
     },
-    // Ajoutons une action pour réinitialiser l'état de chargement si nécessaire
     resetLoading: (state) => {
       state.loading = false;
     },
@@ -77,6 +86,9 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload;
+        // Stocker les rôles et permissions
+        state.roles = action.payload.roles || [];
+        state.permissions = action.payload.permissions || [];
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -91,15 +103,21 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload;
+        // Stocker les rôles et permissions
+        state.roles = action.payload.roles || [];
+        state.permissions = action.payload.permissions || [];
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
-        state.loading = false; // Important : s'assurer que loading est mis à false même en cas d'erreur
+        state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.roles = [];
+        state.permissions = [];
         state.error = action.payload;
       });
   },
 });
 
-export const { logout, clearError, resetLoading } = authSlice.actions;
+export const { prepareLogout, completeLogout, clearError, resetLoading } =
+  authSlice.actions;
 export default authSlice.reducer;

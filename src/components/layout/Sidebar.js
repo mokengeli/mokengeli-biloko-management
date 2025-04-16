@@ -58,8 +58,8 @@ const menuItems = [
     icon: <Utensils className="w-5 h-5" />,
     submenu: true,
     submenuItems: [
-      { title: "Plats", href: "/menu/dishes" },
       { title: "Catégories", href: "/menu/categories" },
+      { title: "Plats", href: "/menu/dishes" },
     ],
   },
   {
@@ -146,13 +146,16 @@ export default function Sidebar({ isMobile = false }) {
                       <Link
                         key={subItem.href}
                         href={
-                          // Correction des URLs pour les pages d'inventaire
+                          // Correction des URLs pour les pages d'inventaire et de menu
                           item.title === "Inventaire" &&
                           subItem.title === "Catégories"
                             ? "/inventory/categories"
                             : item.title === "Inventaire" &&
                               subItem.title === "Produits"
                             ? "/inventory/products"
+                            : item.title === "Menu" &&
+                              subItem.title === "Catégories"
+                            ? "/menu/categories"
                             : "/not-found"
                         }
                         className={`block px-4 py-2 text-sm rounded-md ${

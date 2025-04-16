@@ -62,6 +62,33 @@ const inventoryService = {
       throw error;
     }
   },
+  createProduct: async (productData) => {
+    try {
+      const response = await apiClient.post(
+        "/api/inventory/product",
+        productData
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error creating product:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+  getAllUnitOfMeasurement: async () => {
+    try {
+      const response = await apiClient.get("/api/inventory/product/unitm/all");
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching units of measurement:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
 };
 
 export default inventoryService;

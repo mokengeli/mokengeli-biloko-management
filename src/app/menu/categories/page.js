@@ -1,4 +1,4 @@
-// src/app/inventory/products/page.js
+// src/app/menu/categories/page.js
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -16,36 +16,24 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RestaurantSelector from "@/components/inventory/RestaurantSelector";
-import useInventory from "@/hooks/useInventory";
+import useMenu from "@/hooks/useMenu";
 import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
-import AddProductModal from "@/components/inventory/AddProductModal";
-import { Plus, Eye, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 
-export default function ProductsPage() {
+export default function MenuCategoriesPage() {
   const router = useRouter();
-  const { products, loading, error, fetchProducts } = useInventory();
+  const { categories, loading, error, fetchCategories } = useMenu();
   const { hasPermission } = usePermissions();
   const { user, roles } = useAuth();
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
-  // Vérifier si l'utilisateur a la permission d'éditer l'inventaire
-  const canEditInventory = hasPermission("EDIT_INVENTORY");
-  const canViewInventory = hasPermission("VIEW_INVENTORY");
-
-  // Fonction pour formater la date
-  const formatDate = (dateString) => {
-    if (!dateString) {
-      return "";
-    }
-    const options = { year: "numeric", month: "short", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
+  // Vérifier si l'utilisateur a la permission d'éditer les menus
+  const canEditMenu = hasPermission("EDIT_INVENTORY"); // Adapter selon vos permissions
 
   // Définir le restaurant par défaut lors du chargement initial
   useEffect(() => {
@@ -59,29 +47,18 @@ export default function ProductsPage() {
     setSelectedRestaurant(value);
   }, []);
 
-  // Charger les produits au montage du composant ou au changement de restaurant
+  // Charger les catégories au changement de restaurant
   useEffect(() => {
     if (selectedRestaurant) {
-      fetchProducts();
+      fetchCategories(selectedRestaurant);
     }
-  }, [fetchProducts, selectedRestaurant]);
-
-  // Filtrer les produits par restaurant sélectionné
-  const filteredProducts = selectedRestaurant
-    ? products.filter((product) => product.tenantCode === selectedRestaurant)
-    : [];
+  }, [fetchCategories, selectedRestaurant]);
 
   // Fonction pour gérer les actions non implémentées
   const handleNotImplementedAction = (action, itemName) => {
     setAlertAction(`${action} ${itemName}`);
     setIsAlertModalOpen(true);
   };
-
-  // Si l'utilisateur n'a pas la permission de voir l'inventaire, rediriger
-  if (!canViewInventory) {
-    router.push("/dashboard");
-    return null;
-  }
 
   return (
     <DashboardLayout>
@@ -92,7 +69,7 @@ export default function ProductsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-2xl font-bold tracking-tight"
           >
-            Produits d'inventaire
+            Catégories de menu
           </motion.h1>
 
           <div className="flex flex-col md:flex-row items-center gap-4">
@@ -103,15 +80,22 @@ export default function ProductsPage() {
               />
             )}
 
-            {selectedRestaurant && canEditInventory && (
+            {selectedRestaurant && canEditMenu && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                <Button onClick={() => setIsAddModalOpen(true)}>
+                <Button
+                  onClick={() =>
+                    handleNotImplementedAction(
+                      "ajouter",
+                      "une nouvelle catégorie de menu"
+                    )
+                  }
+                >
                   <Plus className="mr-2 h-4 w-4" />
-                  Ajouter un produit
+                  Ajouter une catégorie
                 </Button>
               </motion.div>
             )}
@@ -122,7 +106,7 @@ export default function ProductsPage() {
           <div className="p-8 text-center bg-gray-50 rounded-md border">
             <p className="text-gray-500">
               {isAdmin
-                ? "Veuillez sélectionner un restaurant pour voir ses produits"
+                ? "Veuillez sélectionner un restaurant pour voir ses catégories de menu"
                 : "Chargement..."}
             </p>
           </div>
@@ -138,7 +122,7 @@ export default function ProductsPage() {
                 <p className="text-red-500">{error}</p>
                 <Button
                   variant="outline"
-                  onClick={fetchProducts}
+                  onClick={() => fetchCategories(selectedRestaurant)}
                   className="mt-4"
                 >
                   Réessayer
@@ -148,18 +132,11 @@ export default function ProductsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[100px]">ID</TableHead>
                     <TableHead>Nom</TableHead>
-                    <TableHead>Catégorie</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Unité de mesure
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Date de création
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Dernière modification
-                    </TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {canEditMenu && (
+                      <TableHead className="text-right">Actions</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -170,72 +147,55 @@ export default function ProductsPage() {
                       .map((_, index) => (
                         <TableRow key={index}>
                           <TableCell>
-                            <Skeleton className="h-5 w-40" />
+                            <Skeleton className="h-5 w-10" />
                           </TableCell>
                           <TableCell>
-                            <Skeleton className="h-5 w-24" />
+                            <Skeleton className="h-5 w-40" />
                           </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <Skeleton className="h-5 w-16" />
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <Skeleton className="h-5 w-28" />
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <Skeleton className="h-5 w-28" />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-2">
-                              <Skeleton className="h-8 w-8 rounded-md" />
-                              {canEditInventory && (
+                          {canEditMenu && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-2">
                                 <Skeleton className="h-8 w-8 rounded-md" />
-                              )}
-                            </div>
-                          </TableCell>
+                                <Skeleton className="h-8 w-8 rounded-md" />
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))
-                  ) : filteredProducts.length === 0 ? (
+                  ) : categories.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={canEditMenu ? 3 : 2}
                         className="text-center py-8 text-gray-500"
                       >
-                        Aucun produit trouvé.{" "}
-                        {canEditInventory ? "Commencez par en créer un !" : ""}
+                        Aucune catégorie de menu trouvée.{" "}
+                        {canEditMenu ? "Commencez par en créer une !" : ""}
                       </TableCell>
                     </TableRow>
                   ) : (
                     // Données réelles
-                    filteredProducts.map((product) => (
-                      <TableRow key={product.id} className="hover:bg-muted/50">
+                    categories.map((category) => (
+                      <TableRow key={category.id} className="hover:bg-muted/50">
                         <TableCell className="font-medium">
-                          {product.name}
+                          {category.id}
                         </TableCell>
-                        <TableCell>
-                          {product.category?.name || "Non catégorisé"}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {product.unitOfMeasure}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {formatDate(product.createdAt)}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {formatDate(product.updatedAt)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-2">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-blue-500"
-                              onClick={() =>
-                                router.push(`/inventory/products/${product.id}`)
-                              }
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {canEditInventory && (
+                        <TableCell>{category.name}</TableCell>
+                        {canEditMenu && (
+                          <TableCell className="text-right">
+                            <div className="flex justify-end space-x-2">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-blue-500"
+                                onClick={() =>
+                                  handleNotImplementedAction(
+                                    "modifier",
+                                    `la catégorie "${category.name}"`
+                                  )
+                                }
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -243,15 +203,15 @@ export default function ProductsPage() {
                                 onClick={() =>
                                   handleNotImplementedAction(
                                     "supprimer",
-                                    `le produit "${product.name}"`
+                                    `la catégorie "${category.name}"`
                                   )
                                 }
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))
                   )}
@@ -268,19 +228,6 @@ export default function ProductsPage() {
         onClose={() => setIsAlertModalOpen(false)}
         title={`Action non disponible : ${alertAction}`}
       />
-
-      {/* Modal d'ajout de produit */}
-      {selectedRestaurant && (
-        <AddProductModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          tenantCode={selectedRestaurant}
-          onSuccess={() => {
-            // Rafraîchir la liste des produits après création réussie
-            fetchProducts();
-          }}
-        />
-      )}
     </DashboardLayout>
   );
 }

@@ -18,6 +18,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import useInventory from "@/hooks/useInventory";
 import usePermissions from "@/hooks/usePermissions";
 import AddCategoryModal from "@/components/inventory/AddCategoryModal";
+import NotImplementedModal from "@/components/common/NotImplementedModal";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 export default function CategoriesPage() {
@@ -25,20 +26,31 @@ export default function CategoriesPage() {
   const { categories, loading, error, fetchCategories } = useInventory();
   const { hasPermission } = usePermissions();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [alertAction, setAlertAction] = useState("");
 
   // Vérifier si l'utilisateur a la permission d'éditer l'inventaire
   const canEditInventory = hasPermission("EDIT_INVENTORY");
 
   // Fonction pour formater la date
   const formatDate = (dateString) => {
+    if (!dateString) {
+      return "";
+    }
     const options = { year: "numeric", month: "short", day: "numeric" };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-
   // Charger les catégories au montage du composant
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  // Fonction pour gérer les actions non implémentées
+  const handleNotImplementedAction = (action, itemName) => {
+    setAlertAction(`${action} ${itemName}`);
+    setIsAlertModalOpen(true);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -150,11 +162,7 @@ export default function CategoriesPage() {
                         {formatDate(category.createdAt)}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {formatDate(
-                          category.updatedAt
-                            ? category.updatedAt
-                            : category.createdAt
-                        )}
+                        {formatDate(category.updatedAt)}
                       </TableCell>
                       {canEditInventory && (
                         <TableCell className="text-right">
@@ -163,7 +171,12 @@ export default function CategoriesPage() {
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8 text-blue-500"
-                              onClick={() => router.push("/not-found")}
+                              onClick={() =>
+                                handleNotImplementedAction(
+                                  "modifier",
+                                  `la catégorie "${category.name}"`
+                                )
+                              }
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -171,7 +184,12 @@ export default function CategoriesPage() {
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8 text-red-500"
-                              onClick={() => router.push("/not-found")}
+                              onClick={() =>
+                                handleNotImplementedAction(
+                                  "supprimer",
+                                  `la catégorie "${category.name}"`
+                                )
+                              }
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -198,6 +216,13 @@ export default function CategoriesPage() {
           }}
         />
       )}
+
+      {/* Modal d'alerte pour les fonctionnalités non implémentées */}
+      <NotImplementedModal
+        isOpen={isAlertModalOpen}
+        onClose={() => setIsAlertModalOpen(false)}
+        title={`Action non disponible : ${alertAction}`}
+      />
     </DashboardLayout>
   );
 }

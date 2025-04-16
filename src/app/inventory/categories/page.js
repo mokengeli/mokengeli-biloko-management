@@ -1,7 +1,7 @@
 // src/app/inventory/categories/page.js
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,10 @@ export default function CategoriesPage() {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  // Charger les catégories au montage du composant
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
   return (
     <DashboardLayout>
       <div className="space-y-6">

@@ -4,6 +4,7 @@ import inventoryService from "@/services/inventoryService";
 
 export const useInventory = () => {
   const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -12,7 +13,6 @@ export const useInventory = () => {
     setLoading(true);
     setError(null);
     try {
-      // Utiliser l'appel API réel
       const data = await inventoryService.getAllCategories();
       setCategories(data);
     } catch (err) {
@@ -23,16 +23,28 @@ export const useInventory = () => {
     }
   }, []);
 
-  // Charger les catégories au montage du composant
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+  // Fonction pour récupérer les produits
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await inventoryService.getAllProducts();
+      setProducts(data);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setError(err.message || "Erreur lors de la récupération des produits");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return {
     categories,
+    products,
     loading,
     error,
     fetchCategories,
+    fetchProducts,
   };
 };
 

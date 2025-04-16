@@ -14,30 +14,34 @@ import {
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "./Sidebar";
+import userService from "@/services/userService";
 
 export default function Topbar() {
-  const { user, logout, isLoggingOut } = useAuth(); // Ajout de isLoggingOut
+  const { user, logout, isLoggingOut } = useAuth();
   const [scrolled, setScrolled] = useState(false);
-  const [currentTime, setCurrentTime] = useState("");
+  const [tenantName, setTenantName] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Effet pour mettre à jour l'heure actuelle toutes les secondes
+  // Récupérer le nom du restaurant à partir du code
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const options = {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      };
-      setCurrentTime(now.toLocaleTimeString(undefined, options));
+    const fetchTenantName = async () => {
+      if (user?.tenantCode) {
+        setLoading(true);
+        try {
+          const tenantData = await userService.getTenantByCode(user.tenantCode);
+          setTenantName(tenantData.name);
+        } catch (error) {
+          console.error("Error fetching tenant name:", error);
+          // En cas d'erreur, on utilise le code comme fallback
+          setTenantName(user.tenantCode);
+        } finally {
+          setLoading(false);
+        }
+      }
     };
 
-    updateTime(); // Mise à jour initiale
-    const intervalId = setInterval(updateTime, 1000); // Mise à jour chaque seconde
-
-    return () => clearInterval(intervalId);
-  }, []);
+    fetchTenantName();
+  }, [user]);
 
   // Détecter le défilement pour ajouter une ombre à la barre supérieure
   useEffect(() => {
@@ -78,13 +82,12 @@ export default function Topbar() {
     >
       <div className="flex items-center">
         <Sidebar isMobile={true} />
-        <div className="ml-2 md:ml-0 text-sm text-gray-500">{currentTime}</div>
       </div>
 
       <div className="flex items-center">
         <div className="mr-6 hidden md:block text-center">
           <h3 className="text-lg font-semibold">
-            {user?.tenantCode || "Restaurant"}
+            {loading ? "Chargement..." : tenantName || "Restaurant"}
           </h3>
         </div>
 

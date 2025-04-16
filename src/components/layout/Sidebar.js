@@ -146,9 +146,13 @@ export default function Sidebar({ isMobile = false }) {
                       <Link
                         key={subItem.href}
                         href={
-                          subItem.title === "Catégories" &&
-                          item.title === "Inventaire"
+                          // Correction des URLs pour les pages d'inventaire
+                          item.title === "Inventaire" &&
+                          subItem.title === "Catégories"
                             ? "/inventory/categories"
+                            : item.title === "Inventaire" &&
+                              subItem.title === "Produits"
+                            ? "/inventory/products"
                             : "/not-found"
                         }
                         className={`block px-4 py-2 text-sm rounded-md ${

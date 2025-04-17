@@ -38,7 +38,6 @@ export default function ProductDetailPage() {
   const { product, tenant, loading, error, refreshProduct } =
     useProductDetail(productId);
   const { hasPermission } = usePermissions();
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
 
   // Vérifier si l'utilisateur a les permissions nécessaires

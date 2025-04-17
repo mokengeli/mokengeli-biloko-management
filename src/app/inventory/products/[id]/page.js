@@ -1,23 +1,52 @@
-// src/app/inventory/products/[id]/page.js
+// src/app/inventory/products/[id]/page.js - Mise à jour pour inclure les informations de stock
 "use client";
 
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Building, Calendar, Info } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft,
+  Building,
+  Calendar,
+  Info,
+  PackagePlus,
+  PackageMinus,
+  AlertCircle,
+} from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import useProductDetail from "@/hooks/useProductDetail";
 import usePermissions from "@/hooks/usePermissions";
+import RemoveArticleModal from "@/components/inventory/RemoveArticleModal";
+
+import AddArticleVolumeModal from "@/components/inventory/AddArticleVolumeModal";
+import AddArticleUnitsModal from "@/components/inventory/AddArticleUnitsModal";
 
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams();
   const productId = params?.id;
-  const { product, tenant, loading, error } = useProductDetail(productId);
+  const { product, tenant, loading, error, refreshProduct } =
+    useProductDetail(productId);
   const { hasPermission } = usePermissions();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
+
+  // Vérifier si l'utilisateur a les permissions nécessaires
   const canViewInventory = hasPermission("VIEW_INVENTORY");
+  const canEditInventory = hasPermission("EDIT_INVENTORY");
+
+  const [isAddVolumeModalOpen, setIsAddVolumeModalOpen] = useState(false);
+  const [isAddUnitsModalOpen, setIsAddUnitsModalOpen] = useState(false);
 
   // Fonction pour formater la date
   const formatDate = (dateString) => {
@@ -31,6 +60,15 @@ export default function ProductDetailPage() {
     };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
+  // Stock disponible
+  const stockQuantity = product?.article?.quantity || 0;
+  const stockStatus =
+    stockQuantity <= 0
+      ? "out-of-stock"
+      : stockQuantity < 10
+      ? "low-stock"
+      : "in-stock";
 
   // Si l'utilisateur n'a pas la permission de voir l'inventaire, rediriger
   if (!canViewInventory) {
@@ -84,18 +122,6 @@ export default function ProductDetailPage() {
                     <Skeleton className="h-5 w-24" />
                     <Skeleton className="h-6 w-48" />
                   </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-24" />
-                    <Skeleton className="h-6 w-48" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-24" />
-                    <Skeleton className="h-6 w-48" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-20 w-full" />
                 </div>
               </CardContent>
             </Card>
@@ -109,10 +135,36 @@ export default function ProductDetailPage() {
             className="space-y-6"
           >
             <Card>
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center">
-                  {product?.name}
-                </CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl flex items-center">
+                    {product?.name}
+                  </CardTitle>
+                </div>
+                {/* Badge de stock */}
+                <Badge
+                  className={`
+                    ${
+                      stockStatus === "out-of-stock"
+                        ? "bg-red-100 text-red-800"
+                        : ""
+                    }
+                    ${
+                      stockStatus === "low-stock"
+                        ? "bg-amber-100 text-amber-800"
+                        : ""
+                    }
+                    ${
+                      stockStatus === "in-stock"
+                        ? "bg-green-100 text-green-800"
+                        : ""
+                    }
+                  `}
+                >
+                  {stockStatus === "out-of-stock" && "Rupture de stock"}
+                  {stockStatus === "low-stock" && "Stock bas"}
+                  {stockStatus === "in-stock" && "En stock"}
+                </Badge>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -139,6 +191,28 @@ export default function ProductDetailPage() {
                     </div>
                   </div>
 
+                  {/* Stock actuel - NOUVEAU */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Stock actuel
+                    </div>
+                    <div className="font-medium flex items-center">
+                      {stockQuantity} {product?.unitOfMeasure || "unités"}
+                      {stockStatus === "out-of-stock" && (
+                        <span className="ml-2 text-red-500 flex items-center">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          Rupture
+                        </span>
+                      )}
+                      {stockStatus === "low-stock" && (
+                        <span className="ml-2 text-amber-500 flex items-center">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          Faible
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Unité de mesure */}
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-muted-foreground">
@@ -152,7 +226,7 @@ export default function ProductDetailPage() {
                   {/* Volume */}
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-muted-foreground">
-                      Volume
+                      Volume par unité
                     </div>
                     <div className="font-medium">
                       {product?.volume !== undefined && product?.volume !== null
@@ -207,8 +281,66 @@ export default function ProductDetailPage() {
                   </div>
                 )}
               </CardContent>
+
+              {/* Boutons pour gérer le stock - NOUVEAU */}
+              {canEditInventory && (
+                <CardFooter className="flex flex-wrap gap-3 pt-6 border-t justify-start">
+                  <Button
+                    onClick={() => setIsAddVolumeModalOpen(true)}
+                    className="w-full sm:w-auto"
+                  >
+                    <PackagePlus className="mr-2 h-4 w-4" />
+                    Ajouter article
+                  </Button>
+
+                  <Button
+                    onClick={() => setIsRemoveModalOpen(true)}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                    disabled={stockQuantity <= 0}
+                  >
+                    <PackageMinus className="mr-2 h-4 w-4" />
+                    Retirer article
+                  </Button>
+
+                  <Button
+                    onClick={() => setIsAddUnitsModalOpen(true)}
+                    className="w-full sm:w-auto"
+                    variant="secondary"
+                  >
+                    <PackagePlus className="mr-2 h-4 w-4" />
+                    Ajouter produit
+                  </Button>
+                </CardFooter>
+              )}
             </Card>
           </motion.div>
+        )}
+
+        {/* Modaux pour gérer le stock */}
+        {product && (
+          <>
+            <AddArticleVolumeModal
+              isOpen={isAddVolumeModalOpen}
+              onClose={() => setIsAddVolumeModalOpen(false)}
+              product={product}
+              onSuccess={() => refreshProduct(productId)}
+            />
+
+            <AddArticleUnitsModal
+              isOpen={isAddUnitsModalOpen}
+              onClose={() => setIsAddUnitsModalOpen(false)}
+              product={product}
+              onSuccess={() => refreshProduct(productId)}
+            />
+
+            <RemoveArticleModal
+              isOpen={isRemoveModalOpen}
+              onClose={() => setIsRemoveModalOpen(false)}
+              product={product}
+              onSuccess={() => refreshProduct(productId)}
+            />
+          </>
         )}
       </div>
     </DashboardLayout>

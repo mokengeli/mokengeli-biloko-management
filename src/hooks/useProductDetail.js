@@ -9,41 +9,46 @@ export const useProductDetail = (productId) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchProductDetails = async () => {
-      if (!productId) return;
+  const fetchProductDetails = async (id) => {
+    if (!id) return;
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      try {
-        // Récupérer les détails du produit
-        const productData = await inventoryService.getProductById(productId);
-        setProduct(productData);
+    try {
+      // Récupérer les détails du produit
+      const productData = await inventoryService.getProductById(id);
+      setProduct(productData);
 
-        // Si le produit a un code de tenant, récupérer les infos du tenant
-        if (productData.tenantCode) {
-          try {
-            const tenantData = await userService.getTenantByCode(
-              productData.tenantCode
-            );
-            setTenant(tenantData);
-          } catch (tenantError) {
-            console.error("Error fetching tenant:", tenantError);
-            // Ne pas définir d'erreur globale si seul le tenant échoue
-          }
+      // Si le produit a un code de tenant, récupérer les infos du tenant
+      if (productData.tenantCode) {
+        try {
+          const tenantData = await userService.getTenantByCode(
+            productData.tenantCode
+          );
+          setTenant(tenantData);
+        } catch (tenantError) {
+          console.error("Error fetching tenant:", tenantError);
+          // Ne pas définir d'erreur globale si seul le tenant échoue
         }
-      } catch (err) {
-        console.error("Error fetching product details:", err);
-        setError(
-          err.message || "Erreur lors de la récupération des détails du produit"
-        );
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching product details:", err);
+      setError(
+        err.message || "Erreur lors de la récupération des détails du produit"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchProductDetails();
+  // Fonction pour rafraîchir les données du produit
+  const refreshProduct = (id) => {
+    fetchProductDetails(id);
+  };
+
+  useEffect(() => {
+    fetchProductDetails(productId);
   }, [productId]);
 
   return {
@@ -51,6 +56,7 @@ export const useProductDetail = (productId) => {
     tenant,
     loading,
     error,
+    refreshProduct,
   };
 };
 

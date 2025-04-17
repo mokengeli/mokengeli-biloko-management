@@ -89,6 +89,57 @@ const inventoryService = {
       throw error;
     }
   },
+
+  // 1. Fonction pour ajouter un article avec une quantité (volume)
+  addArticle: async (articleData) => {
+    try {
+      const response = await apiClient.put(
+        "/api/inventory/article/add",
+        articleData
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error adding article:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  // 2. Fonction pour ajouter un article en spécifiant le nombre d'unités
+  addArticleByProduct: async (productRequest) => {
+    try {
+      const response = await apiClient.put(
+        "/api/inventory/article/add/by-product",
+        productRequest
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error adding article by product:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  // 3. Fonction pour retirer des articles de l'inventaire
+  removeArticle: async (articleList) => {
+    try {
+      const response = await apiClient.put(
+        "/api/inventory/article/remove",
+        articleList
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error removing article:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
 };
 
 export default inventoryService;

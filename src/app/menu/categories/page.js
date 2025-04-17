@@ -20,7 +20,9 @@ import useMenu from "@/hooks/useMenu";
 import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import AddMenuCategoryModal from "@/components/menu/AddMenuCategoryModal";
+import AssignCategoryModal from "@/components/menu/AssignCategoryModal";
+import { Plus, Pencil, Trash2, Link } from "lucide-react";
 
 export default function MenuCategoriesPage() {
   const router = useRouter();
@@ -29,11 +31,19 @@ export default function MenuCategoriesPage() {
   const { user, roles } = useAuth();
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
-  // Vérifier si l'utilisateur a la permission d'éditer les menus
-  const canEditMenu = hasPermission("EDIT_INVENTORY"); // Adapter selon vos permissions
+  // Vérifier si l'utilisateur a les permissions nécessaires
+  // L'admin peut toujours créer et assigner des catégories
+  const canCreateCategory = isAdmin || hasPermission("CREATE_MENU_CATEGORY");
+  const canAssignCategory = isAdmin || hasPermission("ASSIGN_MENU_CATEGORY");
+  const canEditCategory =
+    isAdmin ||
+    hasPermission("CREATE_MENU_CATEGORY") ||
+    hasPermission("ASSIGN_MENU_CATEGORY");
 
   // Définir le restaurant par défaut lors du chargement initial
   useEffect(() => {
@@ -80,24 +90,37 @@ export default function MenuCategoriesPage() {
               />
             )}
 
-            {selectedRestaurant && canEditMenu && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-              >
-                <Button
-                  onClick={() =>
-                    handleNotImplementedAction(
-                      "ajouter",
-                      "une nouvelle catégorie de menu"
-                    )
-                  }
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Ajouter une catégorie
-                </Button>
-              </motion.div>
+            {selectedRestaurant && (
+              <div className="flex gap-2">
+                {canCreateCategory && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <Button onClick={() => setIsAddModalOpen(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Créer une catégorie
+                    </Button>
+                  </motion.div>
+                )}
+
+                {canAssignCategory && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAssignModalOpen(true)}
+                    >
+                      <Link className="mr-2 h-4 w-4" />
+                      Assigner une catégorie
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -134,7 +157,7 @@ export default function MenuCategoriesPage() {
                   <TableRow>
                     <TableHead className="w-[100px]">ID</TableHead>
                     <TableHead>Nom</TableHead>
-                    {canEditMenu && (
+                    {canEditCategory && (
                       <TableHead className="text-right">Actions</TableHead>
                     )}
                   </TableRow>
@@ -152,7 +175,7 @@ export default function MenuCategoriesPage() {
                           <TableCell>
                             <Skeleton className="h-5 w-40" />
                           </TableCell>
-                          {canEditMenu && (
+                          {canEditCategory && (
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">
                                 <Skeleton className="h-8 w-8 rounded-md" />
@@ -165,11 +188,16 @@ export default function MenuCategoriesPage() {
                   ) : categories.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={canEditMenu ? 3 : 2}
+                        colSpan={canEditCategory ? 3 : 2}
                         className="text-center py-8 text-gray-500"
                       >
                         Aucune catégorie de menu trouvée.{" "}
-                        {canEditMenu ? "Commencez par en créer une !" : ""}
+                        {canCreateCategory
+                          ? "Commencez par en créer une !"
+                          : ""}
+                        {!canCreateCategory && canAssignCategory
+                          ? "Commencez par assigner une catégorie existante !"
+                          : ""}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -180,7 +208,7 @@ export default function MenuCategoriesPage() {
                           {category.id}
                         </TableCell>
                         <TableCell>{category.name}</TableCell>
-                        {canEditMenu && (
+                        {canEditCategory && (
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">
                               <Button
@@ -221,6 +249,32 @@ export default function MenuCategoriesPage() {
           </motion.div>
         )}
       </div>
+
+      {/* Modal d'ajout de catégorie */}
+      {selectedRestaurant && (
+        <AddMenuCategoryModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          tenantCode={selectedRestaurant}
+          onSuccess={() => {
+            // Rafraîchir la liste des catégories après création réussie
+            fetchCategories(selectedRestaurant);
+          }}
+        />
+      )}
+
+      {/* Modal d'assignation de catégorie */}
+      {selectedRestaurant && (
+        <AssignCategoryModal
+          isOpen={isAssignModalOpen}
+          onClose={() => setIsAssignModalOpen(false)}
+          tenantCode={selectedRestaurant}
+          onSuccess={() => {
+            // Rafraîchir la liste des catégories après assignation réussie
+            fetchCategories(selectedRestaurant);
+          }}
+        />
+      )}
 
       {/* Modal d'alerte pour les fonctionnalités non implémentées */}
       <NotImplementedModal

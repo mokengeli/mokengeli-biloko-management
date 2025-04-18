@@ -65,6 +65,14 @@ export default function CreateDishPage() {
   });
   const [error, setError] = useState(null);
 
+  // État pour la pagination des produits
+  const [productPagination, setProductPagination] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    pageSize: 100, // Utiliser une grande taille de page pour récupérer le maximum de produits
+  });
+
   // Configuration du formulaire
   const {
     register,
@@ -171,17 +179,51 @@ export default function CreateDishPage() {
       setLoading((prev) => ({ ...prev, categories: false }));
     }
 
-    // Charger les produits d'inventaire
+    // Charger les produits d'inventaire avec pagination
+    await loadProducts(tenantCode);
+  };
+
+  // Fonction pour charger les produits avec pagination
+  const loadProducts = async (tenantCode, page = 0, size = 100) => {
     setLoading((prev) => ({ ...prev, products: true }));
     try {
-      const productsData = await inventoryService.getAllProducts(tenantCode);
-      setProducts(productsData);
+      const productsData = await inventoryService.getAllProducts(
+        tenantCode,
+        page,
+        size
+      );
+
+      // Mettre à jour les produits avec le contenu
+      setProducts(productsData.content || []);
+
+      // Mettre à jour l'état de pagination
+      setProductPagination({
+        currentPage: productsData.number || 0,
+        totalPages: productsData.totalPages || 0,
+        totalElements: productsData.totalElements || 0,
+        pageSize: productsData.size || size,
+      });
+
+      // Si nécessaire, charger des pages supplémentaires pour avoir tous les produits disponibles
+      if (productsData.totalPages > 1 && productsData.number === 0) {
+        // Informer l'utilisateur que plus de produits sont disponibles
+        toast.info(
+          `${productsData.totalElements} produits trouvés. Les 100 premiers sont affichés.`
+        );
+      }
     } catch (err) {
       console.error("Error loading products:", err);
       setError("Erreur lors du chargement des produits");
       toast.error("Impossible de charger les produits d'inventaire");
     } finally {
       setLoading((prev) => ({ ...prev, products: false }));
+    }
+  };
+
+  // Fonction pour gérer le changement de page des produits
+  const handleProductPageChange = (page) => {
+    if (selectedRestaurant) {
+      loadProducts(selectedRestaurant, page, productPagination.pageSize);
     }
   };
 
@@ -685,7 +727,29 @@ export default function CreateDishPage() {
                     </p>
                   )}
                 </CardContent>
-                <CardFooter className="flex justify-end pt-0">
+                <CardFooter className="flex justify-between pt-0">
+                  {productPagination.totalPages > 1 && (
+                    <div className="text-sm text-muted-foreground">
+                      Page {productPagination.currentPage + 1} sur{" "}
+                      {productPagination.totalPages}(
+                      {productPagination.totalElements} produits au total)
+                      {productPagination.currentPage <
+                        productPagination.totalPages - 1 && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={() =>
+                            handleProductPageChange(
+                              productPagination.currentPage + 1
+                            )
+                          }
+                          className="ml-2"
+                        >
+                          Voir plus de produits
+                        </Button>
+                      )}
+                    </div>
+                  )}
                   {fields.length > 0 && (
                     <Button
                       type="button"

@@ -2,15 +2,19 @@
 import apiClient from "@/lib/api";
 
 const dishService = {
-  // Fonction pour récupérer tous les plats d'un restaurant spécifique
-  getAllDishes: async (tenantCode) => {
+  // Mise à jour pour prendre en compte la pagination
+  getAllDishes: async (tenantCode, page = 0, size = 10) => {
     try {
       if (!tenantCode) {
         throw new Error("Code de restaurant requis");
       }
-      const response = await apiClient.get(
-        `/api/order/dish?code=${tenantCode}`
-      );
+      const response = await apiClient.get(`/api/order/dish`, {
+        params: {
+          code: tenantCode,
+          page,
+          size,
+        },
+      });
       return response.data;
     } catch (error) {
       console.error(

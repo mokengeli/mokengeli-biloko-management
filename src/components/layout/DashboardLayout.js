@@ -1,61 +1,87 @@
+// src/components/layout/DashboardLayout.js
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DashboardLayout({ children }) {
-  const { isAuthenticated, checkAuthStatus, loading } = useAuth();
+  const { isAuthenticated, checkAuthStatus, user } = useAuth();
   const router = useRouter();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
+  // Vérifier si l'utilisateur est authentifié
   useEffect(() => {
-    const verifyAuth = async () => {
+    const checkAuth = async () => {
       try {
         await checkAuthStatus();
+        if (!isAuthenticated) {
+          router.push("/auth/login");
+        }
       } catch (error) {
+        console.error("Auth check failed:", error);
         router.push("/auth/login");
       }
     };
 
-    if (!isAuthenticated) {
-      verifyAuth();
-    }
-  }, [isAuthenticated, checkAuthStatus, router]);
+    checkAuth();
+    setIsMounted(true);
+  }, [checkAuthStatus, isAuthenticated, router]);
 
-  if (loading) {
+  // Si le composant n'est pas encore monté, ne rien afficher
+  if (!isMounted || !isAuthenticated || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return null; // Ne rien afficher pendant la redirection
-  }
-
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <Sidebar />
-      <Topbar />
+    <div className="flex h-screen bg-background">
+      {/* Sidebar avec animation */}
+      <motion.div
+        initial={{ x: -250 }}
+        animate={{ x: isSidebarOpen ? 0 : -250 }}
+        transition={{ duration: 0.3 }}
+        className={`fixed inset-y-0 left-0 z-30 w-64 shrink-0 border-r bg-background md:relative md:flex ${
+          isSidebarOpen ? "flex" : "hidden"
+        }`}
+      >
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
+      </motion.div>
 
-      <main className="pt-16 md:ml-64 min-h-screen">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={router.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="p-6"
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+      {/* Contenu principal */}
+      <main className="flex flex-col flex-1 overflow-hidden">
+        {/* Topbar */}
+        <Topbar onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+
+        {/* Contenu de la page avec animation */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="flex-1 overflow-y-auto p-4 md:p-6"
+        >
+          {children}
+        </motion.div>
       </main>
+
+      {/* Overlay pour fermer le menu sur mobile */}
+      {isSidebarOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.5 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-20 bg-black md:hidden"
+        />
+      )}
     </div>
   );
 }

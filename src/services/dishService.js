@@ -35,7 +35,7 @@ const dishService = {
     }
   },
 
-  // Fonction pour créer un nouveau plat (à compléter ultérieurement)
+  // Fonction pour créer un nouveau plat
   createDish: async (dishData) => {
     try {
       const response = await apiClient.post("/api/order/dish", dishData);
@@ -43,6 +43,20 @@ const dishService = {
     } catch (error) {
       console.error(
         "Error creating dish:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  // Fonction pour récupérer toutes les devises disponibles
+  getAllCurrencies: async () => {
+    try {
+      const response = await apiClient.get("/api/order/currency/all");
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching currencies:",
         error.response?.data || error.message
       );
       throw error;

@@ -35,8 +35,8 @@ export const useInventory = () => {
     }
   }, []);
 
-  // Fonction pour récupérer les produits - MISE À JOUR pour utiliser le code du tenant
-  const fetchProducts = useCallback(async (tenantCode) => {
+  // Fonction pour récupérer les produits - MISE À JOUR pour utiliser le code du tenant et la pagination
+  const fetchProducts = useCallback(async (tenantCode, page = 0, size = 10) => {
     setLoading(true);
     setError(null);
     try {
@@ -45,8 +45,18 @@ export const useInventory = () => {
           "Code du restaurant requis pour récupérer les produits"
         );
       }
-      const data = await inventoryService.getAllProducts(tenantCode);
-      setProducts(data);
+      const data = await inventoryService.getAllProducts(
+        tenantCode,
+        page,
+        size
+      );
+      setProducts(data.content || []);
+      setPagination({
+        currentPage: data.number || 0,
+        totalPages: data.totalPages || 0,
+        totalElements: data.totalElements || 0,
+        pageSize: data.size || size,
+      });
     } catch (err) {
       console.error("Error fetching products:", err);
       setError(err.message || "Erreur lors de la récupération des produits");
@@ -63,9 +73,14 @@ export const useInventory = () => {
     pagination,
     fetchCategories,
     fetchProducts,
-    // Helper pour la pagination
+    // Helpers pour la pagination des catégories
     changePage: (newPage) => fetchCategories(newPage, pagination.pageSize),
     changePageSize: (newSize) => fetchCategories(0, newSize),
+    // Helpers pour la pagination des produits
+    changeProductPage: (tenantCode, newPage) =>
+      fetchProducts(tenantCode, newPage, pagination.pageSize),
+    changeProductPageSize: (tenantCode, newSize) =>
+      fetchProducts(tenantCode, 0, newSize),
   };
 };
 

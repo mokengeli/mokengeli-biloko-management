@@ -36,17 +36,21 @@ const inventoryService = {
     }
   },
 
-  // Fonction pour récupérer tous les produits - MISE À JOUR pour utiliser le code du tenant
-  getAllProducts: async (tenantCode) => {
+  // Fonction pour récupérer tous les produits
+  getAllProducts: async (tenantCode, page = 0, size = 10) => {
     try {
       if (!tenantCode) {
         throw new Error(
           "Code de restaurant requis pour récupérer les produits"
         );
       }
-      const response = await apiClient.get(
-        `/api/inventory/product/all?code=${tenantCode}`
-      );
+      const response = await apiClient.get(`/api/inventory/product/all`, {
+        params: {
+          code: tenantCode,
+          page,
+          size,
+        },
+      });
       return response.data;
     } catch (error) {
       console.error(

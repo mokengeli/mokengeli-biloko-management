@@ -426,7 +426,7 @@ export default function CategoriesPage() {
                               onClick={() =>
                                 changePage(pagination.currentPage - 1)
                               }
-                              isDisabled={pagination.currentPage === 0}
+                              disabled={pagination.currentPage === 0}
                               aria-disabled={pagination.currentPage === 0}
                               tabIndex={pagination.currentPage === 0 ? -1 : 0}
                               className={
@@ -444,7 +444,7 @@ export default function CategoriesPage() {
                               onClick={() =>
                                 changePage(pagination.currentPage + 1)
                               }
-                              isDisabled={
+                              disabled={
                                 pagination.currentPage >=
                                 pagination.totalPages - 1
                               }

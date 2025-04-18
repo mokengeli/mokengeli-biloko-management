@@ -20,7 +20,6 @@ import useDishes from "@/hooks/useDishes";
 import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
-import AddDishModal from "@/components/menu/AddDishModal";
 import { Plus, Eye, Trash2 } from "lucide-react";
 
 export default function DishesPage() {
@@ -30,7 +29,6 @@ export default function DishesPage() {
   const { user, roles } = useAuth();
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
@@ -67,9 +65,8 @@ export default function DishesPage() {
 
   // Redirection correcte pour la visualisation détaillée d'un plat
   const handleViewDish = (dishId) => {
-    // Ici, vous redirigerez vers la page de détail du plat lorsqu'elle sera implémentée
-    // Pour l'instant, on montre une alerte "non implémenté"
-    handleNotImplementedAction("voir les détails du", "plat");
+    // Rediriger vers la page de détail du plat
+    router.push(`/menu/dishes/${dishId}`);
   };
 
   // Fonction pour formater le prix avec la devise
@@ -106,7 +103,7 @@ export default function DishesPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                <Button onClick={() => setIsAddModalOpen(true)}>
+                <Button onClick={() => router.push("/menu/dishes/create")}>
                   <Plus className="mr-2 h-4 w-4" />
                   Créer un plat
                 </Button>
@@ -243,19 +240,6 @@ export default function DishesPage() {
         onClose={() => setIsAlertModalOpen(false)}
         title={`Action non disponible : ${alertAction}`}
       />
-
-      {/* Modal d'ajout de plat */}
-      {selectedRestaurant && (
-        <AddDishModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          tenantCode={selectedRestaurant}
-          onSuccess={() => {
-            // Rafraîchir la liste des plats après création réussie
-            fetchDishes(selectedRestaurant);
-          }}
-        />
-      )}
     </DashboardLayout>
   );
 }

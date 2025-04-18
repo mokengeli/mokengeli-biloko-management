@@ -1,5 +1,5 @@
 // src/hooks/useInventory.js
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import inventoryService from "@/services/inventoryService";
 
 export const useInventory = () => {
@@ -7,14 +7,26 @@ export const useInventory = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    pageSize: 10,
+  });
 
-  // Fonction pour récupérer les catégories
-  const fetchCategories = useCallback(async () => {
+  // Fonction pour récupérer les catégories avec pagination
+  const fetchCategories = useCallback(async (page = 0, size = 10) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await inventoryService.getAllCategories();
-      setCategories(data);
+      const data = await inventoryService.getAllCategories(page, size);
+      setCategories(data.content || []);
+      setPagination({
+        currentPage: data.number || 0,
+        totalPages: data.totalPages || 0,
+        totalElements: data.totalElements || 0,
+        pageSize: data.size || size,
+      });
     } catch (err) {
       console.error("Error fetching categories:", err);
       setError(err.message || "Erreur lors de la récupération des catégories");
@@ -48,8 +60,12 @@ export const useInventory = () => {
     products,
     loading,
     error,
+    pagination,
     fetchCategories,
     fetchProducts,
+    // Helper pour la pagination
+    changePage: (newPage) => fetchCategories(newPage, pagination.pageSize),
+    changePageSize: (newSize) => fetchCategories(0, newSize),
   };
 };
 

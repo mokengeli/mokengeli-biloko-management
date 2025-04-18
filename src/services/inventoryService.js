@@ -2,10 +2,12 @@
 import apiClient from "@/lib/api";
 
 const inventoryService = {
-  // Fonction pour récupérer toutes les catégories
-  getAllCategories: async () => {
+  // Fonction pour récupérer toutes les catégories avec pagination
+  getAllCategories: async (page = 0, size = 10) => {
     try {
-      const response = await apiClient.get("/api/inventory/category/all");
+      const response = await apiClient.get("/api/inventory/category/all", {
+        params: { page, size },
+      });
       return response.data;
     } catch (error) {
       console.error(

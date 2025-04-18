@@ -19,11 +19,20 @@ import useInventory from "@/hooks/useInventory";
 import usePermissions from "@/hooks/usePermissions";
 import AddCategoryModal from "@/components/inventory/AddCategoryModal";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
+import { Pagination } from "@/components/ui/pagination";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 export default function CategoriesPage() {
   const router = useRouter();
-  const { categories, loading, error, fetchCategories } = useInventory();
+  const {
+    categories,
+    loading,
+    error,
+    pagination,
+    fetchCategories,
+    changePage,
+    changePageSize,
+  } = useInventory();
   const { hasPermission } = usePermissions();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
@@ -40,6 +49,7 @@ export default function CategoriesPage() {
     const options = { year: "numeric", month: "short", day: "numeric" };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
   // Charger les catégories au montage du composant
   useEffect(() => {
     fetchCategories();
@@ -49,6 +59,16 @@ export default function CategoriesPage() {
   const handleNotImplementedAction = (action, itemName) => {
     setAlertAction(`${action} ${itemName}`);
     setIsAlertModalOpen(true);
+  };
+
+  // Fonction pour gérer le changement de page
+  const handlePageChange = (page) => {
+    changePage(page);
+  };
+
+  // Fonction pour gérer le changement de taille de page
+  const handlePageSizeChange = (size) => {
+    changePageSize(size);
   };
 
   return (
@@ -95,112 +115,129 @@ export default function CategoriesPage() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">ID</TableHead>
-                  <TableHead>Nom</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    Date de création
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    Dernière modification
-                  </TableHead>
-                  {canEditInventory && (
-                    <TableHead className="text-right">Actions</TableHead>
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  // Squelettes de chargement
-                  Array(5)
-                    .fill(0)
-                    .map((_, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          <Skeleton className="h-5 w-10" />
+            <div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">ID</TableHead>
+                    <TableHead>Nom</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Date de création
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Dernière modification
+                    </TableHead>
+                    {canEditInventory && (
+                      <TableHead className="text-right">Actions</TableHead>
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    // Squelettes de chargement
+                    Array(5)
+                      .fill(0)
+                      .map((_, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Skeleton className="h-5 w-10" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-5 w-40" />
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <Skeleton className="h-5 w-28" />
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <Skeleton className="h-5 w-28" />
+                          </TableCell>
+                          {canEditInventory && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-2">
+                                <Skeleton className="h-8 w-8 rounded-md" />
+                                <Skeleton className="h-8 w-8 rounded-md" />
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))
+                  ) : categories.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={canEditInventory ? 5 : 4}
+                        className="text-center py-8 text-gray-500"
+                      >
+                        Aucune catégorie trouvée.{" "}
+                        {canEditInventory ? "Commencez par en créer une !" : ""}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    // Données réelles
+                    categories.map((category) => (
+                      <TableRow key={category.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">
+                          {category.id}
                         </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-5 w-40" />
+                        <TableCell>{category.name}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {formatDate(category.createdAt)}
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          <Skeleton className="h-5 w-28" />
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Skeleton className="h-5 w-28" />
+                          {formatDate(category.updatedAt)}
                         </TableCell>
                         {canEditInventory && (
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">
-                              <Skeleton className="h-8 w-8 rounded-md" />
-                              <Skeleton className="h-8 w-8 rounded-md" />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-blue-500"
+                                onClick={() =>
+                                  handleNotImplementedAction(
+                                    "modifier",
+                                    `la catégorie "${category.name}"`
+                                  )
+                                }
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-red-500"
+                                onClick={() =>
+                                  handleNotImplementedAction(
+                                    "supprimer",
+                                    `la catégorie "${category.name}"`
+                                  )
+                                }
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         )}
                       </TableRow>
                     ))
-                ) : categories.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={canEditInventory ? 5 : 4}
-                      className="text-center py-8 text-gray-500"
-                    >
-                      Aucune catégorie trouvée.{" "}
-                      {canEditInventory ? "Commencez par en créer une !" : ""}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  // Données réelles
-                  categories.map((category) => (
-                    <TableRow key={category.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">
-                        {category.id}
-                      </TableCell>
-                      <TableCell>{category.name}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {formatDate(category.createdAt)}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {formatDate(category.updatedAt)}
-                      </TableCell>
-                      {canEditInventory && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-2">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-blue-500"
-                              onClick={() =>
-                                handleNotImplementedAction(
-                                  "modifier",
-                                  `la catégorie "${category.name}"`
-                                )
-                              }
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-red-500"
-                              onClick={() =>
-                                handleNotImplementedAction(
-                                  "supprimer",
-                                  `la catégorie "${category.name}"`
-                                )
-                              }
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+
+              {/* Pagination */}
+              {!loading && categories.length > 0 && (
+                <div className="border-t p-4">
+                  <Pagination
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    pageSize={pagination.pageSize}
+                    totalItems={pagination.totalElements}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
+                    pageSizeOptions={[5, 10, 25, 50]}
+                  />
+                </div>
+              )}
+            </div>
           )}
         </motion.div>
       </div>

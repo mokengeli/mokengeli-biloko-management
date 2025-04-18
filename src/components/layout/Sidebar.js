@@ -1,244 +1,316 @@
+// src/components/layout/Sidebar.js
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-
-// Import des icônes (vous devrez les installer)
 import {
-  LayoutDashboard,
-  Store,
-  Menu as MenuIcon,
-  Users,
+  BarChart3,
   Package,
-  Utensils,
-  ShoppingCart,
+  Users,
   Settings,
-  LogOut,
-  ChevronRight,
   ChevronDown,
+  ChevronUp,
+  LogOut,
+  Home,
+  X,
+  Utensils,
+  FileText,
+  ShoppingCart,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
+import usePermissions from "@/hooks/usePermissions";
 
-const menuItems = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: <LayoutDashboard className="w-5 h-5" />,
-    submenu: false,
-  },
-  {
-    title: "Restaurants",
-    href: "/restaurants",
-    icon: <Store className="w-5 h-5" />,
-    submenu: false,
-  },
-  {
-    title: "Inventaire",
-    href: "/inventory",
-    icon: <Package className="w-5 h-5" />,
-    submenu: true,
-    submenuItems: [
-      { title: "Catégories", href: "/inventory/categories" },
-      { title: "Produits", href: "/inventory/products" },
-    ],
-  },
-  {
-    title: "Menu",
-    href: "/menu",
-    icon: <Utensils className="w-5 h-5" />,
-    submenu: true,
-    submenuItems: [
-      { title: "Catégories", href: "/menu/categories" },
-      { title: "Plats", href: "/menu/dishes" },
-    ],
-  },
-  {
-    title: "Commandes",
-    href: "/orders",
-    icon: <ShoppingCart className="w-5 h-5" />,
-    submenu: false,
-  },
-  {
-    title: "Utilisateurs",
-    href: "/users",
-    icon: <Users className="w-5 h-5" />,
-    submenu: false,
-  },
-  {
-    title: "Paramètres",
-    href: "/settings",
-    icon: <Settings className="w-5 h-5" />,
-    submenu: false,
-  },
-];
-
-export default function Sidebar({ isMobile = false }) {
-  const router = useRouter();
+export default function Sidebar({ onClose }) {
   const pathname = usePathname();
-  const { logout, isLoggingOut } = useAuth();
-  const [openSubmenu, setOpenSubmenu] = useState(null);
+  const router = useRouter();
+  const { logout, user } = useAuth();
+  const { hasPermission } = usePermissions();
+  const [openMenus, setOpenMenus] = useState({});
 
+  const isAdmin = user && user.roles && user.roles.includes("ROLE_ADMIN");
+  const canViewInventory = hasPermission("VIEW_INVENTORY");
+  const canViewOrders = hasPermission("VIEW_ORDERS");
+  const canViewUsers = hasPermission("VIEW_USERS") || isAdmin;
+
+  // Définir les menus à ouvrir en fonction de la page actuelle
+  useEffect(() => {
+    if (pathname) {
+      if (pathname.startsWith("/inventory")) {
+        setOpenMenus((prev) => ({ ...prev, inventory: true }));
+      }
+      if (pathname.startsWith("/menu")) {
+        setOpenMenus((prev) => ({ ...prev, menu: true }));
+      }
+      if (pathname.startsWith("/orders")) {
+        setOpenMenus((prev) => ({ ...prev, orders: true }));
+      }
+    }
+  }, [pathname]);
+
+  // Fonction pour gérer la déconnexion
   const handleLogout = async () => {
     try {
       await logout();
-      // La redirection est gérée par le service d'authentification
+      router.push("/auth/login");
     } catch (error) {
-      console.error("Error during logout:", error);
+      console.error("Logout error:", error);
     }
   };
 
-  const toggleSubmenu = (index) => {
-    setOpenSubmenu(openSubmenu === index ? null : index);
+  // Fonction pour basculer l'état d'un menu
+  const toggleMenu = (menu) => {
+    setOpenMenus((prev) => ({
+      ...prev,
+      [menu]: !prev[menu],
+    }));
   };
 
-  const isActive = (path) =>
-    pathname === path || pathname.startsWith(path + "/");
+  // Fonction pour vérifier si un lien est actif
+  const isActive = (path) => {
+    if (path === "/dashboard" && pathname === "/dashboard") {
+      return true;
+    }
+    return path !== "/dashboard" && pathname.startsWith(path);
+  };
 
-  const SidebarContent = () => (
-    <div className="h-full flex flex-col bg-white">
-      <div className="p-6">
-        <h2 className="text-2xl font-bold text-primary">Mokengeli Biloko</h2>
-        <p className="text-xs text-gray-500 mt-1">Gestion de restaurants</p>
-      </div>
-
-      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-        {menuItems.map((item, index) => (
-          <div key={item.href} className="mb-1">
-            {item.submenu ? (
-              <div>
-                <Button
-                  variant={isActive(item.href) ? "secondary" : "ghost"}
-                  className={`w-full justify-between ${
-                    isActive(item.href) ? "bg-primary/10" : ""
-                  }`}
-                  onClick={() => toggleSubmenu(index)}
-                >
-                  <div className="flex items-center">
-                    {item.icon}
-                    <span className="ml-3">{item.title}</span>
-                  </div>
-                  {openSubmenu === index ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </Button>
-
-                {openSubmenu === index && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="ml-6 mt-1 space-y-1"
-                  >
-                    {item.submenuItems.map((subItem) => (
-                      <Link
-                        key={subItem.href}
-                        href={
-                          // Correction des URLs pour les pages d'inventaire et de menu
-                          item.title === "Inventaire" &&
-                          subItem.title === "Catégories"
-                            ? "/inventory/categories"
-                            : item.title === "Inventaire" &&
-                              subItem.title === "Produits"
-                            ? "/inventory/products"
-                            : item.title === "Menu" &&
-                              subItem.title === "Catégories"
-                            ? "/menu/categories"
-                            : item.title === "Menu" && subItem.title === "Plats"
-                            ? "/menu/dishes"
-                            : "/not-found"
-                        }
-                        className={`block px-4 py-2 text-sm rounded-md ${
-                          isActive(subItem.href)
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
-                      >
-                        {subItem.title}
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </div>
-            ) : (
-              <Link
-                href={item.title === "Dashboard" ? item.href : "/not-found"}
-                className={`flex items-center px-4 py-2 text-sm rounded-md ${
-                  isActive(item.href)
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                {item.icon}
-                <span className="ml-3">{item.title}</span>
-              </Link>
-            )}
-          </div>
-        ))}
-      </nav>
-
-      <div className="p-4 border-t">
+  return (
+    <div className="flex h-full w-full flex-col bg-background">
+      <div className="flex items-center justify-between p-4">
+        <Link href="/dashboard">
+          <h1 className="text-xl font-semibold tracking-tight">
+            Mokengeli Biloko
+          </h1>
+        </Link>
         <Button
-          variant="outline"
-          className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
-          onClick={handleLogout}
-          disabled={isLoggingOut}
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onClose}
         >
-          {isLoggingOut ? (
-            <>
-              <div className="animate-spin h-4 w-4 mr-3 border-2 border-red-500 rounded-full border-t-transparent"></div>
-              Déconnexion...
-            </>
-          ) : (
-            <>
-              <LogOut className="h-5 w-5 mr-3" />
-              Déconnexion
-            </>
-          )}
+          <X className="h-5 w-5" />
         </Button>
       </div>
-    </div>
-  );
+      <div className="flex-1 overflow-auto p-3">
+        <nav className="flex flex-col gap-2">
+          {/* Dashboard */}
+          <Link
+            href="/dashboard"
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
+              isActive("/dashboard") && "bg-primary text-primary-foreground"
+            )}
+          >
+            <Home className="h-5 w-5" />
+            <span>Tableau de bord</span>
+          </Link>
 
-  // Version mobile de la sidebar (avec le menu burger)
-  if (isMobile) {
-    return (
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <MenuIcon className="h-6 w-6" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-[280px]">
-          <div className="sr-only">
-            <SheetTitle>Menu de navigation</SheetTitle>
-            <SheetDescription>
-              Menu principal permettant d'accéder aux différentes
-              fonctionnalités de l'application
-            </SheetDescription>
+          {/* Inventaire */}
+          {canViewInventory && (
+            <div className="space-y-1">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "flex w-full items-center justify-between px-3 py-2",
+                  openMenus.inventory && "font-medium"
+                )}
+                onClick={() => toggleMenu("inventory")}
+              >
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  <span>Inventaire</span>
+                </div>
+                {openMenus.inventory ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+              {openMenus.inventory && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-4 mt-1 flex flex-col space-y-1"
+                >
+                  <Link
+                    href="/inventory/categories"
+                    className={cn(
+                      "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
+                      isActive("/inventory/categories") &&
+                        "bg-primary/10 font-medium"
+                    )}
+                  >
+                    Catégories
+                  </Link>
+                  <Link
+                    href="/inventory/products"
+                    className={cn(
+                      "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
+                      isActive("/inventory/products") &&
+                        "bg-primary/10 font-medium"
+                    )}
+                  >
+                    Produits
+                  </Link>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Menu */}
+          <div className="space-y-1">
+            <Button
+              variant="ghost"
+              className={cn(
+                "flex w-full items-center justify-between px-3 py-2",
+                openMenus.menu && "font-medium"
+              )}
+              onClick={() => toggleMenu("menu")}
+            >
+              <div className="flex items-center gap-2">
+                <Utensils className="h-5 w-5" />
+                <span>Menu</span>
+              </div>
+              {openMenus.menu ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+            {openMenus.menu && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="ml-4 mt-1 flex flex-col space-y-1"
+              >
+                <Link
+                  href="/menu/categories"
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
+                    isActive("/menu/categories") && "bg-primary/10 font-medium"
+                  )}
+                >
+                  Catégories
+                </Link>
+                <Link
+                  href="/menu/dishes"
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
+                    isActive("/menu/dishes") && "bg-primary/10 font-medium"
+                  )}
+                >
+                  Plats
+                </Link>
+              </motion.div>
+            )}
           </div>
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
-    );
-  }
 
-  // Version desktop de la sidebar
-  return (
-    <div className="hidden md:block w-64 h-screen fixed top-0 left-0 border-r">
-      <SidebarContent />
+          {/* Commandes */}
+          {canViewOrders && (
+            <div className="space-y-1">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "flex w-full items-center justify-between px-3 py-2",
+                  openMenus.orders && "font-medium"
+                )}
+                onClick={() => toggleMenu("orders")}
+              >
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5" />
+                  <span>Commandes</span>
+                </div>
+                {openMenus.orders ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+              {openMenus.orders && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-4 mt-1 flex flex-col space-y-1"
+                >
+                  <Link
+                    href="/not-found"
+                    className={cn(
+                      "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
+                      isActive("/orders/current") && "bg-primary/10 font-medium"
+                    )}
+                  >
+                    Commandes en cours
+                  </Link>
+                  <Link
+                    href="/not-found"
+                    className={cn(
+                      "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
+                      isActive("/orders/history") && "bg-primary/10 font-medium"
+                    )}
+                  >
+                    Historique
+                  </Link>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Utilisateurs - Mise à jour pour rediriger vers la page des utilisateurs */}
+          {canViewUsers && (
+            <Link
+              href="/users"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
+                isActive("/users") && "bg-primary text-primary-foreground"
+              )}
+            >
+              <Users className="h-5 w-5" />
+              <span>Utilisateurs</span>
+            </Link>
+          )}
+
+          {/* Rapports */}
+          {isAdmin && (
+            <Link
+              href="/not-found"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
+                isActive("/reports") && "bg-primary text-primary-foreground"
+              )}
+            >
+              <FileText className="h-5 w-5" />
+              <span>Rapports</span>
+            </Link>
+          )}
+
+          {/* Paramètres */}
+          <Link
+            href="/not-found"
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
+              isActive("/settings") && "bg-primary text-primary-foreground"
+            )}
+          >
+            <Settings className="h-5 w-5" />
+            <span>Paramètres</span>
+          </Link>
+        </nav>
+      </div>
+      <div className="mt-auto p-4">
+        <Button variant="destructive" className="w-full" onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Déconnexion
+        </Button>
+      </div>
     </div>
   );
 }

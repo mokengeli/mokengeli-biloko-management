@@ -16,6 +16,7 @@ import {
   Calendar,
   Building,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,7 +37,6 @@ import {
 } from "@/components/ui/table";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
-import { useToast } from "@/components/ui/use-toast";
 import dishService from "@/services/dishService";
 import userService from "@/services/userService";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,8 +46,7 @@ export default function DishDetailPage() {
   const router = useRouter();
   const params = useParams();
   const dishId = params?.id;
-  const { toast } = useToast();
-  const { user, roles } = useAuth();
+
   const { hasPermission } = usePermissions();
 
   const [dish, setDish] = useState(null);
@@ -57,7 +56,6 @@ export default function DishDetailPage() {
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
 
-  const isAdmin = roles.includes("ROLE_ADMIN");
   const canEditDish = hasPermission("CREATE_DISH"); // Même permission que pour créer un plat
 
   // Charger les détails du plat
@@ -88,11 +86,7 @@ export default function DishDetailPage() {
       } catch (err) {
         console.error("Error fetching dish details:", err);
         setError("Erreur lors de la récupération des détails du plat");
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les détails du plat",
-          variant: "destructive",
-        });
+        toast.error("Impossible de charger les détails du plat");
       } finally {
         setLoading(false);
       }

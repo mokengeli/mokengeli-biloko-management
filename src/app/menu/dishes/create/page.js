@@ -34,7 +34,7 @@ import {
   Utensils,
   Save,
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RestaurantSelector from "@/components/inventory/RestaurantSelector";
@@ -46,7 +46,6 @@ import inventoryService from "@/services/inventoryService";
 
 export default function CreateDishPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const { user, roles } = useAuth();
   const { hasPermission } = usePermissions();
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
@@ -149,11 +148,7 @@ export default function CreateDishPage() {
     } catch (err) {
       console.error("Error loading currencies:", err);
       setError("Erreur lors du chargement des devises");
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les devises",
-        variant: "destructive",
-      });
+      toast.error("Impossible de charger les devises");
     } finally {
       setLoading((prev) => ({ ...prev, currencies: false }));
     }
@@ -166,11 +161,7 @@ export default function CreateDishPage() {
     } catch (err) {
       console.error("Error loading categories:", err);
       setError("Erreur lors du chargement des catégories");
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les catégories du menu",
-        variant: "destructive",
-      });
+      toast.error("Impossible de charger les catégories du menu");
     } finally {
       setLoading((prev) => ({ ...prev, categories: false }));
     }
@@ -183,11 +174,7 @@ export default function CreateDishPage() {
     } catch (err) {
       console.error("Error loading products:", err);
       setError("Erreur lors du chargement des produits");
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les produits d'inventaire",
-        variant: "destructive",
-      });
+      toast.error("Impossible de charger les produits d'inventaire");
     } finally {
       setLoading((prev) => ({ ...prev, products: false }));
     }
@@ -224,10 +211,7 @@ export default function CreateDishPage() {
       await dishService.createDish(formattedData);
 
       // Afficher un message de succès
-      toast({
-        title: "Plat créé avec succès",
-        description: `Le plat "${data.name}" a été ajouté au menu`,
-      });
+      toast.success(`Le plat "${data.name}" a été ajouté au menu`);
 
       // Rediriger vers la liste des plats
       router.push("/menu/dishes");
@@ -236,11 +220,7 @@ export default function CreateDishPage() {
       const errorMessage =
         err.response?.data?.message || "Erreur lors de la création du plat";
       setError(errorMessage);
-      toast({
-        title: "Erreur",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast.error(errorMessage);
     } finally {
       setLoading((prev) => ({ ...prev, submitting: false }));
     }

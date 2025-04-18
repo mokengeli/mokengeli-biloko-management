@@ -14,12 +14,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import useInventory from "@/hooks/useInventory";
 import usePermissions from "@/hooks/usePermissions";
 import AddCategoryModal from "@/components/inventory/AddCategoryModal";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
-import { Pagination } from "@/components/ui/pagination";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 export default function CategoriesPage() {
@@ -61,14 +76,153 @@ export default function CategoriesPage() {
     setIsAlertModalOpen(true);
   };
 
-  // Fonction pour gérer le changement de page
-  const handlePageChange = (page) => {
-    changePage(page);
-  };
+  // Fonction pour générer les items de pagination
+  const generatePaginationItems = () => {
+    const { currentPage, totalPages } = pagination;
+    const items = [];
 
-  // Fonction pour gérer le changement de taille de page
-  const handlePageSizeChange = (size) => {
-    changePageSize(size);
+    // Si pas assez de pages pour nécessiter des ellipsis
+    if (totalPages <= 5) {
+      for (let i = 0; i < totalPages; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              isActive={currentPage === i}
+              onClick={() => changePage(i)}
+            >
+              {i + 1}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+      return items;
+    }
+
+    // Première page toujours affichée
+    items.push(
+      <PaginationItem key={0}>
+        <PaginationLink
+          isActive={currentPage === 0}
+          onClick={() => changePage(0)}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    );
+
+    // Déterminer où commencer les ellipsis
+    let startPage;
+    let endPage;
+
+    if (currentPage <= 2) {
+      // Près du début, montrer les premières pages
+      startPage = 1;
+      endPage = 3;
+      items.push(
+        ...Array.from({ length: endPage - startPage + 1 }, (_, index) => {
+          const pageNum = startPage + index;
+          return (
+            <PaginationItem key={pageNum}>
+              <PaginationLink
+                isActive={currentPage === pageNum}
+                onClick={() => changePage(pageNum)}
+              >
+                {pageNum + 1}
+              </PaginationLink>
+            </PaginationItem>
+          );
+        })
+      );
+
+      // Ajouter ellipsis si nécessaire
+      if (totalPages > 4) {
+        items.push(
+          <PaginationItem key="ellipsis1">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+    } else if (currentPage >= totalPages - 3) {
+      // Près de la fin, montrer les dernières pages
+      // Ajouter ellipsis si nécessaire
+      if (currentPage > 3) {
+        items.push(
+          <PaginationItem key="ellipsis1">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+
+      startPage = totalPages - 4;
+      endPage = totalPages - 2;
+      items.push(
+        ...Array.from({ length: endPage - startPage + 1 }, (_, index) => {
+          const pageNum = startPage + index;
+          return (
+            <PaginationItem key={pageNum}>
+              <PaginationLink
+                isActive={currentPage === pageNum}
+                onClick={() => changePage(pageNum)}
+              >
+                {pageNum + 1}
+              </PaginationLink>
+            </PaginationItem>
+          );
+        })
+      );
+    } else {
+      // Au milieu, montrer la page courante et avant/après
+      items.push(
+        <PaginationItem key="ellipsis1">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+
+      // Page précédente, courante, et suivante
+      const pagesBefore = Math.max(0, currentPage - 1);
+      const pagesAfter = Math.min(totalPages - 1, currentPage + 1);
+
+      items.push(
+        ...Array.from({ length: pagesAfter - pagesBefore + 1 }, (_, index) => {
+          const pageNum = pagesBefore + index;
+          return (
+            <PaginationItem key={pageNum}>
+              <PaginationLink
+                isActive={currentPage === pageNum}
+                onClick={() => changePage(pageNum)}
+              >
+                {pageNum + 1}
+              </PaginationLink>
+            </PaginationItem>
+          );
+        })
+      );
+
+      // Second ellipsis si nécessaire
+      if (pagesAfter < totalPages - 2) {
+        items.push(
+          <PaginationItem key="ellipsis2">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+    }
+
+    // Dernière page toujours affichée sauf si c'est la première
+    if (totalPages > 1) {
+      items.push(
+        <PaginationItem key={totalPages - 1}>
+          <PaginationLink
+            isActive={currentPage === totalPages - 1}
+            onClick={() => changePage(totalPages - 1)}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
   };
 
   return (
@@ -223,18 +377,99 @@ export default function CategoriesPage() {
                 </TableBody>
               </Table>
 
-              {/* Pagination */}
+              {/* Pagination avec les composants shadcn */}
+              {/* Pagination avec les composants shadcn */}
               {!loading && categories.length > 0 && (
-                <div className="border-t p-4">
-                  <Pagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    pageSize={pagination.pageSize}
-                    totalItems={pagination.totalElements}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    pageSizeOptions={[5, 10, 25, 50]}
-                  />
+                <div className="border-t py-4 px-6">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    {/* Informations sur la pagination */}
+                    <div className="text-sm text-muted-foreground">
+                      Affichage{" "}
+                      {pagination.currentPage * pagination.pageSize + 1}-
+                      {Math.min(
+                        (pagination.currentPage + 1) * pagination.pageSize,
+                        pagination.totalElements
+                      )}{" "}
+                      sur {pagination.totalElements} éléments
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      {/* Sélecteur du nombre d'éléments par page */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          Éléments par page:
+                        </span>
+                        <Select
+                          value={pagination.pageSize.toString()}
+                          onValueChange={(value) =>
+                            changePageSize(parseInt(value, 10))
+                          }
+                        >
+                          <SelectTrigger className="w-[70px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[5, 10, 25, 50].map((size) => (
+                              <SelectItem key={size} value={size.toString()}>
+                                {size}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Composant de pagination de shadcn */}
+                      <Pagination className="mt-0">
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              onClick={() =>
+                                changePage(pagination.currentPage - 1)
+                              }
+                              isDisabled={pagination.currentPage === 0}
+                              aria-disabled={pagination.currentPage === 0}
+                              tabIndex={pagination.currentPage === 0 ? -1 : 0}
+                              className={
+                                pagination.currentPage === 0
+                                  ? "pointer-events-none opacity-50"
+                                  : ""
+                              }
+                            />
+                          </PaginationItem>
+
+                          {generatePaginationItems()}
+
+                          <PaginationItem>
+                            <PaginationNext
+                              onClick={() =>
+                                changePage(pagination.currentPage + 1)
+                              }
+                              isDisabled={
+                                pagination.currentPage >=
+                                pagination.totalPages - 1
+                              }
+                              aria-disabled={
+                                pagination.currentPage >=
+                                pagination.totalPages - 1
+                              }
+                              tabIndex={
+                                pagination.currentPage >=
+                                pagination.totalPages - 1
+                                  ? -1
+                                  : 0
+                              }
+                              className={
+                                pagination.currentPage >=
+                                pagination.totalPages - 1
+                                  ? "pointer-events-none opacity-50"
+                                  : ""
+                              }
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

@@ -23,12 +23,17 @@ export const useInventory = () => {
     }
   }, []);
 
-  // Fonction pour récupérer les produits
-  const fetchProducts = useCallback(async () => {
+  // Fonction pour récupérer les produits - MISE À JOUR pour utiliser le code du tenant
+  const fetchProducts = useCallback(async (tenantCode) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await inventoryService.getAllProducts();
+      if (!tenantCode) {
+        throw new Error(
+          "Code du restaurant requis pour récupérer les produits"
+        );
+      }
+      const data = await inventoryService.getAllProducts(tenantCode);
       setProducts(data);
     } catch (err) {
       console.error("Error fetching products:", err);

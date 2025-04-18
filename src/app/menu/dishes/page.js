@@ -1,4 +1,4 @@
-// src/app/inventory/products/page.js
+// src/app/menu/dishes/page.js
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -16,36 +16,24 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RestaurantSelector from "@/components/inventory/RestaurantSelector";
-import useInventory from "@/hooks/useInventory";
+import useDishes from "@/hooks/useDishes";
 import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
-import AddProductModal from "@/components/inventory/AddProductModal";
 import { Plus, Eye, Trash2 } from "lucide-react";
 
-export default function ProductsPage() {
+export default function DishesPage() {
   const router = useRouter();
-  const { products, loading, error, fetchProducts } = useInventory();
+  const { dishes, loading, error, fetchDishes } = useDishes();
   const { hasPermission } = usePermissions();
   const { user, roles } = useAuth();
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
-  // Vérifier si l'utilisateur a la permission d'éditer l'inventaire
-  const canEditInventory = hasPermission("EDIT_INVENTORY");
-  const canViewInventory = hasPermission("VIEW_INVENTORY");
-
-  // Fonction pour formater la date
-  const formatDate = (dateString) => {
-    if (!dateString) {
-      return "";
-    }
-    const options = { year: "numeric", month: "short", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
+  // Vérifier si l'utilisateur a les permissions nécessaires
+  const canCreateDish = hasPermission("CREATE_DISH");
 
   // Définir le restaurant par défaut lors du chargement initial
   useEffect(() => {
@@ -59,13 +47,12 @@ export default function ProductsPage() {
     setSelectedRestaurant(value);
   }, []);
 
-  // Charger les produits au montage du composant ou au changement de restaurant
+  // Charger les plats au changement de restaurant
   useEffect(() => {
     if (selectedRestaurant) {
-      // MISE À JOUR: Passer le code du tenant à fetchProducts
-      fetchProducts(selectedRestaurant);
+      fetchDishes(selectedRestaurant);
     }
-  }, [fetchProducts, selectedRestaurant]);
+  }, [fetchDishes, selectedRestaurant]);
 
   // Fonction pour gérer les actions non implémentées
   const handleNotImplementedAction = (action, itemName) => {
@@ -73,11 +60,23 @@ export default function ProductsPage() {
     setIsAlertModalOpen(true);
   };
 
-  // Si l'utilisateur n'a pas la permission de voir l'inventaire, rediriger
-  if (!canViewInventory) {
-    router.push("/dashboard");
-    return null;
-  }
+  // Redirection correcte pour la visualisation détaillée d'un plat
+  const handleViewDish = (dishId) => {
+    // Ici, vous redirigerez vers la page de détail du plat lorsqu'elle sera implémentée
+    // Pour l'instant, on montre une alerte "non implémenté"
+    handleNotImplementedAction("voir les détails du", "plat");
+  };
+
+  // Cette page est accessible à tous les utilisateurs authentifiés
+  // Seules certaines actions comme la création de plats sont conditionnées par les permissions
+
+  // Fonction pour formater le prix avec la devise
+  const formatPrice = (price, currency) => {
+    if (!price) return "N/A";
+
+    const currencyCode = currency?.code || "";
+    return `${price} ${currencyCode}`;
+  };
 
   return (
     <DashboardLayout>
@@ -88,7 +87,7 @@ export default function ProductsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-2xl font-bold tracking-tight"
           >
-            Produits d'inventaire
+            Plats du menu
           </motion.h1>
 
           <div className="flex flex-col md:flex-row items-center gap-4">
@@ -99,15 +98,19 @@ export default function ProductsPage() {
               />
             )}
 
-            {selectedRestaurant && canEditInventory && (
+            {selectedRestaurant && canCreateDish && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                <Button onClick={() => setIsAddModalOpen(true)}>
+                <Button
+                  onClick={() =>
+                    handleNotImplementedAction("créer", "un nouveau plat")
+                  }
+                >
                   <Plus className="mr-2 h-4 w-4" />
-                  Ajouter un produit
+                  Créer un plat
                 </Button>
               </motion.div>
             )}
@@ -118,7 +121,7 @@ export default function ProductsPage() {
           <div className="p-8 text-center bg-gray-50 rounded-md border">
             <p className="text-gray-500">
               {isAdmin
-                ? "Veuillez sélectionner un restaurant pour voir ses produits"
+                ? "Veuillez sélectionner un restaurant pour voir ses plats"
                 : "Chargement..."}
             </p>
           </div>
@@ -134,7 +137,7 @@ export default function ProductsPage() {
                 <p className="text-red-500">{error}</p>
                 <Button
                   variant="outline"
-                  onClick={() => fetchProducts(selectedRestaurant)}
+                  onClick={() => fetchDishes(selectedRestaurant)}
                   className="mt-4"
                 >
                   Réessayer
@@ -145,15 +148,9 @@ export default function ProductsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nom</TableHead>
-                    <TableHead>Catégorie</TableHead>
+                    <TableHead>Prix</TableHead>
                     <TableHead className="hidden md:table-cell">
-                      Unité de mesure
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Date de création
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Dernière modification
+                      Catégories
                     </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -172,52 +169,40 @@ export default function ProductsPage() {
                             <Skeleton className="h-5 w-24" />
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                            <Skeleton className="h-5 w-16" />
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <Skeleton className="h-5 w-28" />
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <Skeleton className="h-5 w-28" />
+                            <Skeleton className="h-5 w-32" />
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">
                               <Skeleton className="h-8 w-8 rounded-md" />
-                              {canEditInventory && (
-                                <Skeleton className="h-8 w-8 rounded-md" />
-                              )}
+                              <Skeleton className="h-8 w-8 rounded-md" />
                             </div>
                           </TableCell>
                         </TableRow>
                       ))
-                  ) : products.length === 0 ? (
+                  ) : dishes.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={4}
                         className="text-center py-8 text-gray-500"
                       >
-                        Aucun produit trouvé.{" "}
-                        {canEditInventory ? "Commencez par en créer un !" : ""}
+                        Aucun plat trouvé.{" "}
+                        {canCreateDish ? "Commencez par en créer un !" : ""}
                       </TableCell>
                     </TableRow>
                   ) : (
                     // Données réelles
-                    products.map((product) => (
-                      <TableRow key={product.id} className="hover:bg-muted/50">
+                    dishes.map((dish) => (
+                      <TableRow key={dish.id} className="hover:bg-muted/50">
                         <TableCell className="font-medium">
-                          {product.name}
+                          {dish.name}
                         </TableCell>
                         <TableCell>
-                          {product.category?.name || "Non catégorisé"}
+                          {formatPrice(dish.price, dish.currency)}
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {product.unitOfMeasure}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {formatDate(product.createdAt)}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {formatDate(product.updatedAt)}
+                          {dish.categories?.length > 0
+                            ? dish.categories.join(", ")
+                            : "Non catégorisé"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
@@ -225,27 +210,23 @@ export default function ProductsPage() {
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8 text-blue-500"
-                              onClick={() =>
-                                router.push(`/inventory/products/${product.id}`)
-                              }
+                              onClick={() => handleViewDish(dish.id)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {canEditInventory && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-red-500"
-                                onClick={() =>
-                                  handleNotImplementedAction(
-                                    "supprimer",
-                                    `le produit "${product.name}"`
-                                  )
-                                }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-red-500"
+                              onClick={() =>
+                                handleNotImplementedAction(
+                                  "supprimer",
+                                  `le plat "${dish.name}"`
+                                )
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -264,19 +245,6 @@ export default function ProductsPage() {
         onClose={() => setIsAlertModalOpen(false)}
         title={`Action non disponible : ${alertAction}`}
       />
-
-      {/* Modal d'ajout de produit */}
-      {selectedRestaurant && (
-        <AddProductModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          tenantCode={selectedRestaurant}
-          onSuccess={() => {
-            // Rafraîchir la liste des produits après création réussie
-            fetchProducts(selectedRestaurant);
-          }}
-        />
-      )}
     </DashboardLayout>
   );
 }

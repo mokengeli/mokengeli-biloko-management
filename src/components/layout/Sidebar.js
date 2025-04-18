@@ -156,6 +156,8 @@ export default function Sidebar({ isMobile = false }) {
                             : item.title === "Menu" &&
                               subItem.title === "Catégories"
                             ? "/menu/categories"
+                            : item.title === "Menu" && subItem.title === "Plats"
+                            ? "/menu/dishes"
                             : "/not-found"
                         }
                         className={`block px-4 py-2 text-sm rounded-md ${

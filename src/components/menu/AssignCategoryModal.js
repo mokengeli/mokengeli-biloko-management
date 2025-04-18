@@ -38,9 +38,14 @@ export default function AssignCategoryModal({
 
       setLoadingCategories(true);
       try {
-        const data = await menuService.getAllAvailableCategories();
+        // Mise à jour pour gérer la pagination - demander 100 éléments maximum
+        const data = await menuService.getAllAvailableCategories(0, 100);
+
+        // Mise à jour: extraire les catégories du champ 'content' de la réponse paginée
+        const categoryList = data.content || [];
+
         // Transformer les données pour le format attendu par Combobox
-        const formattedCategories = data.map((category) => ({
+        const formattedCategories = categoryList.map((category) => ({
           label: category.name,
           value: category.id.toString(),
         }));

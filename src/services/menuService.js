@@ -3,14 +3,18 @@ import apiClient from "@/lib/api";
 
 const menuService = {
   // Fonction pour récupérer toutes les catégories de menu d'un restaurant spécifique
-  getAllCategories: async (tenantCode) => {
+  getAllCategories: async (tenantCode, page = 0, size = 10) => {
     try {
       if (!tenantCode) {
         throw new Error("Code de restaurant requis");
       }
-      const response = await apiClient.get(
-        `api/order/category?code=${tenantCode}`
-      );
+      const response = await apiClient.get("api/order/category", {
+        params: {
+          code: tenantCode,
+          page,
+          size,
+        },
+      });
       return response.data;
     } catch (error) {
       console.error(
@@ -38,9 +42,14 @@ const menuService = {
     }
   },
   // Fonction pour récupérer toutes les catégories sans filtre de restaurant
-  getAllAvailableCategories: async () => {
+  getAllAvailableCategories: async (page = 0, size = 10) => {
     try {
-      const response = await apiClient.get("/api/order/category/all");
+      const response = await apiClient.get("/api/order/category/all", {
+        params: {
+          page,
+          size,
+        },
+      });
       return response.data;
     } catch (error) {
       console.error(

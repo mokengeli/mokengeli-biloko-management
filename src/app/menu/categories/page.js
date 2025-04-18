@@ -14,6 +14,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RestaurantSelector from "@/components/inventory/RestaurantSelector";
 import useMenu from "@/hooks/useMenu";
@@ -26,7 +42,15 @@ import { Plus, Pencil, Trash2, Link } from "lucide-react";
 
 export default function MenuCategoriesPage() {
   const router = useRouter();
-  const { categories, loading, error, fetchCategories } = useMenu();
+  const {
+    categories,
+    loading,
+    error,
+    pagination,
+    fetchCategories,
+    changePage,
+    changePageSize,
+  } = useMenu();
   const { hasPermission } = usePermissions();
   const { user, roles } = useAuth();
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
@@ -60,7 +84,8 @@ export default function MenuCategoriesPage() {
   // Charger les catégories au changement de restaurant
   useEffect(() => {
     if (selectedRestaurant) {
-      fetchCategories(selectedRestaurant);
+      // Mise à jour: Utilisation de fetchCategories avec pagination
+      fetchCategories(selectedRestaurant, 0, 10);
     }
   }, [fetchCategories, selectedRestaurant]);
 
@@ -68,6 +93,165 @@ export default function MenuCategoriesPage() {
   const handleNotImplementedAction = (action, itemName) => {
     setAlertAction(`${action} ${itemName}`);
     setIsAlertModalOpen(true);
+  };
+
+  // Fonction pour gérer le changement de page
+  const handlePageChange = (page) => {
+    changePage(selectedRestaurant, page);
+  };
+
+  // Fonction pour gérer le changement de taille de page
+  const handlePageSizeChange = (size) => {
+    changePageSize(selectedRestaurant, size);
+  };
+
+  // Fonction pour générer les items de pagination
+  const generatePaginationItems = () => {
+    const { currentPage, totalPages } = pagination;
+    const items = [];
+
+    // Si pas assez de pages pour nécessiter des ellipsis
+    if (totalPages <= 5) {
+      for (let i = 0; i < totalPages; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              isActive={currentPage === i}
+              onClick={() => handlePageChange(i)}
+            >
+              {i + 1}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+      return items;
+    }
+
+    // Première page toujours affichée
+    items.push(
+      <PaginationItem key={0}>
+        <PaginationLink
+          isActive={currentPage === 0}
+          onClick={() => handlePageChange(0)}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    );
+
+    // Déterminer où commencer les ellipsis
+    let startPage;
+    let endPage;
+
+    if (currentPage <= 2) {
+      // Près du début, montrer les premières pages
+      startPage = 1;
+      endPage = 3;
+      items.push(
+        ...Array.from({ length: endPage - startPage + 1 }, (_, index) => {
+          const pageNum = startPage + index;
+          return (
+            <PaginationItem key={pageNum}>
+              <PaginationLink
+                isActive={currentPage === pageNum}
+                onClick={() => handlePageChange(pageNum)}
+              >
+                {pageNum + 1}
+              </PaginationLink>
+            </PaginationItem>
+          );
+        })
+      );
+
+      // Ajouter ellipsis si nécessaire
+      if (totalPages > 4) {
+        items.push(
+          <PaginationItem key="ellipsis1">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+    } else if (currentPage >= totalPages - 3) {
+      // Près de la fin, montrer les dernières pages
+      // Ajouter ellipsis si nécessaire
+      if (currentPage > 3) {
+        items.push(
+          <PaginationItem key="ellipsis1">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+
+      startPage = totalPages - 4;
+      endPage = totalPages - 2;
+      items.push(
+        ...Array.from({ length: endPage - startPage + 1 }, (_, index) => {
+          const pageNum = startPage + index;
+          return (
+            <PaginationItem key={pageNum}>
+              <PaginationLink
+                isActive={currentPage === pageNum}
+                onClick={() => handlePageChange(pageNum)}
+              >
+                {pageNum + 1}
+              </PaginationLink>
+            </PaginationItem>
+          );
+        })
+      );
+    } else {
+      // Au milieu, montrer la page courante et avant/après
+      items.push(
+        <PaginationItem key="ellipsis1">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+
+      // Page précédente, courante, et suivante
+      const pagesBefore = Math.max(0, currentPage - 1);
+      const pagesAfter = Math.min(totalPages - 1, currentPage + 1);
+
+      items.push(
+        ...Array.from({ length: pagesAfter - pagesBefore + 1 }, (_, index) => {
+          const pageNum = pagesBefore + index;
+          return (
+            <PaginationItem key={pageNum}>
+              <PaginationLink
+                isActive={currentPage === pageNum}
+                onClick={() => handlePageChange(pageNum)}
+              >
+                {pageNum + 1}
+              </PaginationLink>
+            </PaginationItem>
+          );
+        })
+      );
+
+      // Second ellipsis si nécessaire
+      if (pagesAfter < totalPages - 2) {
+        items.push(
+          <PaginationItem key="ellipsis2">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+    }
+
+    // Dernière page toujours affichée sauf si c'est la première
+    if (totalPages > 1) {
+      items.push(
+        <PaginationItem key={totalPages - 1}>
+          <PaginationLink
+            isActive={currentPage === totalPages - 1}
+            onClick={() => handlePageChange(totalPages - 1)}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
   };
 
   return (
@@ -152,99 +336,199 @@ export default function MenuCategoriesPage() {
                 </Button>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">ID</TableHead>
-                    <TableHead>Nom</TableHead>
-                    {canEditCategory && (
-                      <TableHead className="text-right">Actions</TableHead>
-                    )}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    // Squelettes de chargement
-                    Array(5)
-                      .fill(0)
-                      .map((_, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Skeleton className="h-5 w-10" />
+              <div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">ID</TableHead>
+                      <TableHead>Nom</TableHead>
+                      {canEditCategory && (
+                        <TableHead className="text-right">Actions</TableHead>
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      // Squelettes de chargement
+                      Array(5)
+                        .fill(0)
+                        .map((_, index) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <Skeleton className="h-5 w-10" />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton className="h-5 w-40" />
+                            </TableCell>
+                            {canEditCategory && (
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-2">
+                                  <Skeleton className="h-8 w-8 rounded-md" />
+                                  <Skeleton className="h-8 w-8 rounded-md" />
+                                </div>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        ))
+                    ) : categories.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={canEditCategory ? 3 : 2}
+                          className="text-center py-8 text-gray-500"
+                        >
+                          Aucune catégorie de menu trouvée.{" "}
+                          {canCreateCategory
+                            ? "Commencez par en créer une !"
+                            : ""}
+                          {!canCreateCategory && canAssignCategory
+                            ? "Commencez par assigner une catégorie existante !"
+                            : ""}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      // Données réelles
+                      categories.map((category) => (
+                        <TableRow
+                          key={category.id}
+                          className="hover:bg-muted/50"
+                        >
+                          <TableCell className="font-medium">
+                            {category.id}
                           </TableCell>
-                          <TableCell>
-                            <Skeleton className="h-5 w-40" />
-                          </TableCell>
+                          <TableCell>{category.name}</TableCell>
                           {canEditCategory && (
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">
-                                <Skeleton className="h-8 w-8 rounded-md" />
-                                <Skeleton className="h-8 w-8 rounded-md" />
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-blue-500"
+                                  onClick={() =>
+                                    handleNotImplementedAction(
+                                      "modifier",
+                                      `la catégorie "${category.name}"`
+                                    )
+                                  }
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-red-500"
+                                  onClick={() =>
+                                    handleNotImplementedAction(
+                                      "supprimer",
+                                      `la catégorie "${category.name}"`
+                                    )
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </TableCell>
                           )}
                         </TableRow>
                       ))
-                  ) : categories.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={canEditCategory ? 3 : 2}
-                        className="text-center py-8 text-gray-500"
-                      >
-                        Aucune catégorie de menu trouvée.{" "}
-                        {canCreateCategory
-                          ? "Commencez par en créer une !"
-                          : ""}
-                        {!canCreateCategory && canAssignCategory
-                          ? "Commencez par assigner une catégorie existante !"
-                          : ""}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    // Données réelles
-                    categories.map((category) => (
-                      <TableRow key={category.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">
-                          {category.id}
-                        </TableCell>
-                        <TableCell>{category.name}</TableCell>
-                        {canEditCategory && (
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-2">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-blue-500"
+                    )}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination */}
+                {!loading && categories.length > 0 && (
+                  <div className="border-t py-4 px-6">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                      {/* Informations sur la pagination */}
+                      <div className="text-sm text-muted-foreground">
+                        Affichage{" "}
+                        {pagination.currentPage * pagination.pageSize + 1}-
+                        {Math.min(
+                          (pagination.currentPage + 1) * pagination.pageSize,
+                          pagination.totalElements
+                        )}{" "}
+                        sur {pagination.totalElements} éléments
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-center gap-4">
+                        {/* Sélecteur du nombre d'éléments par page */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            Éléments par page:
+                          </span>
+                          <Select
+                            value={pagination.pageSize.toString()}
+                            onValueChange={(value) =>
+                              handlePageSizeChange(parseInt(value, 10))
+                            }
+                          >
+                            <SelectTrigger className="w-[70px] h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[5, 10, 25, 50].map((size) => (
+                                <SelectItem key={size} value={size.toString()}>
+                                  {size}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Composant de pagination de shadcn */}
+                        <Pagination className="mt-0">
+                          <PaginationContent>
+                            <PaginationItem>
+                              <PaginationPrevious
                                 onClick={() =>
-                                  handleNotImplementedAction(
-                                    "modifier",
-                                    `la catégorie "${category.name}"`
-                                  )
+                                  handlePageChange(pagination.currentPage - 1)
                                 }
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-red-500"
+                                disabled={pagination.currentPage === 0}
+                                aria-disabled={pagination.currentPage === 0}
+                                tabIndex={pagination.currentPage === 0 ? -1 : 0}
+                                className={
+                                  pagination.currentPage === 0
+                                    ? "pointer-events-none opacity-50"
+                                    : ""
+                                }
+                              />
+                            </PaginationItem>
+
+                            {generatePaginationItems()}
+
+                            <PaginationItem>
+                              <PaginationNext
                                 onClick={() =>
-                                  handleNotImplementedAction(
-                                    "supprimer",
-                                    `la catégorie "${category.name}"`
-                                  )
+                                  handlePageChange(pagination.currentPage + 1)
                                 }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                                disabled={
+                                  pagination.currentPage >=
+                                  pagination.totalPages - 1
+                                }
+                                aria-disabled={
+                                  pagination.currentPage >=
+                                  pagination.totalPages - 1
+                                }
+                                tabIndex={
+                                  pagination.currentPage >=
+                                  pagination.totalPages - 1
+                                    ? -1
+                                    : 0
+                                }
+                                className={
+                                  pagination.currentPage >=
+                                  pagination.totalPages - 1
+                                    ? "pointer-events-none opacity-50"
+                                    : ""
+                                }
+                              />
+                            </PaginationItem>
+                          </PaginationContent>
+                        </Pagination>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </motion.div>
         )}
@@ -258,7 +542,11 @@ export default function MenuCategoriesPage() {
           tenantCode={selectedRestaurant}
           onSuccess={() => {
             // Rafraîchir la liste des catégories après création réussie
-            fetchCategories(selectedRestaurant);
+            fetchCategories(
+              selectedRestaurant,
+              pagination.currentPage,
+              pagination.pageSize
+            );
           }}
         />
       )}
@@ -271,7 +559,11 @@ export default function MenuCategoriesPage() {
           tenantCode={selectedRestaurant}
           onSuccess={() => {
             // Rafraîchir la liste des catégories après assignation réussie
-            fetchCategories(selectedRestaurant);
+            fetchCategories(
+              selectedRestaurant,
+              pagination.currentPage,
+              pagination.pageSize
+            );
           }}
         />
       )}

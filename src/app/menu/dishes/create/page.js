@@ -154,10 +154,15 @@ export default function CreateDishPage() {
     }
 
     // Charger les catégories de menu
-    setLoading((prev) => ({ ...prev, categories: true }));
     try {
-      const categoriesData = await menuService.getAllCategories(tenantCode);
-      setCategories(categoriesData);
+      // Mise à jour pour gérer la pagination - demander 100 éléments maximum
+      const categoriesData = await menuService.getAllCategories(
+        tenantCode,
+        0,
+        100
+      );
+      // Extraction des catégories du contenu de la pagination
+      setCategories(categoriesData.content || []);
     } catch (err) {
       console.error("Error loading categories:", err);
       setError("Erreur lors du chargement des catégories");

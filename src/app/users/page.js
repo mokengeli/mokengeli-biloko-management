@@ -37,6 +37,7 @@ import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import { PrimaryRoleBadge } from "@/components/common/RoleBadge";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
+import CreateUserModal from "@/components/users/CreateUserModal";
 import { Plus, Eye, Trash2 } from "lucide-react";
 
 export default function UsersPage() {
@@ -54,6 +55,7 @@ export default function UsersPage() {
   const { user, roles } = useAuth();
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
@@ -281,11 +283,7 @@ export default function UsersPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                <Button
-                  onClick={() =>
-                    handleNotImplementedAction("créer", "un utilisateur")
-                  }
-                >
+                <Button onClick={() => setIsCreateModalOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Créer un utilisateur
                 </Button>
@@ -503,13 +501,13 @@ export default function UsersPage() {
                                 }
                                 tabIndex={
                                   pagination.currentPage >=
-                                  pagination.totalPages - 1
+                                    pagination.totalPages - 1
                                     ? -1
                                     : 0
                                 }
                                 className={
                                   pagination.currentPage >=
-                                  pagination.totalPages - 1
+                                    pagination.totalPages - 1
                                     ? "pointer-events-none opacity-50"
                                     : ""
                                 }
@@ -533,6 +531,18 @@ export default function UsersPage() {
         onClose={() => setIsAlertModalOpen(false)}
         title={`Action non disponible : ${alertAction}`}
       />
+      {/* Modal de création d'utilisateur */}
+      {selectedRestaurant && (
+        <CreateUserModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          tenantCode={selectedRestaurant}
+          onSuccess={() => {
+            // Rafraîchir la liste des utilisateurs après création réussie
+            fetchUsers(selectedRestaurant, pagination.currentPage, pagination.pageSize);
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 }

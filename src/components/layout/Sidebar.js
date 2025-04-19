@@ -32,8 +32,8 @@ export default function Sidebar({ onClose }) {
   const [openMenus, setOpenMenus] = useState({});
 
   const isAdmin = user && user.roles && user.roles.includes("ROLE_ADMIN");
-  const canViewInventory = hasPermission("VIEW_INVENTORY");
-  const canViewOrders = hasPermission("VIEW_ORDERS");
+  const canViewInventory = hasPermission("VIEW_INVENTORY") || isAdmin;
+  const canViewOrders = hasPermission("VIEW_ORDERS") || isAdmin;
   const canViewUsers = hasPermission("VIEW_USERS") || isAdmin;
 
   // Définir les menus à ouvrir en fonction de la page actuelle
@@ -142,7 +142,7 @@ export default function Sidebar({ onClose }) {
                     className={cn(
                       "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
                       isActive("/inventory/categories") &&
-                        "bg-primary/10 font-medium"
+                      "bg-primary/10 font-medium"
                     )}
                   >
                     Catégories
@@ -152,7 +152,7 @@ export default function Sidebar({ onClose }) {
                     className={cn(
                       "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
                       isActive("/inventory/products") &&
-                        "bg-primary/10 font-medium"
+                      "bg-primary/10 font-medium"
                     )}
                   >
                     Produits

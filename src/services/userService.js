@@ -15,6 +15,8 @@ const userService = {
       throw error;
     }
   },
+
+  // Fonction pour récupérer un tenant par son code
   getTenantByCode: async (code) => {
     try {
       const response = await apiClient.get(`/api/user/tenant?code=${code}`);
@@ -28,15 +30,15 @@ const userService = {
     }
   },
 
-  // Nouvelle fonction pour récupérer tous les utilisateurs d'un restaurant avec pagination
+  // Fonction pour récupérer tous les utilisateurs d'un restaurant avec pagination
   getAllUsers: async (tenantCode, page = 0, size = 10) => {
     try {
       const response = await apiClient.get("/api/user", {
         params: {
           code: tenantCode,
           page,
-          size,
-        },
+          size
+        }
       });
       return response.data;
     } catch (error) {
@@ -47,13 +49,14 @@ const userService = {
       throw error;
     }
   },
+
   // Fonction pour récupérer un utilisateur par son nom d'utilisateur
   getUserByUsername: async (username) => {
     try {
       const response = await apiClient.get(`/api/user/by-username`, {
         params: {
-          username,
-        },
+          username
+        }
       });
       return response.data;
     } catch (error) {
@@ -64,6 +67,20 @@ const userService = {
       throw error;
     }
   },
+
+  // Fonction pour récupérer les rôles autorisés pour le profil d'utilisateur courant
+  getAuthorizedRolesByUserProfile: async () => {
+    try {
+      const response = await apiClient.get("/api/user/roles");
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching authorized roles:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  }
 };
 
 export default userService;

@@ -5,22 +5,39 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "../common/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
+import userService from "@/services/userService";
 import { Menu, Building } from "lucide-react";
 
 export default function Topbar({ onToggleSidebar }) {
   const router = useRouter();
   const { user } = useAuth();
   const [activeTenant, setActiveTenant] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Récupérer les informations du tenant actif
   useEffect(() => {
     if (user?.tenantCode) {
-      setActiveTenant({
-        code: user.tenantCode,
-        // Idéalement, nous aurions le nom complet du tenant ici
-        // Pour l'instant, nous utilisons simplement le code
-        name: user.tenantName || user.tenantCode,
-      });
+      const fetchTenantInfo = async () => {
+        setLoading(true);
+        try {
+          const tenantData = await userService.getTenantByCode(user.tenantCode);
+          setActiveTenant({
+            code: user.tenantCode,
+            name: tenantData.name || user.tenantCode
+          });
+        } catch (error) {
+          console.error("Erreur lors de la récupération des infos du restaurant:", error);
+          // En cas d'erreur, utiliser au moins le code disponible
+          setActiveTenant({
+            code: user.tenantCode,
+            name: user.tenantName || user.tenantCode
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchTenantInfo();
     }
   }, [user]);
 

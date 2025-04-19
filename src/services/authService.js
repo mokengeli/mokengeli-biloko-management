@@ -58,6 +58,20 @@ const authService = {
       throw error;
     }
   },
+
+  // Fonction pour enregistrer un nouvel utilisateur
+  registerUser: async (userData) => {
+    try {
+      const response = await apiClient.post("/api/auth/register", userData);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Register user failed:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  }
 };
 
 export default authService;

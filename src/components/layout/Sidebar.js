@@ -7,7 +7,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
-  BarChart3,
   Package,
   Users,
   ChevronDown,
@@ -16,8 +15,6 @@ import {
   Home,
   X,
   Utensils,
-  FileText,
-  ShoppingCart,
   Store
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,7 +30,6 @@ export default function Sidebar({ onClose }) {
 
   const isAdmin = user && user.roles && user.roles.includes("ROLE_ADMIN");
   const canViewInventory = hasPermission("VIEW_INVENTORY") || isAdmin;
-  const canViewOrders = hasPermission("VIEW_ORDERS") || isAdmin;
   const canViewUsers = hasPermission("VIEW_USERS") || isAdmin;
   const canViewTenants = hasPermission("VIEW_TENANTS") || isAdmin;
 
@@ -45,9 +41,6 @@ export default function Sidebar({ onClose }) {
       }
       if (pathname.startsWith("/menu")) {
         setOpenMenus((prev) => ({ ...prev, menu: true }));
-      }
-      if (pathname.startsWith("/orders")) {
-        setOpenMenus((prev) => ({ ...prev, orders: true }));
       }
     }
   }, [pathname]);
@@ -97,7 +90,7 @@ export default function Sidebar({ onClose }) {
       </div>
       <div className="flex-1 overflow-auto p-3">
         <nav className="flex flex-col gap-2">
-          {/* Dashboard */}
+          {/* 1. Tableau de bord */}
           <Link
             href="/dashboard"
             className={cn(
@@ -109,7 +102,35 @@ export default function Sidebar({ onClose }) {
             <span>Tableau de bord</span>
           </Link>
 
-          {/* Inventaire */}
+          {/* 2. Restaurants */}
+          {canViewTenants && (
+            <Link
+              href="/not-found"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
+                isActive("/restaurants") && "bg-primary text-primary-foreground"
+              )}
+            >
+              <Store className="h-5 w-5" />
+              <span>Restaurants</span>
+            </Link>
+          )}
+
+          {/* 3. Utilisateurs */}
+          {canViewUsers && (
+            <Link
+              href="/users"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
+                isActive("/users") && "bg-primary text-primary-foreground"
+              )}
+            >
+              <Users className="h-5 w-5" />
+              <span>Utilisateurs</span>
+            </Link>
+          )}
+
+          {/* 4. Inventaire */}
           {canViewInventory && (
             <div className="space-y-1">
               <Button
@@ -163,7 +184,7 @@ export default function Sidebar({ onClose }) {
             </div>
           )}
 
-          {/* Menu */}
+          {/* 5. Menu */}
           <div className="space-y-1">
             <Button
               variant="ghost"
@@ -212,100 +233,6 @@ export default function Sidebar({ onClose }) {
               </motion.div>
             )}
           </div>
-
-          {/* Commandes */}
-          {canViewOrders && (
-            <div className="space-y-1">
-              <Button
-                variant="ghost"
-                className={cn(
-                  "flex w-full items-center justify-between px-3 py-2",
-                  openMenus.orders && "font-medium"
-                )}
-                onClick={() => toggleMenu("orders")}
-              >
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5" />
-                  <span>Commandes</span>
-                </div>
-                {openMenus.orders ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-              {openMenus.orders && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="ml-4 mt-1 flex flex-col space-y-1"
-                >
-                  <Link
-                    href="/not-found"
-                    className={cn(
-                      "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
-                      isActive("/orders/current") && "bg-primary/10 font-medium"
-                    )}
-                  >
-                    Commandes en cours
-                  </Link>
-                  <Link
-                    href="/not-found"
-                    className={cn(
-                      "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
-                      isActive("/orders/history") && "bg-primary/10 font-medium"
-                    )}
-                  >
-                    Historique
-                  </Link>
-                </motion.div>
-              )}
-            </div>
-          )}
-
-          {/* Utilisateurs */}
-          {canViewUsers && (
-            <Link
-              href="/users"
-              className={cn(
-                "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
-                isActive("/users") && "bg-primary text-primary-foreground"
-              )}
-            >
-              <Users className="h-5 w-5" />
-              <span>Utilisateurs</span>
-            </Link>
-          )}
-
-          {/* Restaurants - nouveau menu uniquement visible par les admins ou ceux avec VIEW_TENANTS */}
-          {canViewTenants && (
-            <Link
-              href="/not-found"
-              className={cn(
-                "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
-                isActive("/restaurants") && "bg-primary text-primary-foreground"
-              )}
-            >
-              <Store className="h-5 w-5" />
-              <span>Restaurants</span>
-            </Link>
-          )}
-
-          {/* Rapports */}
-          {isAdmin && (
-            <Link
-              href="/not-found"
-              className={cn(
-                "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
-                isActive("/reports") && "bg-primary text-primary-foreground"
-              )}
-            >
-              <FileText className="h-5 w-5" />
-              <span>Rapports</span>
-            </Link>
-          )}
         </nav>
       </div>
       <div className="mt-auto p-4">

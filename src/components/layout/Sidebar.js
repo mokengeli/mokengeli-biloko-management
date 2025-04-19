@@ -10,7 +10,6 @@ import {
   BarChart3,
   Package,
   Users,
-  Settings,
   ChevronDown,
   ChevronUp,
   LogOut,
@@ -19,6 +18,7 @@ import {
   Utensils,
   FileText,
   ShoppingCart,
+  Store
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,7 @@ export default function Sidebar({ onClose }) {
   const canViewInventory = hasPermission("VIEW_INVENTORY") || isAdmin;
   const canViewOrders = hasPermission("VIEW_ORDERS") || isAdmin;
   const canViewUsers = hasPermission("VIEW_USERS") || isAdmin;
+  const canViewTenants = hasPermission("VIEW_TENANTS") || isAdmin;
 
   // Définir les menus à ouvrir en fonction de la page actuelle
   useEffect(() => {
@@ -264,7 +265,7 @@ export default function Sidebar({ onClose }) {
             </div>
           )}
 
-          {/* Utilisateurs - Mise à jour pour rediriger vers la page des utilisateurs */}
+          {/* Utilisateurs */}
           {canViewUsers && (
             <Link
               href="/users"
@@ -275,6 +276,20 @@ export default function Sidebar({ onClose }) {
             >
               <Users className="h-5 w-5" />
               <span>Utilisateurs</span>
+            </Link>
+          )}
+
+          {/* Restaurants - nouveau menu uniquement visible par les admins ou ceux avec VIEW_TENANTS */}
+          {canViewTenants && (
+            <Link
+              href="/not-found"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
+                isActive("/restaurants") && "bg-primary text-primary-foreground"
+              )}
+            >
+              <Store className="h-5 w-5" />
+              <span>Restaurants</span>
             </Link>
           )}
 
@@ -291,22 +306,14 @@ export default function Sidebar({ onClose }) {
               <span>Rapports</span>
             </Link>
           )}
-
-          {/* Paramètres */}
-          <Link
-            href="/not-found"
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
-              isActive("/settings") && "bg-primary text-primary-foreground"
-            )}
-          >
-            <Settings className="h-5 w-5" />
-            <span>Paramètres</span>
-          </Link>
         </nav>
       </div>
       <div className="mt-auto p-4">
-        <Button variant="destructive" className="w-full" onClick={handleLogout}>
+        <Button
+          variant="destructive"
+          className="w-full"
+          onClick={handleLogout}
+        >
           <LogOut className="mr-2 h-4 w-4" />
           Déconnexion
         </Button>

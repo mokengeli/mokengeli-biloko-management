@@ -105,7 +105,7 @@ export default function Sidebar({ onClose }) {
           {/* 2. Restaurants */}
           {canViewTenants && (
             <Link
-              href="/not-found"
+              href="/restaurants"
               className={cn(
                 "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
                 isActive("/restaurants") && "bg-primary text-primary-foreground"

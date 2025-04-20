@@ -16,6 +16,25 @@ const userService = {
     }
   },
 
+  // Fonction pour récupérer tous les tenants/restaurants avec pagination
+  getAllTenantsWithPagination: async (page = 0, size = 10) => {
+    try {
+      const response = await apiClient.get("/api/user/tenant/all/pg", {
+        params: {
+          page,
+          size
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching tenants with pagination:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
   // Fonction pour récupérer un tenant par son code
   getTenantByCode: async (code) => {
     try {
@@ -50,18 +69,18 @@ const userService = {
     }
   },
 
-  // Fonction pour récupérer un utilisateur par son nom d'utilisateur
-  getUserByUsername: async (username) => {
+  // Fonction pour récupérer un utilisateur par son nom d'employé
+  getUserByEmployeeNumber: async (employeeNumber) => {
     try {
-      const response = await apiClient.get(`/api/user/by-username`, {
+      const response = await apiClient.get(`/api/user/by-employee-number`, {
         params: {
-          username
+          employeeNumber
         }
       });
       return response.data;
     } catch (error) {
       console.error(
-        "Error fetching user by username:",
+        "Error fetching user by employee number:",
         error.response?.data || error.message
       );
       throw error;

@@ -1,7 +1,7 @@
 // src/app/restaurants/page.js
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import useTenants from "@/hooks/useTenants";
 import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
+import CreateTenantModal from "@/components/tenants/CreateTenantModal";
 import { Plus, Eye, Trash2, Building } from "lucide-react";
 
 export default function RestaurantsPage() {
@@ -51,6 +52,7 @@ export default function RestaurantsPage() {
     const { hasPermission } = usePermissions();
     const { roles } = useAuth();
     const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [alertAction, setAlertAction] = useState("");
     const isAdmin = roles.includes("ROLE_ADMIN");
 
@@ -58,32 +60,37 @@ export default function RestaurantsPage() {
     const canViewTenants = hasPermission("VIEW_TENANTS") || isAdmin;
     const canCreateTenant = hasPermission("CREATE_TENANT") || isAdmin;
 
+    // Fonction pour gérer les actions non implémentées
+    const handleNotImplementedAction = useCallback((action, itemName) => {
+        setAlertAction(`${action} ${itemName}`);
+        setIsAlertModalOpen(true);
+    }, []);
+
+    // Fonction pour formater une date
+    const formatDate = useCallback((dateString) => {
+        if (!dateString) return "N/A";
+        const options = { year: "numeric", month: "short", day: "numeric" };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    }, []);
+
+    // Fonction pour rediriger vers la page de détail d'un restaurant
+    const handleViewRestaurant = useCallback((tenantId) => {
+        router.push(`/not-found`);
+    }, [router]);
+
+    // Fonction pour gérer le succès de la création d'un restaurant
+    const handleCreateSuccess = useCallback(() => {
+        fetchTenants(0, pagination.pageSize);
+        setIsCreateModalOpen(false);
+    }, [fetchTenants, pagination.pageSize]);
+
     // Charger les restaurants au montage du composant
     useEffect(() => {
         fetchTenants(0, 10);
     }, [fetchTenants]);
 
-    // Fonction pour gérer les actions non implémentées
-    const handleNotImplementedAction = (action, itemName) => {
-        setAlertAction(`${action} ${itemName}`);
-        setIsAlertModalOpen(true);
-    };
-
-    // Fonction pour formater une date
-    const formatDate = (dateString) => {
-        if (!dateString) return "N/A";
-        const options = { year: "numeric", month: "short", day: "numeric" };
-        return new Date(dateString).toLocaleDateString(undefined, options);
-    };
-
-
-    // Fonction pour rediriger vers la page de détail d'un restaurant
-    const handleViewRestaurant = (tenantId) => {
-        router.push(`/not-found`);
-    };
-
     // Fonction pour générer les items de pagination
-    const generatePaginationItems = () => {
+    const generatePaginationItems = useCallback(() => {
         const { currentPage, totalPages } = pagination;
         const items = [];
 
@@ -229,7 +236,7 @@ export default function RestaurantsPage() {
         }
 
         return items;
-    };
+    }, [pagination, changePage]);
 
     // Si l'utilisateur n'a pas la permission de voir les restaurants, rediriger
     if (!canViewTenants) {
@@ -256,7 +263,7 @@ export default function RestaurantsPage() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.1 }}
                             >
-                                <Button onClick={() => handleNotImplementedAction("créer", "un restaurant")}>
+                                <Button onClick={() => setIsCreateModalOpen(true)}>
                                     <Plus className="mr-2 h-4 w-4" />
                                     Créer un restaurant
                                 </Button>
@@ -390,6 +397,7 @@ export default function RestaurantsPage() {
                                     )}
                                 </TableBody>
                             </Table>
+
                             {/* Pagination */}
                             {!loading && tenants.length > 0 && (
                                 <div className="border-t py-4 px-6">
@@ -495,6 +503,15 @@ export default function RestaurantsPage() {
                 onClose={() => setIsAlertModalOpen(false)}
                 title={`Action non disponible : ${alertAction}`}
             />
+
+            {/* Rendre la modal conditionnellement pour éviter les rendus inutiles */}
+            {isCreateModalOpen && (
+                <CreateTenantModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onSuccess={handleCreateSuccess}
+                />
+            )}
         </DashboardLayout>
     );
 }

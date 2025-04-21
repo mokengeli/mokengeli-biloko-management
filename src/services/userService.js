@@ -48,6 +48,19 @@ const userService = {
       throw error;
     }
   },
+  // Fonction pour créer un nouveau restaurant (tenant)
+  createTenant: async (tenantData) => {
+    try {
+      const response = await apiClient.post("/api/user/tenant", tenantData);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error creating tenant:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
 
   // Fonction pour récupérer tous les utilisateurs d'un restaurant avec pagination
   getAllUsers: async (tenantCode, page = 0, size = 10) => {

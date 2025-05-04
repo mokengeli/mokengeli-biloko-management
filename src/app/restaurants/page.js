@@ -75,7 +75,7 @@ export default function RestaurantsPage() {
 
     // Fonction pour rediriger vers la page de détail d'un restaurant
     const handleViewRestaurant = useCallback((tenantId) => {
-        router.push(`/not-found`);
+        router.push(`/restaurants/${tenantId}`);
     }, [router]);
 
     // Fonction pour gérer le succès de la création d'un restaurant

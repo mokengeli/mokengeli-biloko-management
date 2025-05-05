@@ -1,6 +1,7 @@
 // src/components/dashboard/DashboardMetrics.js
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -14,105 +15,19 @@ import {
   Utensils,
   TrendingUp,
   TrendingDown,
+  Loader2,
 } from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-} from "recharts";
-import {
-  formatCurrency,
-  formatPercentage,
-  getChangeColor,
-  getChartColor,
-} from "@/lib/dashboardUtils";
+import orderService from "@/services/orderService";
+import { formatCurrency, getChangeColor } from "@/lib/dashboardUtils";
 
-// Données simulées
-const getDummyData = () => {
-  // Sales des 7 derniers jours
-  const salesData = [
-    { date: "Lun", sales: 1800 },
-    { date: "Mar", sales: 2200 },
-    { date: "Mer", sales: 1950 },
-    { date: "Jeu", sales: 2450 },
-    { date: "Ven", sales: 3100 },
-    { date: "Sam", sales: 3500 },
-    { date: "Dim", sales: 2800 },
-  ];
-
-  // Tendances pour KPIs
-  const salesTrendData = [
-    { value: 2100 },
-    { value: 2300 },
-    { value: 2200 },
-    { value: 2400 },
-    { value: 2450 },
-  ];
-
-  const ordersTrendData = [
-    { value: 75 },
-    { value: 82 },
-    { value: 79 },
-    { value: 86 },
-    { value: 86 },
-  ];
-
-  // Top 5 plats
-  const topDishes = [
-    { name: "Burger Classic", quantity: 45, revenue: 900 },
-    { name: "Pizza Margherita", quantity: 38, revenue: 760 },
-    { name: "Frites Maison", quantity: 35, revenue: 175 },
-    { name: "Steak Frites", quantity: 28, revenue: 700 },
-    { name: "Caesar Salad", quantity: 25, revenue: 375 },
-  ];
-
-  // Distribution par catégorie
-  const categoryData = [
-    { name: "Plats", value: 40, color: "#3b82f6" },
-    { name: "Entrées", value: 25, color: "#10b981" },
-    { name: "Desserts", value: 15, color: "#f59e0b" },
-    { name: "Boissons", value: 20, color: "#8b5cf6" },
-  ];
-
-  // Commandes par heure
-  const hourlyOrders = [
-    { hour: "12h", orders: 15 },
-    { hour: "13h", orders: 32 },
-    { hour: "14h", orders: 28 },
-    { hour: "15h", orders: 10 },
-    { hour: "19h", orders: 25 },
-    { hour: "20h", orders: 45 },
-    { hour: "21h", orders: 30 },
-    { hour: "22h", orders: 12 },
-  ];
-
-  return {
-    salesData,
-    topDishes,
-    categoryData,
-    hourlyOrders,
-    salesTrendData,
-    ordersTrendData,
-  };
-};
-
-// Composant pour les KPIs principaux
+// Composant KPICard réutilisable
 const KPICard = ({
   title,
   value,
   change,
   icon: Icon,
-  trend,
   color = "blue",
+  loading = false,
 }) => {
   const isPositive = change >= 0;
 
@@ -130,33 +45,28 @@ const KPICard = ({
           <Icon className={`h-5 w-5 text-${color}-500`} />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold mb-1">{value}</div>
-          {change !== undefined && (
-            <div
-              className={`flex items-center text-sm ${getChangeColor(change)}`}
-            >
-              {isPositive ? (
-                <TrendingUp className="h-4 w-4 mr-1" />
-              ) : (
-                <TrendingDown className="h-4 w-4 mr-1" />
+          {loading ? (
+            <div className="flex items-center justify-center h-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              <div className="text-2xl font-bold mb-1">{value}</div>
+              {change !== undefined && (
+                <div
+                  className={`flex items-center text-sm ${getChangeColor(
+                    change
+                  )}`}
+                >
+                  {isPositive ? (
+                    <TrendingUp className="h-4 w-4 mr-1" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 mr-1" />
+                  )}
+                  {Math.abs(change)}% vs hier
+                </div>
               )}
-              {Math.abs(change)}% vs hier
-            </div>
-          )}
-          {trend && (
-            <div className="mt-2 h-16">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trend}>
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={getChartColor(color)}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -164,264 +74,159 @@ const KPICard = ({
   );
 };
 
-// Composant pour les alertes
-const AlertSection = () => {
-  const stockAlerts = [
-    { item: "Tomates", level: "critique" },
-    { item: "Fromage", level: "bas" },
-    { item: "Huile d'olive", level: "critique" },
-  ];
+// Composant LoadingState
+const LoadingState = () => (
+  <div className="space-y-6">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {[1, 2, 3, 4].map((i) => (
+        <KPICard key={i} title="" value="" loading={true} />
+      ))}
+    </div>
+  </div>
+);
+
+// Composant FinancialKPISection
+const FinancialKPISection = ({ data, loading }) => {
+  if (!data && !loading) return null;
+
+  const realRevenue = data?.realRevenue || 0;
+  const theoreticalRevenue = data?.theoreticalRevenue || 0;
+  const revenueGap = theoreticalRevenue - realRevenue;
+  const discountRate =
+    theoreticalRevenue > 0
+      ? ((revenueGap / theoreticalRevenue) * 100).toFixed(1)
+      : 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.5 }}
-      className="mt-6"
-    >
-      <h2 className="text-lg font-semibold mb-4 flex items-center">
-        <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
-        Alertes Stock
-      </h2>
-      <div className="grid gap-2">
-        {stockAlerts.map((alert, index) => (
-          <Alert
-            key={index}
-            variant={alert.level === "critique" ? "destructive" : "default"}
-            className="bg-background"
-          >
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <span className="font-medium">{alert.item}</span> - Stock{" "}
-              {alert.level}
-            </AlertDescription>
-          </Alert>
-        ))}
-      </div>
-    </motion.div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <KPICard
+        title="Revenus Réels"
+        value={formatCurrency(realRevenue)}
+        icon={Euro}
+        color="green"
+        loading={loading}
+      />
+      <KPICard
+        title="Revenus Théoriques"
+        value={formatCurrency(theoreticalRevenue)}
+        icon={Euro}
+        color="blue"
+        loading={loading}
+      />
+      <KPICard
+        title="Écart de Revenus"
+        value={formatCurrency(revenueGap)}
+        icon={ArrowDown}
+        color="red"
+        loading={loading}
+      />
+      <KPICard
+        title="Taux de Remise"
+        value={`${discountRate}%`}
+        icon={Package}
+        color="amber"
+        loading={loading}
+      />
+    </div>
   );
 };
 
-// Composant principal du Dashboard
-export const DashboardMetrics = () => {
-  const {
-    salesData,
-    topDishes,
-    categoryData,
-    hourlyOrders,
-    salesTrendData,
-    ordersTrendData,
-  } = getDummyData();
+// Composant de KPIs Opérationnels
+const OperationalKPISection = ({ data, loading }) => {
+  if (!data && !loading) return null;
+
+  const orders = data?.orders || [];
+  const totalOrders = orders.length;
+  const totalAmount = orders.reduce(
+    (sum, order) => sum + (order.totalAmount || 0),
+    0
+  );
+  const averageTicket = totalOrders > 0 ? totalAmount / totalOrders : 0;
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <KPICard
+        title="Nombre de Commandes"
+        value={totalOrders.toString()}
+        icon={ShoppingCart}
+        color="blue"
+        loading={loading}
+      />
+      <KPICard
+        title="Ticket Moyen"
+        value={formatCurrency(averageTicket)}
+        icon={Euro}
+        color="green"
+        loading={loading}
+      />
+      <KPICard
+        title="Paiements Complets"
+        value={formatCurrency(data?.breakdown?.fullPayments || 0)}
+        icon={Utensils}
+        color="violet"
+        loading={loading}
+      />
+    </div>
+  );
+};
+
+// Composant principal DashboardMetrics
+export const DashboardMetrics = ({ tenantCode, startDate, endDate }) => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!tenantCode) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const revenueData = await orderService.getRevenue(
+          startDate,
+          endDate,
+          tenantCode
+        );
+
+        setDashboardData(revenueData);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError(
+          "Erreur lors de la récupération des données du tableau de bord"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [tenantCode, startDate, endDate]);
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="my-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* KPIs principaux */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KPICard
-          title="CA Aujourd'hui"
-          value={formatCurrency(2450)}
-          change={15}
-          icon={Euro}
-          color="green"
-          trend={salesTrendData}
-        />
-        <KPICard
-          title="Ticket Moyen"
-          value={formatCurrency(28.5)}
-          change={12}
-          icon={ShoppingCart}
-          color="blue"
-        />
-        <KPICard
-          title="Commandes Total"
-          value="86"
-          change={20}
-          icon={Package}
-          color="violet"
-          trend={ordersTrendData}
-        />
-        <KPICard
-          title="Plats Servis"
-          value="198"
-          change={-5}
-          icon={Utensils}
-          color="orange"
-        />
-      </div>
+      {/* KPIs Financiers */}
+      <FinancialKPISection data={dashboardData} loading={loading} />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Graphique CA 7 derniers jours */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Chiffre d'affaires - 7 derniers jours</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={salesData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: "#6b7280" }}
-                    axisLine={{ stroke: "#e5e7eb" }}
-                  />
-                  <YAxis
-                    tick={{ fill: "#6b7280" }}
-                    axisLine={{ stroke: "#e5e7eb" }}
-                    tickFormatter={(value) => `€${value}`}
-                  />
-                  <Tooltip
-                    formatter={(value) => [formatCurrency(value), "CA"]}
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "0.5rem",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="sales"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    dot={{ fill: "#3b82f6", r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPIs Opérationnels */}
+      <OperationalKPISection data={dashboardData} loading={loading} />
 
-        {/* Top 5 plats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top 5 Plats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topDishes.map((dish, index) => (
-                <motion.div
-                  key={index}
-                  className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <div
-                    className={`
-                    w-8 h-8 rounded-full flex items-center justify-center font-bold
-                    ${
-                      index === 0
-                        ? "bg-yellow-100 text-yellow-700"
-                        : index === 1
-                        ? "bg-gray-100 text-gray-700"
-                        : index === 2
-                        ? "bg-orange-100 text-orange-700"
-                        : "bg-blue-100 text-blue-600"
-                    }
-                  `}
-                  >
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium">{dish.name}</div>
-                    <div className="text-sm text-gray-500">
-                      {dish.quantity} vendus
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold">
-                      {formatCurrency(dish.revenue)}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Distribution par catégorie */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribution des Ventes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
-                    outerRadius="80%"
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value) => `${value}%`}
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "0.5rem",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Commandes par heure */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Commandes par Heure</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={hourlyOrders}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="hour"
-                    tick={{ fill: "#6b7280" }}
-                    axisLine={{ stroke: "#e5e7eb" }}
-                  />
-                  <YAxis
-                    tick={{ fill: "#6b7280" }}
-                    axisLine={{ stroke: "#e5e7eb" }}
-                  />
-                  <Tooltip
-                    formatter={(value) => [`${value}`, "Commandes"]}
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "0.5rem",
-                    }}
-                  />
-                  <Bar dataKey="orders" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Section des alertes */}
-      <AlertSection />
+      {/* TODO: Ajouter d'autres sections pour :
+          - TopDishes (via /api/order/dashboard/dishes/top)
+          - CategoryBreakdown (via /api/order/dashboard/revenue/breakdown-by-category)
+          - HourlyDistribution (via /api/order/dashboard/hourly-distribution)
+          - InventoryAlerts
+      */}
     </div>
   );
 };

@@ -7,28 +7,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  AlertTriangle,
-  Calendar,
-  ArrowRight,
-  RefreshCw,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { AlertTriangle, Calendar, ArrowRight, RefreshCw } from "lucide-react";
+
+import FinancialSection from "./sections/FinancialSection";
+import OperationalSection from "./sections/OperationalSection";
+import SalesSection from "./sections/SalesSection";
+
 import orderService from "@/services/orderService";
 import { useAuth } from "@/hooks/useAuth";
-
-// Importer les KPIs
-import RealRevenueKPI from "./kpis/RealRevenueKPI";
-import TheoreticalRevenueKPI from "./kpis/TheoreticalRevenueKPI";
-import RevenueGapKPI from "./kpis/RevenueGapKPI";
-import DiscountRateKPI from "./kpis/DiscountRateKPI";
-import OrderCountKPI from "./kpis/OrderCountKPI";
-import AverageTicketKPI from "./kpis/AverageTicketKPI";
-import FullPaymentsKPI from "./kpis/FullPaymentsKPI";
-import TopDishesKPI from "./kpis/TopDishesKPI";
-import CategoryBreakdownKPI from "./kpis/CategoryBreakdownKPI";
-import HourlyDistributionKPI from "./kpis/HourlyDistributionKPI";
 
 // Fonction utilitaire pour formater les dates pour l'API
 const formatDateForAPI = (date) => {
@@ -42,34 +28,9 @@ const getThirtyDaysAgo = () => {
   return date;
 };
 
-// Composant Section avec possibilité de collapse
-const CollapsibleSection = ({ title, children, defaultExpanded = true }) => {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-
-  return (
-    <div className="space-y-4">
-      <div
-        className="flex items-center justify-between cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <h2 className="text-xl font-semibold">{title}</h2>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          {isExpanded ? (
-            <ChevronUp className="h-5 w-5" />
-          ) : (
-            <ChevronDown className="h-5 w-5" />
-          )}
-        </Button>
-      </div>
-
-      {isExpanded && children}
-    </div>
-  );
-};
-
 // Composant principal DashboardMetrics
 export const DashboardMetrics = () => {
-  const { user, roles } = useAuth();
+  const { user } = useAuth();
   const [revenueData, setRevenueData] = useState(null);
   const [categoryData, setCategoryData] = useState([]);
   const [hourlyData, setHourlyData] = useState([]);
@@ -263,79 +224,29 @@ export const DashboardMetrics = () => {
         </Card>
       </motion.div>
 
-      {/* KPIs Financiers */}
-      <CollapsibleSection title="Métriques Financières" defaultExpanded={true}>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {/* KPI Revenus Réels */}
-          <RealRevenueKPI
-            value={revenueData?.realRevenue}
-            loading={loading}
-            previousData={previousPeriodData}
-          />
+      {/* Section des métriques financières */}
+      <FinancialSection
+        revenueData={revenueData}
+        previousPeriodData={previousPeriodData}
+        loading={loading}
+      />
 
-          {/* KPI Revenus Théoriques */}
-          <TheoreticalRevenueKPI
-            value={revenueData?.theoreticalRevenue}
-            loading={loading}
-            previousData={previousPeriodData}
-          />
+      {/* Section des métriques opérationnelles */}
+      <OperationalSection
+        revenueData={revenueData}
+        previousPeriodData={previousPeriodData}
+        loading={loading}
+      />
 
-          {/* KPI Écart de Revenus */}
-          <RevenueGapKPI data={revenueData} loading={loading} />
-
-          {/* KPI Taux de Remise */}
-          <DiscountRateKPI data={revenueData} loading={loading} />
-        </div>
-      </CollapsibleSection>
-
-      {/* KPIs Opérationnels */}
-      <CollapsibleSection
-        title="Métriques Opérationnelles"
-        defaultExpanded={true}
-      >
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {/* KPI Nombre de Commandes */}
-          <OrderCountKPI
-            data={revenueData}
-            loading={loading}
-            previousData={previousPeriodData}
-          />
-
-          {/* KPI Ticket Moyen */}
-          <AverageTicketKPI
-            data={revenueData}
-            loading={loading}
-            previousData={previousPeriodData}
-          />
-
-          {/* KPI Paiements Complets */}
-          <FullPaymentsKPI
-            data={revenueData}
-            loading={loading}
-            previousData={previousPeriodData}
-          />
-        </div>
-      </CollapsibleSection>
-
-      {/* Visualisations */}
-      <CollapsibleSection title="Analyse de Ventes" defaultExpanded={true}>
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-          {/* KPI Top Dishes */}
-          <TopDishesKPI
-            tenantCode={tenantCode}
-            startDate={formatDateForAPI(startDate)}
-            endDate={formatDateForAPI(endDate)}
-            limit={5}
-          />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Graphique Répartition par Catégorie */}
-          <CategoryBreakdownKPI data={categoryData} loading={loading} />
-
-          {/* Graphique Distribution Horaire */}
-          <HourlyDistributionKPI data={hourlyData} loading={loading} />
-        </div>
-      </CollapsibleSection>
+      {/* Section d'analyse des ventes */}
+      <SalesSection
+        tenantCode={tenantCode}
+        startDate={formatDateForAPI(startDate)}
+        endDate={formatDateForAPI(endDate)}
+        categoryData={categoryData}
+        hourlyData={hourlyData}
+        loading={loading}
+      />
     </div>
   );
 };

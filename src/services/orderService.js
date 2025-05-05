@@ -88,6 +88,60 @@ const orderService = {
       throw error;
     }
   },
+  // Fonction pour récupérer la répartition par catégorie
+  getCategoryBreakdown: async (startDate, endDate, tenantCode) => {
+    try {
+      if (!startDate || !endDate || !tenantCode) {
+        throw new Error(
+          "Paramètres requis manquants pour récupérer la répartition par catégorie"
+        );
+      }
+      const response = await apiClient.get(
+        "/api/order/dashboard/revenue/breakdown-by-category",
+        {
+          params: {
+            startDate,
+            endDate,
+            tenantCode,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching category breakdown:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  // Fonction pour récupérer la distribution horaire
+  getHourlyDistribution: async (date, tenantCode) => {
+    try {
+      if (!date || !tenantCode) {
+        throw new Error(
+          "Paramètres requis manquants pour récupérer la distribution horaire"
+        );
+      }
+      const response = await apiClient.get(
+        "/api/order/dashboard/hourly-distribution",
+        {
+          params: {
+            date,
+            tenantCode,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching hourly distribution:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
 };
 
 export default orderService;

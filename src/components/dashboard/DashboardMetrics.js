@@ -7,7 +7,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertTriangle, Calendar, ArrowRight, RefreshCw } from "lucide-react";
+import {
+  AlertTriangle,
+  Calendar,
+  ArrowRight,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import orderService from "@/services/orderService";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -20,6 +27,8 @@ import OrderCountKPI from "./kpis/OrderCountKPI";
 import AverageTicketKPI from "./kpis/AverageTicketKPI";
 import FullPaymentsKPI from "./kpis/FullPaymentsKPI";
 import TopDishesKPI from "./kpis/TopDishesKPI";
+import CategoryBreakdownKPI from "./kpis/CategoryBreakdownKPI";
+import HourlyDistributionKPI from "./kpis/HourlyDistributionKPI";
 
 // Fonction utilitaire pour formater les dates pour l'API
 const formatDateForAPI = (date) => {
@@ -33,10 +42,37 @@ const getThirtyDaysAgo = () => {
   return date;
 };
 
+// Composant Section avec possibilité de collapse
+const CollapsibleSection = ({ title, children, defaultExpanded = true }) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  return (
+    <div className="space-y-4">
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <h2 className="text-xl font-semibold">{title}</h2>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          {isExpanded ? (
+            <ChevronUp className="h-5 w-5" />
+          ) : (
+            <ChevronDown className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
+
+      {isExpanded && children}
+    </div>
+  );
+};
+
 // Composant principal DashboardMetrics
 export const DashboardMetrics = () => {
   const { user, roles } = useAuth();
   const [revenueData, setRevenueData] = useState(null);
+  const [categoryData, setCategoryData] = useState([]);
+  const [hourlyData, setHourlyData] = useState([]);
   const [previousPeriodData, setPreviousPeriodData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,8 +99,8 @@ export const DashboardMetrics = () => {
     return { prevStart, prevEnd };
   };
 
-  // Fonction pour récupérer les données de revenus
-  const fetchRevenueData = async () => {
+  // Fonction pour récupérer les données du dashboard
+  const fetchDashboardData = async () => {
     if (!tenantCode) {
       setLoading(false);
       return;
@@ -86,8 +122,13 @@ export const DashboardMetrics = () => {
       const formattedPrevStartDate = formatDateForAPI(prevStart);
       const formattedPrevEndDate = formatDateForAPI(prevEnd);
 
-      // Appel API pour les données de la période sélectionnée et de la période précédente
-      const [currentData, previousData] = await Promise.all([
+      // Appel API pour toutes les données du dashboard
+      const [
+        currentRevenueData,
+        previousRevenueData,
+        categoryBreakdownData,
+        hourlyDistributionData,
+      ] = await Promise.all([
         orderService.getRevenue(
           formattedStartDate,
           formattedEndDate,
@@ -98,14 +139,22 @@ export const DashboardMetrics = () => {
           formattedPrevEndDate,
           tenantCode
         ),
+        orderService.getCategoryBreakdown(
+          formattedStartDate,
+          formattedEndDate,
+          tenantCode
+        ),
+        orderService.getHourlyDistribution(formattedEndDate, tenantCode), // On utilise la date de fin pour la distribution horaire
       ]);
 
-      setRevenueData(currentData);
-      setPreviousPeriodData(previousData);
+      setRevenueData(currentRevenueData);
+      setPreviousPeriodData(previousRevenueData);
+      setCategoryData(categoryBreakdownData || []);
+      setHourlyData(hourlyDistributionData || []);
       setInitialLoadDone(true);
     } catch (err) {
-      console.error("Error fetching revenue data:", err);
-      setError("Erreur lors de la récupération des données de revenus");
+      console.error("Error fetching dashboard data:", err);
+      setError("Erreur lors de la récupération des données du tableau de bord");
     } finally {
       setLoading(false);
     }
@@ -114,14 +163,14 @@ export const DashboardMetrics = () => {
   // Chargement initial des données
   useEffect(() => {
     if (tenantCode && !initialLoadDone) {
-      fetchRevenueData();
+      fetchDashboardData();
     }
   }, [tenantCode, initialLoadDone]);
 
   // Fonction pour gérer la soumission du formulaire de date
   const handleDateSubmit = (e) => {
     e.preventDefault();
-    fetchRevenueData();
+    fetchDashboardData();
   };
 
   // Message si pas de restaurant assigné à l'utilisateur
@@ -147,7 +196,7 @@ export const DashboardMetrics = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* Sélecteur de période */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -215,8 +264,7 @@ export const DashboardMetrics = () => {
       </motion.div>
 
       {/* KPIs Financiers */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Métriques Financières</h2>
+      <CollapsibleSection title="Métriques Financières" defaultExpanded={true}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* KPI Revenus Réels */}
           <RealRevenueKPI
@@ -238,11 +286,13 @@ export const DashboardMetrics = () => {
           {/* KPI Taux de Remise */}
           <DiscountRateKPI data={revenueData} loading={loading} />
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* KPIs Opérationnels */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Métriques Opérationnelles</h2>
+      <CollapsibleSection
+        title="Métriques Opérationnelles"
+        defaultExpanded={true}
+      >
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {/* KPI Nombre de Commandes */}
           <OrderCountKPI
@@ -265,11 +315,10 @@ export const DashboardMetrics = () => {
             previousData={previousPeriodData}
           />
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* KPIs de Produits */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Analyse des Produits</h2>
+      {/* Visualisations */}
+      <CollapsibleSection title="Analyse de Ventes" defaultExpanded={true}>
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
           {/* KPI Top Dishes */}
           <TopDishesKPI
@@ -279,7 +328,14 @@ export const DashboardMetrics = () => {
             limit={5}
           />
         </div>
-      </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Graphique Répartition par Catégorie */}
+          <CategoryBreakdownKPI data={categoryData} loading={loading} />
+
+          {/* Graphique Distribution Horaire */}
+          <HourlyDistributionKPI data={hourlyData} loading={loading} />
+        </div>
+      </CollapsibleSection>
     </div>
   );
 };

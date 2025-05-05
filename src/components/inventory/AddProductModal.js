@@ -1,4 +1,4 @@
-// src/components/inventory/AddProductModal.js
+// src/components/inventory/AddProductModal.js (version corrigée)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -50,12 +50,11 @@ export default function AddProductModal({
       description: "",
       unitOfMeasure: "",
       volume: "",
-      categories: [],
+      categories: "",
       tenantCode: tenantCode || "",
     },
   });
 
-  // Charger les données nécessaires
   // Charger les données nécessaires
   useEffect(() => {
     const fetchData = async () => {
@@ -64,14 +63,17 @@ export default function AddProductModal({
       // Charger les catégories
       setLoadingCategories(true);
       try {
-        const categoriesData = await inventoryService.getAllCategories();
+        // Récupérer les catégories (maintenant avec pagination)
+        const categoriesResponse = await inventoryService.getAllCategories();
+        // Extraire seulement le tableau content du résultat paginé
+        const categoriesData = categoriesResponse.content || [];
         setCategories(categoriesData);
 
         // Définir une catégorie par défaut si disponible
         if (categoriesData && categoriesData.length > 0) {
           reset({
             ...control._formValues,
-            categories: categoriesData[0].name, // Définir le nom de la première catégorie
+            categories: categoriesData[0].name,
           });
         }
       } catch (err) {
@@ -104,33 +106,37 @@ export default function AddProductModal({
 
     fetchData();
   }, [isOpen, control, reset]);
+
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     setError(null);
 
-    // Trouver l'objet catégorie complet à partir de son nom
-    const selectedCategory = categories.find(
-      (cat) => cat.name === data.categories
-    );
-
-    // Préparer les données pour l'API avec le format correct
-    const productData = {
-      name: data.name,
-      description: data.description,
-      unitOfMeasure: data.unitOfMeasure,
-      volume: parseFloat(data.volume),
-      category: selectedCategory
-        ? {
-            id: selectedCategory.id,
-            name: selectedCategory.name,
-          }
-        : null,
-      tenantCode: tenantCode,
-    };
-
-    console.log("Sending product data:", productData);
-
     try {
+      // Vérifier que categories est bien un tableau avant d'utiliser find
+      console.log("Categories:", categories);
+
+      // Trouver l'objet catégorie complet à partir de son nom
+      const selectedCategory = Array.isArray(categories)
+        ? categories.find((cat) => cat.name === data.categories)
+        : null;
+
+      // Préparer les données pour l'API avec le format correct
+      const productData = {
+        name: data.name,
+        description: data.description,
+        unitOfMeasure: data.unitOfMeasure,
+        volume: parseFloat(data.volume),
+        category: selectedCategory
+          ? {
+              id: selectedCategory.id,
+              name: selectedCategory.name,
+            }
+          : null,
+        tenantCode: tenantCode,
+      };
+
+      console.log("Sending product data:", productData);
+
       // Créer le produit via l'API
       await inventoryService.createProduct(productData);
 
@@ -200,13 +206,15 @@ export default function AddProductModal({
                   <Controller
                     name="categories"
                     control={control}
-                    render={({ field: { onChange, onBlur, name, ref } }) => (
+                    render={({
+                      field: { onChange, onBlur, name, ref, value },
+                    }) => (
                       <Select
                         onValueChange={onChange}
                         onOpenChange={onBlur}
                         name={name}
                         ref={ref}
-                        defaultValue={categories[0]?.name} // Utiliser une valeur par défaut concrète
+                        value={value || categories[0]?.name}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionner une catégorie" />
@@ -239,13 +247,15 @@ export default function AddProductModal({
                     name="unitOfMeasure"
                     control={control}
                     rules={{ required: "L'unité de mesure est requise" }}
-                    render={({ field: { onChange, onBlur, name, ref } }) => (
+                    render={({
+                      field: { onChange, onBlur, name, ref, value },
+                    }) => (
                       <Select
                         onValueChange={onChange}
                         onOpenChange={onBlur}
                         name={name}
                         ref={ref}
-                        defaultValue={units[0]} // Utiliser une valeur par défaut concrète
+                        value={value || units[0]}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Choisir une unité" />

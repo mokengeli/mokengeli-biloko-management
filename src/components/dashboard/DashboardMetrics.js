@@ -1,4 +1,4 @@
-// src/components/dashboard/DashboardMetrics.js
+// src/components/dashboard/DashboardMetrics.js (mis à jour)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,6 +12,7 @@ import { AlertTriangle, Calendar, ArrowRight, RefreshCw } from "lucide-react";
 import FinancialSection from "./sections/FinancialSection";
 import OperationalSection from "./sections/OperationalSection";
 import SalesSection from "./sections/SalesSection";
+import RestaurantSelector from "@/components/inventory/RestaurantSelector";
 
 import orderService from "@/services/orderService";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,7 +31,7 @@ const getThirtyDaysAgo = () => {
 
 // Composant principal DashboardMetrics
 export const DashboardMetrics = () => {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const [revenueData, setRevenueData] = useState(null);
   const [categoryData, setCategoryData] = useState([]);
   const [hourlyData, setHourlyData] = useState([]);
@@ -42,11 +43,24 @@ export const DashboardMetrics = () => {
   const [startDate, setStartDate] = useState(getThirtyDaysAgo());
   const [endDate, setEndDate] = useState(new Date());
 
+  // État pour le tenant sélectionné (pour les admins)
+  const [selectedRestaurant, setSelectedRestaurant] = useState("");
+
   // État pour suivre si les données ont été chargées au moins une fois
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
-  // Déterminer le tenant code depuis l'utilisateur
-  const tenantCode = user?.tenantCode;
+  // Vérifier si l'utilisateur est admin
+  const isAdmin = roles.includes("ROLE_ADMIN");
+
+  // Déterminer le tenant code à utiliser
+  const tenantCode = isAdmin ? selectedRestaurant : user?.tenantCode;
+
+  // Définir le restaurant par défaut lors du chargement initial (pour les admins)
+  useEffect(() => {
+    if (!isAdmin && user?.tenantCode) {
+      setSelectedRestaurant(user.tenantCode);
+    }
+  }, [isAdmin, user]);
 
   // Fonction pour calculer la période précédente (même durée)
   const calculatePreviousPeriod = (start, end) => {
@@ -121,6 +135,13 @@ export const DashboardMetrics = () => {
     }
   };
 
+  // Définir le callback de changement de restaurant
+  const handleRestaurantChange = (value) => {
+    setSelectedRestaurant(value);
+    // Réinitialiser l'état de chargement initial pour déclencher un nouveau chargement
+    setInitialLoadDone(false);
+  };
+
   // Chargement initial des données
   useEffect(() => {
     if (tenantCode && !initialLoadDone) {
@@ -134,14 +155,15 @@ export const DashboardMetrics = () => {
     fetchDashboardData();
   };
 
-  // Message si pas de restaurant assigné à l'utilisateur
+  // Message si pas de restaurant assigné/sélectionné
   if (!tenantCode && !loading) {
     return (
       <Alert className="my-4">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          Aucun restaurant assigné à votre compte. Veuillez contacter
-          l'administrateur.
+          {isAdmin
+            ? "Veuillez sélectionner un restaurant pour afficher le tableau de bord."
+            : "Aucun restaurant assigné à votre compte. Veuillez contacter l'administrateur."}
         </AlertDescription>
       </Alert>
     );
@@ -158,6 +180,21 @@ export const DashboardMetrics = () => {
 
   return (
     <div className="space-y-10">
+      {/* Sélecteur de restaurant (pour les admins uniquement) */}
+      {isAdmin && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full flex flex-col sm:flex-row justify-between items-start gap-4"
+        >
+          <h2 className="text-xl font-bold">Tableau de bord</h2>
+          <RestaurantSelector
+            value={selectedRestaurant}
+            onChange={handleRestaurantChange}
+          />
+        </motion.div>
+      )}
+
       {/* Sélecteur de période */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

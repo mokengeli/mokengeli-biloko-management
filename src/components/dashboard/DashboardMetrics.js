@@ -9,8 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertTriangle, Calendar, ArrowRight, RefreshCw } from "lucide-react";
 import orderService from "@/services/orderService";
-import RealRevenueKPI from "./kpis/RealRevenueKPI";
 import { useAuth } from "@/hooks/useAuth";
+
+// Importer les KPIs
+import RealRevenueKPI from "./kpis/RealRevenueKPI";
+import TheoreticalRevenueKPI from "./kpis/TheoreticalRevenueKPI";
+import RevenueGapKPI from "./kpis/RevenueGapKPI";
+import DiscountRateKPI from "./kpis/DiscountRateKPI";
 
 // Fonction utilitaire pour formater les dates pour l'API
 const formatDateForAPI = (date) => {
@@ -28,6 +33,7 @@ const getThirtyDaysAgo = () => {
 export const DashboardMetrics = () => {
   const { user, roles } = useAuth();
   const [revenueData, setRevenueData] = useState(null);
+  const [previousPeriodData, setPreviousPeriodData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -40,6 +46,18 @@ export const DashboardMetrics = () => {
 
   // Déterminer le tenant code depuis l'utilisateur
   const tenantCode = user?.tenantCode;
+
+  // Fonction pour calculer la période précédente (même durée)
+  const calculatePreviousPeriod = (start, end) => {
+    const duration = end.getTime() - start.getTime();
+    const prevEnd = new Date(start);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+
+    const prevStart = new Date(prevEnd);
+    prevStart.setTime(prevEnd.getTime() - duration);
+
+    return { prevStart, prevEnd };
+  };
 
   // Fonction pour récupérer les données de revenus
   const fetchRevenueData = async () => {
@@ -56,14 +74,30 @@ export const DashboardMetrics = () => {
       const formattedStartDate = formatDateForAPI(startDate);
       const formattedEndDate = formatDateForAPI(endDate);
 
-      // Appel API pour les données de la période sélectionnée
-      const data = await orderService.getRevenue(
-        formattedStartDate,
-        formattedEndDate,
-        tenantCode
+      // Calcul de la période précédente (même durée)
+      const { prevStart, prevEnd } = calculatePreviousPeriod(
+        startDate,
+        endDate
       );
+      const formattedPrevStartDate = formatDateForAPI(prevStart);
+      const formattedPrevEndDate = formatDateForAPI(prevEnd);
 
-      setRevenueData(data);
+      // Appel API pour les données de la période sélectionnée et de la période précédente
+      const [currentData, previousData] = await Promise.all([
+        orderService.getRevenue(
+          formattedStartDate,
+          formattedEndDate,
+          tenantCode
+        ),
+        orderService.getRevenue(
+          formattedPrevStartDate,
+          formattedPrevEndDate,
+          tenantCode
+        ),
+      ]);
+
+      setRevenueData(currentData);
+      setPreviousPeriodData(previousData);
       setInitialLoadDone(true);
     } catch (err) {
       console.error("Error fetching revenue data:", err);
@@ -179,9 +213,24 @@ export const DashboardMetrics = () => {
       {/* KPIs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* KPI Revenus Réels */}
-        <RealRevenueKPI value={revenueData?.realRevenue} loading={loading} />
+        <RealRevenueKPI
+          value={revenueData?.realRevenue}
+          loading={loading}
+          previousData={previousPeriodData}
+        />
 
-        {/* TODO: Autres KPIs à ajouter ici */}
+        {/* KPI Revenus Théoriques */}
+        <TheoreticalRevenueKPI
+          value={revenueData?.theoreticalRevenue}
+          loading={loading}
+          previousData={previousPeriodData}
+        />
+
+        {/* KPI Écart de Revenus */}
+        <RevenueGapKPI data={revenueData} loading={loading} />
+
+        {/* KPI Taux de Remise */}
+        <DiscountRateKPI data={revenueData} loading={loading} />
       </div>
     </div>
   );

@@ -63,6 +63,31 @@ const orderService = {
       throw error;
     }
   },
+  // Fonction pour récupérer les plats les plus vendus
+  getTopDishes: async (startDate, endDate, tenantCode, limit = 5) => {
+    try {
+      if (!startDate || !endDate || !tenantCode) {
+        throw new Error(
+          "Paramètres requis manquants pour récupérer les plats populaires"
+        );
+      }
+      const response = await apiClient.get("/api/order/dashboard/dishes/top", {
+        params: {
+          startDate,
+          endDate,
+          tenantCode,
+          limit,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching top dishes:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
 };
 
 export default orderService;

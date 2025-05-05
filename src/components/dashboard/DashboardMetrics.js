@@ -19,6 +19,7 @@ import DiscountRateKPI from "./kpis/DiscountRateKPI";
 import OrderCountKPI from "./kpis/OrderCountKPI";
 import AverageTicketKPI from "./kpis/AverageTicketKPI";
 import FullPaymentsKPI from "./kpis/FullPaymentsKPI";
+import TopDishesKPI from "./kpis/TopDishesKPI";
 
 // Fonction utilitaire pour formater les dates pour l'API
 const formatDateForAPI = (date) => {
@@ -262,6 +263,20 @@ export const DashboardMetrics = () => {
             data={revenueData}
             loading={loading}
             previousData={previousPeriodData}
+          />
+        </div>
+      </div>
+
+      {/* KPIs de Produits */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Analyse des Produits</h2>
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+          {/* KPI Top Dishes */}
+          <TopDishesKPI
+            tenantCode={tenantCode}
+            startDate={formatDateForAPI(startDate)}
+            endDate={formatDateForAPI(endDate)}
+            limit={5}
           />
         </div>
       </div>

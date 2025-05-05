@@ -16,6 +16,9 @@ import RealRevenueKPI from "./kpis/RealRevenueKPI";
 import TheoreticalRevenueKPI from "./kpis/TheoreticalRevenueKPI";
 import RevenueGapKPI from "./kpis/RevenueGapKPI";
 import DiscountRateKPI from "./kpis/DiscountRateKPI";
+import OrderCountKPI from "./kpis/OrderCountKPI";
+import AverageTicketKPI from "./kpis/AverageTicketKPI";
+import FullPaymentsKPI from "./kpis/FullPaymentsKPI";
 
 // Fonction utilitaire pour formater les dates pour l'API
 const formatDateForAPI = (date) => {
@@ -210,27 +213,57 @@ export const DashboardMetrics = () => {
         </Card>
       </motion.div>
 
-      {/* KPIs */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* KPI Revenus Réels */}
-        <RealRevenueKPI
-          value={revenueData?.realRevenue}
-          loading={loading}
-          previousData={previousPeriodData}
-        />
+      {/* KPIs Financiers */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Métriques Financières</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {/* KPI Revenus Réels */}
+          <RealRevenueKPI
+            value={revenueData?.realRevenue}
+            loading={loading}
+            previousData={previousPeriodData}
+          />
 
-        {/* KPI Revenus Théoriques */}
-        <TheoreticalRevenueKPI
-          value={revenueData?.theoreticalRevenue}
-          loading={loading}
-          previousData={previousPeriodData}
-        />
+          {/* KPI Revenus Théoriques */}
+          <TheoreticalRevenueKPI
+            value={revenueData?.theoreticalRevenue}
+            loading={loading}
+            previousData={previousPeriodData}
+          />
 
-        {/* KPI Écart de Revenus */}
-        <RevenueGapKPI data={revenueData} loading={loading} />
+          {/* KPI Écart de Revenus */}
+          <RevenueGapKPI data={revenueData} loading={loading} />
 
-        {/* KPI Taux de Remise */}
-        <DiscountRateKPI data={revenueData} loading={loading} />
+          {/* KPI Taux de Remise */}
+          <DiscountRateKPI data={revenueData} loading={loading} />
+        </div>
+      </div>
+
+      {/* KPIs Opérationnels */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Métriques Opérationnelles</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* KPI Nombre de Commandes */}
+          <OrderCountKPI
+            data={revenueData}
+            loading={loading}
+            previousData={previousPeriodData}
+          />
+
+          {/* KPI Ticket Moyen */}
+          <AverageTicketKPI
+            data={revenueData}
+            loading={loading}
+            previousData={previousPeriodData}
+          />
+
+          {/* KPI Paiements Complets */}
+          <FullPaymentsKPI
+            data={revenueData}
+            loading={loading}
+            previousData={previousPeriodData}
+          />
+        </div>
       </div>
     </div>
   );

@@ -34,21 +34,15 @@ import {
   ChevronRight,
   Bell,
   MoonStar,
-  Info,
-  Eye,
-  EyeOff,
-  LockKeyhole,
   AlertCircle,
 } from "lucide-react";
+import { PasswordChangeSection } from "@/components/profile/PasswordChangeSection";
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { isAdmin } = usePermissions();
   const [activeTab, setActiveTab] = useState("general");
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
 
@@ -265,95 +259,9 @@ export default function ProfilePage() {
                       compte sécurisé
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Alert variant="outline" className="mb-4">
-                      <Info className="h-4 w-4 mr-2" />
-                      <AlertDescription>
-                        Votre mot de passe doit contenir au moins 8 caractères,
-                        incluant une lettre majuscule, un chiffre et un
-                        caractère spécial.
-                      </AlertDescription>
-                    </Alert>
-
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="current-password">
-                            Mot de passe actuel
-                          </Label>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                        <Input
-                          id="current-password"
-                          type={showPassword ? "text" : "password"}
-                          value={oldPassword}
-                          onChange={(e) => setOldPassword(e.target.value)}
-                          placeholder="Entrez votre mot de passe actuel"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="new-password">
-                          Nouveau mot de passe
-                        </Label>
-                        <Input
-                          id="new-password"
-                          type={showPassword ? "text" : "password"}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Entrez votre nouveau mot de passe"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="confirm-password">
-                          Confirmer le mot de passe
-                        </Label>
-                        <Input
-                          id="confirm-password"
-                          type={showPassword ? "text" : "password"}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Confirmez votre nouveau mot de passe"
-                        />
-                      </div>
-                    </div>
+                  <CardContent>
+                    <PasswordChangeSection />
                   </CardContent>
-                  <CardFooter>
-                    <Button
-                      variant="outline"
-                      className="mr-2"
-                      onClick={() => {
-                        setOldPassword("");
-                        setNewPassword("");
-                        setConfirmPassword("");
-                      }}
-                    >
-                      Annuler
-                    </Button>
-                    <Button
-                      disabled={
-                        !oldPassword ||
-                        !newPassword ||
-                        !confirmPassword ||
-                        newPassword !== confirmPassword
-                      }
-                    >
-                      <LockKeyhole className="mr-2 h-4 w-4" />
-                      Mettre à jour le mot de passe
-                    </Button>
-                  </CardFooter>
                 </Card>
 
                 <Card>

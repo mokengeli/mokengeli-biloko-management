@@ -71,7 +71,22 @@ const authService = {
       );
       throw error;
     }
-  }
+  },
+  changePassword: async (oldPassword, newPassword) => {
+    try {
+      const response = await apiClient.patch("/api/auth/password", {
+        oldPassword,
+        newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Change password failed:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
 };
 
 export default authService;

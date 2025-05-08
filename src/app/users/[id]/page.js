@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import usePermissions from "@/hooks/usePermissions";
+import UserProfileCard from "@/components/users/UserProfileCard";
 
 export default function UserDetailPage() {
   const { id: employeeNumber } = useParams();
@@ -175,73 +176,12 @@ export default function UserDetailPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Carte de profil */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>Profil Utilisateur</CardTitle>
-                <CardDescription>Informations personnelles</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center text-center">
-                <UserAvatar user={user} size="xl" className="mb-4" />
-                <h2 className="text-xl font-bold">
-                  {user.firstName} {user.lastName}
-                </h2>
-                {user.postName && (
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {user.postName}
-                  </p>
-                )}
-                <div className="flex flex-wrap justify-center gap-2 mt-2">
-                  {user.roles?.map((role) => (
-                    <RoleBadge key={role} roleId={role} />
-                  ))}
-                </div>
-                <div className="w-full mt-6 space-y-2">
-                  <div className="flex items-center gap-2 text-sm py-1.5 border-t">
-                    <Badge className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">N° Employé:</span>
-                    <span className="font-medium ml-auto">
-                      {user.employeeNumber}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm py-1.5 border-t">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Email:</span>
-                    <span className="font-medium ml-auto">
-                      {user.email || "Non spécifié"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm py-1.5 border-t">
-                    <Building className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Restaurant:</span>
-                    <span className="font-medium ml-auto">
-                      {user.tenantName || user.tenantCode}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm py-1.5 border-t">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Création:</span>
-                    <span className="font-medium ml-auto">
-                      {formatDate(user.createdAt)}
-                    </span>
-                  </div>
-                  {user.updatedAt && (
-                    <div className="flex items-center gap-2 text-sm py-1.5 border-t">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Mis à jour:</span>
-                      <span className="font-medium ml-auto">
-                        {formatDate(user.updatedAt)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <UserProfileCard
+            user={user}
+            title="Profil Utilisateur"
+            description="Informations personnelles"
+            formatDate={formatDate}
+          />
 
           {/* Contenu principal */}
           <motion.div

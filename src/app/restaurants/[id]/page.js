@@ -8,24 +8,14 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import { Pagination } from "@/components/ui/pagination";
-import { Select } from "@/components/ui/select";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import usePermissions from "@/hooks/usePermissions";
 import userService from "@/services/userService";
@@ -37,18 +27,12 @@ import {
   Mail,
   Calendar,
   Building,
-  Shield,
   User as UserIcon,
   Edit,
   Trash2,
   Clock,
-  BadgeInfo,
   LayoutGrid,
-  Grid3X3,
   PlusCircle,
-  MapPin,
-  AlertTriangle,
-  Info,
 } from "lucide-react";
 
 export default function RestaurantDetailPage() {

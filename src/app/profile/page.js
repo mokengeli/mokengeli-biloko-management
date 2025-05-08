@@ -127,7 +127,7 @@ export default function ProfilePage() {
                     <Building className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Restaurant:</span>
                     <span className="font-medium ml-auto">
-                      {user.tenantCode}
+                      {user.tenantName}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm py-1.5 border-t">
@@ -206,48 +206,6 @@ export default function ProfilePage() {
                     </Button>
                   </CardFooter>
                 </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Préférences</CardTitle>
-                    <CardDescription>
-                      Personnalisez votre expérience
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between space-y-1">
-                      <div className="flex items-center gap-3">
-                        <Bell className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <label className="font-medium">Notifications</label>
-                          <p className="text-sm text-muted-foreground">
-                            Activer les notifications pour les actions
-                            importantes
-                          </p>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={notificationsEnabled}
-                        onCheckedChange={setNotificationsEnabled}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between space-y-1">
-                      <div className="flex items-center gap-3">
-                        <MoonStar className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <label className="font-medium">Mode sombre</label>
-                          <p className="text-sm text-muted-foreground">
-                            Basculer entre les thèmes clair et sombre
-                          </p>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={darkModeEnabled}
-                        onCheckedChange={setDarkModeEnabled}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
               </TabsContent>
 
               <TabsContent value="security" className="mt-4 space-y-4">
@@ -261,51 +219,6 @@ export default function ProfilePage() {
                   </CardHeader>
                   <CardContent>
                     <PasswordChangeSection />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dernières connexions</CardTitle>
-                    <CardDescription>
-                      Historique récent des connexions à votre compte
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between py-2">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Clock className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Aujourd'hui, 10:45</p>
-                            <p className="text-sm text-muted-foreground">
-                              Connexion réussie - 192.168.1.1
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          Détails
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between py-2">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Clock className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Hier, 15:30</p>
-                            <p className="text-sm text-muted-foreground">
-                              Connexion réussie - 192.168.1.1
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          Détails
-                        </Button>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

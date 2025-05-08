@@ -17,27 +17,10 @@ export default function Topbar({ onToggleSidebar }) {
   // Récupérer les informations du tenant actif
   useEffect(() => {
     if (user?.tenantCode) {
-      const fetchTenantInfo = async () => {
-        setLoading(true);
-        try {
-          const tenantData = await userService.getTenantByCode(user.tenantCode);
-          setActiveTenant({
-            code: user.tenantCode,
-            name: tenantData.name || user.tenantCode
-          });
-        } catch (error) {
-          console.error("Erreur lors de la récupération des infos du restaurant:", error);
-          // En cas d'erreur, utiliser au moins le code disponible
-          setActiveTenant({
-            code: user.tenantCode,
-            name: user.tenantName || user.tenantCode
-          });
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchTenantInfo();
+      setActiveTenant({
+        code: user.tenantCode,
+        name: user.tenantName || user.tenantCode,
+      });
     }
   }, [user]);
 

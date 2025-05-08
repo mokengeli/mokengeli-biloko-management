@@ -27,8 +27,8 @@ export default function NotImplementedModal({
           </DialogTitle>
         </DialogHeader>
         <DialogDescription className="pt-2 pb-4 text-center">
-          Cette fonctionnalité n'est pas encore disponible. Veuillez vous
-          rapprocher de l'équipe support pour plus d'informations.
+          Cette fonctionnalité est restreinte. Veuillez vous rapprocher de
+          l'équipe support pour plus d'informations.
         </DialogDescription>
         <DialogFooter>
           <Button onClick={onClose} className="w-full">

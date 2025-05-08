@@ -391,7 +391,9 @@ export default function UsersPage() {
                                 size="icon"
                                 variant="ghost"
                                 className="h-8 w-8 text-blue-500"
-                                onClick={() => handleViewUser(user.id)}
+                                onClick={() =>
+                                  handleViewUser(user.employeeNumber)
+                                }
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -501,13 +503,13 @@ export default function UsersPage() {
                                 }
                                 tabIndex={
                                   pagination.currentPage >=
-                                    pagination.totalPages - 1
+                                  pagination.totalPages - 1
                                     ? -1
                                     : 0
                                 }
                                 className={
                                   pagination.currentPage >=
-                                    pagination.totalPages - 1
+                                  pagination.totalPages - 1
                                     ? "pointer-events-none opacity-50"
                                     : ""
                                 }
@@ -539,7 +541,11 @@ export default function UsersPage() {
           tenantCode={selectedRestaurant}
           onSuccess={() => {
             // Rafraîchir la liste des utilisateurs après création réussie
-            fetchUsers(selectedRestaurant, pagination.currentPage, pagination.pageSize);
+            fetchUsers(
+              selectedRestaurant,
+              pagination.currentPage,
+              pagination.pageSize
+            );
           }}
         />
       )}

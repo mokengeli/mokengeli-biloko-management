@@ -142,6 +142,17 @@ const orderService = {
       throw error;
     }
   },
+  countTablesByTenant: async (tenantCode) => {
+    try {
+      const response = await apiClient.get("/api/order/table/count", {
+        params: { code: tenantCode },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error counting tables:", error);
+      throw error;
+    }
+  },
 };
 
 export default orderService;

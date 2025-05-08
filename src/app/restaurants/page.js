@@ -75,8 +75,9 @@ export default function RestaurantsPage() {
 
   // Fonction pour rediriger vers la page de détail d'un restaurant
   const handleViewRestaurant = useCallback(
-    (tenantId) => {
-      router.push(`/restaurants/${tenantId}`);
+    (tenant) => {
+      // Au lieu de passer l'ID, on passe le code du restaurant
+      router.push(`/restaurants/${tenant.code}`);
     },
     [router]
   );
@@ -368,7 +369,7 @@ export default function RestaurantsPage() {
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8 text-blue-500"
-                              onClick={() => handleViewRestaurant(tenant.id)}
+                              onClick={() => handleViewRestaurant(tenant)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>

@@ -22,8 +22,8 @@ const userService = {
       const response = await apiClient.get("/api/user/tenant/all/pg", {
         params: {
           page,
-          size
-        }
+          size,
+        },
       });
       return response.data;
     } catch (error) {
@@ -69,8 +69,8 @@ const userService = {
         params: {
           code: tenantCode,
           page,
-          size
-        }
+          size,
+        },
       });
       return response.data;
     } catch (error) {
@@ -87,8 +87,8 @@ const userService = {
     try {
       const response = await apiClient.get(`/api/user/by-employee-number`, {
         params: {
-          employeeNumber
-        }
+          employeeNumber,
+        },
       });
       return response.data;
     } catch (error) {
@@ -112,7 +112,18 @@ const userService = {
       );
       throw error;
     }
-  }
+  },
+  countUsersByRole: async (tenantCode) => {
+    try {
+      const response = await apiClient.get("/api/user/count-by-role", {
+        params: { tenantCode },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error counting users by role:", error);
+      throw error;
+    }
+  },
 };
 
 export default userService;

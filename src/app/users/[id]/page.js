@@ -5,14 +5,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { UserAvatar } from "@/components/common/UserAvatar";
-import { RoleBadge } from "@/components/common/RoleBadge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";

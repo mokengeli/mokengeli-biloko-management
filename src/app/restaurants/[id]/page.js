@@ -8,37 +8,54 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import usePermissions from "@/hooks/usePermissions";
 import userService from "@/services/userService";
 import orderService from "@/services/orderService";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
 import CreateTableModal from "@/components/restaurants/CreateTableModal";
+import { RoleBadge } from "@/components/common/RoleBadge";
 import {
   ArrowLeft,
   Mail,
   Calendar,
   Building,
+  Shield,
   User as UserIcon,
   Edit,
   Trash2,
   Clock,
+  BadgeInfo,
   LayoutGrid,
+  Grid3X3,
   PlusCircle,
+  MapPin,
+  AlertTriangle,
+  Info,
 } from "lucide-react";
 
 export default function RestaurantDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const restaurantId = params?.id;
+  const restaurantCode = params?.id; // Le paramètre contient le code du restaurant
   const { isAdmin } = usePermissions();
 
   const [restaurant, setRestaurant] = useState(null);
@@ -54,14 +71,19 @@ export default function RestaurantDetailPage() {
     currentPage: 0,
     totalPages: 0,
     totalElements: 0,
-    pageSize: 10,
+    pageSize: 30,
   });
+
+  // États pour les statistiques
+  const [tableCount, setTableCount] = useState(0);
+  const [userCounts, setUserCounts] = useState([]);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Fonction pour récupérer les détails du restaurant
   useEffect(() => {
     const fetchRestaurantDetails = async () => {
-      if (!restaurantId) {
-        setError("Identifiant restaurant non valide");
+      if (!restaurantCode) {
+        setError("Code restaurant non valide");
         setLoading(false);
         return;
       }
@@ -70,11 +92,9 @@ export default function RestaurantDetailPage() {
       setError(null);
 
       try {
-        // Simulation: Dans un vrai cas, il faudrait un endpoint getUserById
-        // Pour cette démo, nous allons récupérer la liste et filtrer
-        const allRestaurants = await userService.getAllTenants();
-        const currentRestaurant = allRestaurants.find(
-          (r) => r.id === parseInt(restaurantId)
+        // Utilisation de l'endpoint spécifique pour récupérer le restaurant par son code
+        const currentRestaurant = await userService.getTenantByCode(
+          restaurantCode
         );
 
         if (currentRestaurant) {
@@ -91,7 +111,7 @@ export default function RestaurantDetailPage() {
     };
 
     fetchRestaurantDetails();
-  }, [restaurantId]);
+  }, [restaurantCode]);
 
   // Fonction pour récupérer les tables
   useEffect(() => {
@@ -124,6 +144,36 @@ export default function RestaurantDetailPage() {
       fetchTables();
     }
   }, [restaurant, pagination.currentPage, pagination.pageSize]);
+
+  // Fonction pour récupérer les statistiques
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      if (!restaurant?.code) return;
+
+      setStatsLoading(true);
+      try {
+        // Charger le nombre de tables
+        const tablesCount = await orderService.countTablesByTenant(
+          restaurant.code
+        );
+        setTableCount(tablesCount);
+
+        // Charger le nombre d'utilisateurs par rôle
+        const usersCountByRole = await userService.countUsersByRole(
+          restaurant.code
+        );
+        setUserCounts(usersCountByRole || []);
+      } catch (err) {
+        console.error("Error fetching statistics:", err);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    if (restaurant) {
+      fetchStatistics();
+    }
+  }, [restaurant]);
 
   // Fonction pour gérer les actions non implémentées
   const handleNotImplementedAction = (action, itemName) => {
@@ -394,29 +444,59 @@ export default function RestaurantDetailPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Statistiques à implémenter */}
-                        <div className="p-4 border rounded-lg">
-                          <h3 className="text-sm font-medium text-muted-foreground">
-                            Utilisateurs
-                          </h3>
-                          <p className="text-2xl font-bold mt-1">-</p>
+                      {statsLoading ? (
+                        // État de chargement
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <Skeleton className="h-24 w-full" />
+                          <Skeleton className="h-24 w-full" />
                         </div>
-                        <div className="p-4 border rounded-lg">
-                          <h3 className="text-sm font-medium text-muted-foreground">
-                            Tables
-                          </h3>
-                          <p className="text-2xl font-bold mt-1">
-                            {pagination.totalElements || 0}
-                          </p>
+                      ) : (
+                        <div className="space-y-6">
+                          {/* Affichage du nombre de tables */}
+                          <div className="p-4 border rounded-lg">
+                            <h3 className="text-sm font-medium text-muted-foreground flex items-center">
+                              <LayoutGrid className="h-4 w-4 mr-2 text-primary" />
+                              Tables
+                            </h3>
+                            <p className="text-3xl font-bold mt-2">
+                              {tableCount}
+                            </p>
+                          </div>
+
+                          {/* Affichage du nombre d'utilisateurs par rôle */}
+                          <div className="p-4 border rounded-lg">
+                            <h3 className="text-sm font-medium text-muted-foreground flex items-center">
+                              <UserIcon className="h-4 w-4 mr-2 text-primary" />
+                              Utilisateurs par rôle
+                            </h3>
+
+                            {userCounts.length === 0 ? (
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Aucun utilisateur trouvé
+                              </p>
+                            ) : (
+                              <div className="mt-3 space-y-2">
+                                {userCounts.map((item) => (
+                                  <div
+                                    key={item.role}
+                                    className="flex justify-between items-center p-2 bg-muted/50 rounded-md"
+                                  >
+                                    <div className="flex items-center">
+                                      <RoleBadge roleId={item.role} size="sm" />
+                                      <span className="ml-2 text-sm">
+                                        {item.role.replace("ROLE_", "")}
+                                      </span>
+                                    </div>
+                                    <span className="font-bold">
+                                      {item.count}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="p-4 border rounded-lg">
-                          <h3 className="text-sm font-medium text-muted-foreground">
-                            Commandes
-                          </h3>
-                          <p className="text-2xl font-bold mt-1">-</p>
-                        </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>

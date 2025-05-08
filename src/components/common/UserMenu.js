@@ -12,15 +12,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "./UserAvatar";
 import { PrimaryRoleBadge } from "./RoleBadge";
 import { useAuth } from "@/hooks/useAuth";
-import { User, LogOut, ChevronDown, Building } from "lucide-react";
+import {
+  User,
+  LogOut,
+  ChevronDown,
+  Building,
+  Store,
+  Coffee,
+  Beer,
+  Sofa,
+  Crown,
+} from "lucide-react";
 
 /**
  * Menu contextuel pour l'utilisateur connecté
  */
-export function UserMenu() {
+export function UserMenu({ showSubscriptionBadge = false }) {
   const router = useRouter();
   const { user, isLoggingOut, logout } = useAuth();
   const [open, setOpen] = useState(false);
@@ -44,6 +55,38 @@ export function UserMenu() {
     setOpen(false);
   };
 
+  // Fonction pour obtenir l'icône correspondant au type d'établissement
+  const getEstablishmentIcon = () => {
+    if (!user?.establishmentCode) return <Building className="h-4 w-4" />;
+
+    switch (user.establishmentCode) {
+      case "RESTAURANT":
+        return <Store className="h-4 w-4" />;
+      case "BAR":
+        return <Beer className="h-4 w-4" />;
+      case "LOUNGE":
+        return <Sofa className="h-4 w-4" />;
+      case "PLATFORM":
+        return <Coffee className="h-4 w-4" />;
+      default:
+        return <Building className="h-4 w-4" />;
+    }
+  };
+
+  // Fonction pour obtenir le texte complet du type d'établissement
+  const getEstablishmentType = () => {
+    if (!user?.establishmentCode) return "Établissement";
+
+    const types = {
+      RESTAURANT: "Restaurant",
+      BAR: "Bar",
+      LOUNGE: "Lounge",
+      PLATFORM: "Plateforme",
+    };
+
+    return types[user.establishmentCode] || "Établissement";
+  };
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -51,7 +94,12 @@ export function UserMenu() {
           variant="ghost"
           className="flex items-center gap-2 px-2 h-auto py-1.5 hover:bg-primary/5"
         >
-          <UserAvatar user={user} size="sm" showTooltip={false} />
+          <UserAvatar
+            user={user}
+            size="sm"
+            showTooltip={false}
+            showSubscriptionBadge={showSubscriptionBadge}
+          />
           <div className="flex flex-col items-start">
             <span className="text-sm font-medium leading-none">
               {user.firstName} {user.lastName.charAt(0)}.
@@ -87,16 +135,44 @@ export function UserMenu() {
             </div>
           </div>
 
-          {/* Information sur le restaurant */}
-          {user.tenantCode && (
-            <div className="px-3 py-1.5 flex items-center gap-2 mb-1 border-b">
-              <Building className="h-4 w-4 text-muted-foreground" />
+          {/* Information sur le restaurant et le plan */}
+          <div className="px-3 py-1.5 flex flex-col gap-2 mb-1 border-b">
+            {/* Type d'établissement */}
+            <div className="flex items-center gap-2">
+              {getEstablishmentIcon()}
               <span className="text-xs text-muted-foreground">
-                Restaurant:{" "}
-                <span className="font-medium">{user.tenantCode}</span>
+                {getEstablishmentType()}:{" "}
+                <span className="font-medium">
+                  {user.tenantName || user.tenantCode}
+                </span>
               </span>
             </div>
-          )}
+
+            {/* Plan de souscription */}
+            {user.subscriptionCode && (
+              <div className="flex items-center gap-2">
+                {user.subscriptionCode === "PREMIUM" ? (
+                  <Crown className="h-4 w-4 text-amber-500" />
+                ) : (
+                  <Crown className="h-4 w-4 text-gray-400" />
+                )}
+                <span className="text-xs text-muted-foreground">
+                  Plan:{" "}
+                  <span
+                    className={`font-medium ${
+                      user.subscriptionCode === "PREMIUM"
+                        ? "text-amber-500"
+                        : ""
+                    }`}
+                  >
+                    {user.subscriptionCode === "PREMIUM"
+                      ? "Premium"
+                      : "Starter"}
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
 
           <DropdownMenuGroup>
             <DropdownMenuItem onSelect={() => navigateTo("/profile")}>

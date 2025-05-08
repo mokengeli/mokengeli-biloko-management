@@ -35,6 +35,11 @@ import {
   Bell,
   MoonStar,
   AlertCircle,
+  Store,
+  Coffee,
+  Beer,
+  Sofa,
+  Crown,
 } from "lucide-react";
 import { PasswordChangeSection } from "@/components/profile/PasswordChangeSection";
 
@@ -189,7 +194,7 @@ export default function ProfilePage() {
                       <div className="space-y-1">
                         <label className="text-sm font-medium">Email</label>
                         <div className="p-2 bg-muted/50 rounded-md">
-                          {user.email}
+                          {user.email || "Non spécifié"}
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -205,6 +210,107 @@ export default function ProfilePage() {
                       Éditer les informations
                     </Button>
                   </CardFooter>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informations sur l'établissement</CardTitle>
+                    <CardDescription>
+                      Détails sur votre établissement et plan de souscription
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Type d'établissement */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">
+                        Type d'établissement
+                      </label>
+                      <div className="p-3 bg-muted/50 rounded-md flex items-center gap-2">
+                        {user.establishmentCode === "RESTAURANT" && (
+                          <Store className="h-5 w-5 text-primary" />
+                        )}
+                        {user.establishmentCode === "BAR" && (
+                          <Beer className="h-5 w-5 text-primary" />
+                        )}
+                        {user.establishmentCode === "LOUNGE" && (
+                          <Sofa className="h-5 w-5 text-primary" />
+                        )}
+                        {user.establishmentCode === "PLATFORM" && (
+                          <Coffee className="h-5 w-5 text-primary" />
+                        )}
+                        {!user.establishmentCode && (
+                          <Building className="h-5 w-5 text-primary" />
+                        )}
+                        <span className="font-medium">
+                          {user.establishmentCode === "RESTAURANT" &&
+                            "Restaurant"}
+                          {user.establishmentCode === "BAR" && "Bar"}
+                          {user.establishmentCode === "LOUNGE" && "Lounge"}
+                          {user.establishmentCode === "PLATFORM" &&
+                            "Plateforme"}
+                          {!user.establishmentCode && "Non spécifié"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Plan de souscription */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">
+                        Plan de souscription
+                      </label>
+                      <div
+                        className={`p-3 rounded-md flex items-center gap-2 ${
+                          user.subscriptionCode === "PREMIUM"
+                            ? "bg-amber-50 border border-amber-200"
+                            : "bg-muted/50"
+                        }`}
+                      >
+                        <Crown
+                          className={`h-5 w-5 ${
+                            user.subscriptionCode === "PREMIUM"
+                              ? "text-amber-500"
+                              : "text-gray-500"
+                          }`}
+                        />
+                        <div className="flex flex-col">
+                          <span
+                            className={`font-medium ${
+                              user.subscriptionCode === "PREMIUM"
+                                ? "text-amber-700"
+                                : ""
+                            }`}
+                          >
+                            Plan{" "}
+                            {user.subscriptionCode === "PREMIUM"
+                              ? "Premium"
+                              : "Starter"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {user.subscriptionCode === "PREMIUM"
+                              ? "Accès à toutes les fonctionnalités avancées"
+                              : "Fonctionnalités de base uniquement"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Nom de l'établissement */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">
+                        Nom de l'établissement
+                      </label>
+                      <div className="p-2 bg-muted/50 rounded-md">
+                        {user.tenantName || "Non spécifié"}
+                      </div>
+                    </div>
+                  </CardContent>
+                  {user.subscriptionCode !== "PREMIUM" && (
+                    <CardFooter>
+                      <Button disabled variant="outline" className="ml-auto">
+                        <Crown className="mr-2 h-4 w-4" />
+                        Passer au plan Premium
+                      </Button>
+                    </CardFooter>
+                  )}
                 </Card>
               </TabsContent>
 

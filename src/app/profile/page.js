@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { PasswordChangeSection } from "@/components/profile/PasswordChangeSection";
 import UserProfileCard from "@/components/users/UserProfileCard";
+import UserPermissionsCard from "@/components/users/UserPermissionsCard";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -279,66 +280,11 @@ export default function ProfilePage() {
 
               {isAdmin() && (
                 <TabsContent value="permissions" className="mt-4 space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Rôles et Permissions</CardTitle>
-                      <CardDescription>
-                        Liste des rôles et permissions associés à votre compte
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div>
-                        <h3 className="text-lg font-semibold mb-3">Rôles</h3>
-                        <div className="space-y-2">
-                          {user.roles?.map((role) => (
-                            <div
-                              key={role}
-                              className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
-                            >
-                              <div className="flex items-center gap-2">
-                                <RoleBadge
-                                  roleId={role}
-                                  size="default"
-                                  showTooltip={false}
-                                />
-                                <span className="text-sm text-muted-foreground ml-2">
-                                  {role}
-                                </span>
-                              </div>
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-semibold mb-3">
-                          Permissions
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {user.permissions?.map((permission) => (
-                            <div
-                              key={permission}
-                              className="flex items-center gap-2 p-2 border rounded-md"
-                            >
-                              <Shield className="h-4 w-4 text-primary" />
-                              <span className="text-sm">{permission}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {(!user.permissions ||
-                          user.permissions.length === 0) && (
-                          <div className="p-4 text-center border rounded-md">
-                            <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                            <p className="text-muted-foreground">
-                              Aucune permission spécifique trouvée
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <UserPermissionsCard
+                    user={user}
+                    title="Rôles et Permissions"
+                    description="Liste des rôles et permissions associés à votre compte"
+                  />
                 </TabsContent>
               )}
             </Tabs>

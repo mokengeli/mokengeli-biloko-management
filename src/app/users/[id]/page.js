@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import usePermissions from "@/hooks/usePermissions";
+import UserPermissionsCard from "@/components/users/UserPermissionsCard";
 import UserProfileCard from "@/components/users/UserProfileCard";
 
 export default function UserDetailPage() {
@@ -272,69 +273,14 @@ export default function UserDetailPage() {
               </TabsContent>
 
               <TabsContent value="permissions" className="mt-4 space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Rôles et Permissions</CardTitle>
-                    <CardDescription>
-                      Liste des rôles et permissions de l'utilisateur
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Rôles de l'utilisateur */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center">
-                        <Star className="mr-2 h-5 w-5 text-amber-500" />
-                        Rôles
-                      </h3>
-                      {user.roles && user.roles.length > 0 ? (
-                        <div className="space-y-2">
-                          {user.roles.map((role) => (
-                            <div
-                              key={role}
-                              className="flex items-center gap-4 p-3 border rounded-lg hover:bg-muted/50"
-                            >
-                              <RoleBadge roleId={role} showTooltip={false} />
-                              <span className="text-sm ml-2">{role}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="p-4 text-center border rounded-md">
-                          <p className="text-muted-foreground">
-                            Aucun rôle attribué
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Permissions de l'utilisateur */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center">
-                        <Shield className="mr-2 h-5 w-5 text-blue-500" />
-                        Permissions
-                      </h3>
-                      {user.permissions && user.permissions.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {user.permissions.map((permission) => (
-                            <div
-                              key={permission}
-                              className="flex items-center gap-2 p-2 border rounded-md"
-                            >
-                              <Shield className="h-4 w-4 text-primary" />
-                              <span className="text-sm">{permission}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="p-4 text-center border rounded-md">
-                          <p className="text-muted-foreground">
-                            Aucune permission spécifique
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <UserPermissionsCard
+                  user={user}
+                  title="Rôles et Permissions"
+                  description="Liste des rôles et permissions de l'utilisateur"
+                  // Nous pouvons personnaliser certaines propriétés selon le contexte
+                  showRoleDetails={true}
+                  showPermissionDetails={isAdmin()} // Afficher les permissions détaillées seulement pour les admins
+                />
               </TabsContent>
             </Tabs>
           </motion.div>

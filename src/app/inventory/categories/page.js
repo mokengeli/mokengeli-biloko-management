@@ -38,7 +38,6 @@ import NotImplementedModal from "@/components/common/NotImplementedModal";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 export default function CategoriesPage() {
-  const router = useRouter();
   const {
     categories,
     loading,
@@ -273,7 +272,6 @@ export default function CategoriesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px]">ID</TableHead>
                     <TableHead>Nom</TableHead>
                     <TableHead className="hidden md:table-cell">
                       Date de création
@@ -293,9 +291,6 @@ export default function CategoriesPage() {
                       .fill(0)
                       .map((_, index) => (
                         <TableRow key={index}>
-                          <TableCell>
-                            <Skeleton className="h-5 w-10" />
-                          </TableCell>
                           <TableCell>
                             <Skeleton className="h-5 w-40" />
                           </TableCell>
@@ -318,7 +313,7 @@ export default function CategoriesPage() {
                   ) : categories.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={canEditInventory ? 5 : 4}
+                        colSpan={canEditInventory ? 4 : 3}
                         className="text-center py-8 text-gray-500"
                       >
                         Aucune catégorie trouvée.{" "}
@@ -329,9 +324,6 @@ export default function CategoriesPage() {
                     // Données réelles
                     categories.map((category) => (
                       <TableRow key={category.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">
-                          {category.id}
-                        </TableCell>
                         <TableCell>{category.name}</TableCell>
                         <TableCell className="hidden md:table-cell">
                           {formatDate(category.createdAt)}

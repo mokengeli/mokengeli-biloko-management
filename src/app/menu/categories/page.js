@@ -340,7 +340,6 @@ export default function MenuCategoriesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[100px]">ID</TableHead>
                       <TableHead>Nom</TableHead>
                       {canEditCategory && (
                         <TableHead className="text-right">Actions</TableHead>
@@ -354,9 +353,6 @@ export default function MenuCategoriesPage() {
                         .fill(0)
                         .map((_, index) => (
                           <TableRow key={index}>
-                            <TableCell>
-                              <Skeleton className="h-5 w-10" />
-                            </TableCell>
                             <TableCell>
                               <Skeleton className="h-5 w-40" />
                             </TableCell>
@@ -373,7 +369,7 @@ export default function MenuCategoriesPage() {
                     ) : categories.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={canEditCategory ? 3 : 2}
+                          colSpan={canEditCategory ? 2 : 1}
                           className="text-center py-8 text-gray-500"
                         >
                           Aucune catégorie de menu trouvée.{" "}
@@ -392,9 +388,6 @@ export default function MenuCategoriesPage() {
                           key={category.id}
                           className="hover:bg-muted/50"
                         >
-                          <TableCell className="font-medium">
-                            {category.id}
-                          </TableCell>
                           <TableCell>{category.name}</TableCell>
                           {canEditCategory && (
                             <TableCell className="text-right">

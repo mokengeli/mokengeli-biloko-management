@@ -23,15 +23,24 @@ export const useAuth = () => {
   // Référence pour suivre si nous avons déjà fait une vérification initiale
   const initialCheckDoneRef = useRef(false);
 
+
   const loginUser = async (username, password) => {
     try {
+      // S'assurer que les champs ne sont pas vides avant d'appeler l'API
+      if (!username.trim() || !password.trim()) {
+        throw new Error("Nom d'utilisateur et mot de passe requis");
+      }
+
       const resultAction = await dispatch(loginAction({ username, password }));
 
       if (loginAction.fulfilled.match(resultAction)) {
         console.log("Login successful, redirecting...");
-        router.push("/dashboard");
         initialCheckDoneRef.current = true;
+        // La redirection est maintenant gérée par le composant via l'effet
         return resultAction.payload;
+      } else if (loginAction.rejected.match(resultAction)) {
+        // Propager l'erreur pour pouvoir la gérer dans le composant
+        throw new Error(resultAction.payload || "Échec de la connexion");
       }
 
       return resultAction;

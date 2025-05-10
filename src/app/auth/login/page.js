@@ -1,4 +1,4 @@
-// src/app/auth/login/page.js (partie modifiée)
+// src/app/auth/login/page.js 
 "use client";
 
 import { useState, useEffect } from "react";
@@ -14,11 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // État local pour le contrôle précis du bouton
   const { login, loading, error, clearError, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -37,21 +39,29 @@ export default function LoginPage() {
     }
   }, [username, password, clearError, error]);
 
+  // Synchroniser l'état local avec l'état global
+  useEffect(() => {
+    setIsSubmitting(loading);
+  }, [loading]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      const result = await login(username, password);
-      // Si pas d'erreur, la redirection est gérée dans le hook useAuth
+    // Éviter les soumissions multiples
+    if (isSubmitting) return;
 
-      // Solution de secours: forcer la redirection après un court délai
-      if (!error && result) {
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 500);
-      }
+    try {
+      // Activer immédiatement l'état de soumission pour un feedback visuel instantané
+      setIsSubmitting(true);
+
+      // Appel au service de login
+      await login(username, password);
+
+      // La redirection est gérée par l'effet qui surveille isAuthenticated
     } catch (err) {
       console.error("Login error in component:", err);
+      // En cas d'erreur, désactiver l'état de soumission
+      setIsSubmitting(false);
     }
   };
 
@@ -84,6 +94,7 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="space-y-2">
@@ -97,24 +108,32 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
 
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-3 rounded bg-red-50 text-red-500 text-sm"
-                  >
-                    {error}
-                  </motion.div>
-                )}
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="p-3 rounded bg-red-50 text-red-500 text-sm"
+                    >
+                      {error}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                <motion.div whileTap={{ scale: 0.95 }}>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? (
+                <motion.div whileTap={{ scale: isSubmitting ? 1 : 0.95 }}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
                       <div className="flex items-center justify-center">
-                        <div className="animate-spin mr-2 h-4 w-4 border-2 border-white rounded-full border-t-transparent"></div>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Connexion en cours...
                       </div>
                     ) : (

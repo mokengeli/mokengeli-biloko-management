@@ -7,7 +7,16 @@ export const login = createAsyncThunk(
   "auth/login",
   async ({ username, password }, { rejectWithValue }) => {
     try {
+      // Simuler un délai minimum pour éviter les flashs d'UI sur les connexions très rapides
+      const startTime = Date.now();
       const data = await authService.login(username, password);
+
+      // S'assurer que l'animation de chargement est visible pendant au moins 500ms
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < 500) {
+        await new Promise(resolve => setTimeout(resolve, 500 - elapsedTime));
+      }
+
       return data;
     } catch (error) {
       const errorMessage =

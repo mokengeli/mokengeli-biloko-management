@@ -41,12 +41,8 @@ export function UserMenu({ showSubscriptionBadge = false }) {
 
   // Fonction pour gérer la déconnexion
   const handleLogout = async () => {
-    try {
-      await logout();
-      setOpen(false);
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion", error);
-    }
+    router.push("/auth/logout");
+    setOpen(false);
   };
 
   // Fonction pour naviguer vers une page
@@ -159,11 +155,10 @@ export function UserMenu({ showSubscriptionBadge = false }) {
                 <span className="text-xs text-muted-foreground">
                   Plan:{" "}
                   <span
-                    className={`font-medium ${
-                      user.subscriptionCode === "PREMIUM"
+                    className={`font-medium ${user.subscriptionCode === "PREMIUM"
                         ? "text-amber-500"
                         : ""
-                    }`}
+                      }`}
                   >
                     {user.subscriptionCode === "PREMIUM"
                       ? "Premium"

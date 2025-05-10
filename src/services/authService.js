@@ -43,19 +43,30 @@ const authService = {
   // Fonction de déconnexion côté client
   logout: async () => {
     try {
-      // Appeler notre API de déconnexion pour supprimer le cookie
-      const response = await fetch("/api/auth/logout", {
+      // 1. Appeler l'endpoint backend décrit dans le contrat
+      await apiClient.post("/api/auth/logout");
+
+      // 2. Appeler notre API locale pour s'assurer que le cookie est supprimé côté client
+      await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
 
-      if (!response.ok) {
-        throw new Error("Échec de la déconnexion");
-      }
-
-      return await response.json();
+      return { success: true };
     } catch (error) {
       console.error("Logout error:", error);
+
+      // Même en cas d'erreur dans l'API backend, tenter de supprimer le cookie localement
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch (clientError) {
+        console.error("Failed to clean client cookie:", clientError);
+      }
+
+      // On propage l'erreur pour la gestion dans useAuth
       throw error;
     }
   },

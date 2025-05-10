@@ -42,19 +42,22 @@ export const useAuth = () => {
   };
 
   const logoutUser = async () => {
+    // Évite les déconnexions multiples simultanées
+    if (isLoggingOut) return;
+
     try {
       setIsLoggingOut(true);
 
       // 1. Indiquer que la déconnexion est en cours
       dispatch(prepareLogout());
 
-      // 2. Appeler l'API pour supprimer le cookie
+      // 2. Appeler le service qui gère à la fois l'appel API backend et le nettoyage côté client
       await authService.logout();
 
       // 3. Réinitialiser l'état de vérification
       initialCheckDoneRef.current = false;
 
-      // 4. Rediriger
+      // 4. Rediriger vers la page de login
       router.push("/auth/login");
 
       // 5. Terminer la déconnexion après redirection
@@ -63,7 +66,11 @@ export const useAuth = () => {
       }, 100);
     } catch (error) {
       console.error("Error during logout:", error);
+
+      // Même en cas d'erreur, on continue avec la redirection et le nettoyage
       router.push("/auth/login");
+
+      // Terminer la déconnexion
       setTimeout(() => {
         dispatch(completeLogout());
       }, 100);

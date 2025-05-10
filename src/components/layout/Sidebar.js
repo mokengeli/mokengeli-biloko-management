@@ -47,12 +47,7 @@ export default function Sidebar({ onClose }) {
 
   // Fonction pour gérer la déconnexion
   const handleLogout = async () => {
-    try {
-      await logout();
-      router.push("/auth/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    router.push("/auth/logout");
   };
 
   // Fonction pour basculer l'état d'un menu

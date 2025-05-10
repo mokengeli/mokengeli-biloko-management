@@ -5,10 +5,11 @@ const authService = {
   // Fonction de connexion
   login: async (username, password) => {
     try {
-      console.log("Starting login request");
+      const platformType = "WEB";
       const response = await apiClient.post("/api/auth/login", {
         username,
         password,
+        platformType
       });
 
       console.log("Login request completed successfully");

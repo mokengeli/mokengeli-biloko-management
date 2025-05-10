@@ -24,23 +24,42 @@ export const useAuth = () => {
   const initialCheckDoneRef = useRef(false);
 
 
+
   const loginUser = async (username, password) => {
     try {
       // S'assurer que les champs ne sont pas vides avant d'appeler l'API
-      if (!username.trim() || !password.trim()) {
-        throw new Error("Nom d'utilisateur et mot de passe requis");
+      if (!username.trim()) {
+        throw new Error("Veuillez entrer votre nom d'utilisateur");
+      }
+
+      if (!password.trim()) {
+        throw new Error("Veuillez entrer votre mot de passe");
       }
 
       const resultAction = await dispatch(loginAction({ username, password }));
 
       if (loginAction.fulfilled.match(resultAction)) {
-        console.log("Login successful, redirecting...");
         initialCheckDoneRef.current = true;
-        // La redirection est maintenant gérée par le composant via l'effet
         return resultAction.payload;
-      } else if (loginAction.rejected.match(resultAction)) {
-        // Propager l'erreur pour pouvoir la gérer dans le composant
-        throw new Error(resultAction.payload || "Échec de la connexion");
+      }
+
+      // Amélioration de la gestion des erreurs
+      if (loginAction.rejected.match(resultAction)) {
+        // Formatage des messages d'erreur pour l'utilisateur final
+        let errorMessage = resultAction.payload || "Échec de la connexion";
+
+        // Traduction des codes d'erreur en messages plus clairs
+        if (typeof errorMessage === 'string') {
+          if (errorMessage.includes("credentials")) {
+            errorMessage = "Identifiants incorrects. Veuillez vérifier votre nom d'utilisateur et mot de passe.";
+          } else if (errorMessage.includes("locked")) {
+            errorMessage = "Votre compte est temporairement verrouillé. Veuillez réessayer plus tard.";
+          } else if (errorMessage.includes("expired")) {
+            errorMessage = "Votre session a expiré. Veuillez vous reconnecter.";
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
       return resultAction;

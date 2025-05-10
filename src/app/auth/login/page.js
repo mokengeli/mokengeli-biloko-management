@@ -1,4 +1,4 @@
-// src/app/auth/login/page.js 
+// src/app/auth/login/page.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,12 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false); // État local pour le contrôle précis du bouton
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
   const { login, loading, error, clearError, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -32,14 +34,25 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
-  // Effacer les erreurs lorsque l'utilisateur modifie les champs
+  // Synchroniser l'erreur du store Redux avec l'état local
   useEffect(() => {
     if (error) {
-      clearError();
+      setFormError(error);
     }
-  }, [username, password, clearError, error]);
+  }, [error]);
 
-  // Synchroniser l'état local avec l'état global
+  // Effacer les erreurs seulement lorsque les valeurs changent
+  const handleUsernameChange = (e) => {
+    setUsername(e.target.value);
+    if (formError) setFormError(null);
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (formError) setFormError(null);
+  };
+
+  // Synchroniser l'état local avec l'état global du chargement
   useEffect(() => {
     setIsSubmitting(loading);
   }, [loading]);
@@ -47,10 +60,25 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validation côté client
+    if (!username.trim()) {
+      setFormError("Veuillez entrer votre nom d'utilisateur");
+      return;
+    }
+
+    if (!password.trim()) {
+      setFormError("Veuillez entrer votre mot de passe");
+      return;
+    }
+
     // Éviter les soumissions multiples
     if (isSubmitting) return;
 
     try {
+      // Effacer les erreurs précédentes
+      setFormError(null);
+      if (error) clearError();
+
       // Activer immédiatement l'état de soumission pour un feedback visuel instantané
       setIsSubmitting(true);
 
@@ -60,7 +88,22 @@ export default function LoginPage() {
       // La redirection est gérée par l'effet qui surveille isAuthenticated
     } catch (err) {
       console.error("Login error in component:", err);
-      // En cas d'erreur, désactiver l'état de soumission
+
+      // Personnaliser les messages d'erreur pour l'utilisateur
+      const errorMessage = err.message || "Une erreur est survenue lors de la connexion";
+
+      // Traduction des erreurs techniques en messages utilisateur
+      if (errorMessage.includes("Network Error")) {
+        setFormError("Impossible de se connecter au serveur. Veuillez vérifier votre connexion internet.");
+      } else if (errorMessage.includes("401")) {
+        setFormError("Nom d'utilisateur ou mot de passe incorrect");
+      } else if (errorMessage.includes("404")) {
+        setFormError("Le service d'authentification est indisponible. Veuillez réessayer plus tard.");
+      } else {
+        setFormError(errorMessage);
+      }
+
+      // Désactiver l'état de soumission
       setIsSubmitting(false);
     }
   };
@@ -92,9 +135,10 @@ export default function LoginPage() {
                     id="username"
                     placeholder="Entrez votre nom d'utilisateur"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={handleUsernameChange}
                     required
                     disabled={isSubmitting}
+                    aria-invalid={formError && !username ? "true" : "false"}
                   />
                 </div>
                 <div className="space-y-2">
@@ -106,26 +150,35 @@ export default function LoginPage() {
                     type="password"
                     placeholder="Entrez votre mot de passe"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={handlePasswordChange}
                     required
                     disabled={isSubmitting}
+                    aria-invalid={formError && !password ? "true" : "false"}
                   />
                 </div>
 
+                {/* Message d'erreur conditionnel sans réservation d'espace */}
                 <AnimatePresence>
-                  {error && (
+                  {formError && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="p-3 rounded bg-red-50 text-red-500 text-sm"
+                      key="error"
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ opacity: 1, height: "auto", marginTop: 8 }}
+                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      {error}
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{formError}</AlertDescription>
+                      </Alert>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                <motion.div whileTap={{ scale: isSubmitting ? 1 : 0.95 }}>
+                <motion.div
+                  whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
+                  className="mt-4" // Espacement fixe au lieu d'un espace conditionnel
+                >
                   <Button
                     type="submit"
                     className="w-full"

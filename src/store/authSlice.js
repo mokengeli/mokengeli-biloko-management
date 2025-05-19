@@ -14,11 +14,30 @@ export const login = createAsyncThunk(
       // S'assurer que l'animation de chargement est visible pendant au moins 500ms
       const elapsedTime = Date.now() - startTime;
       if (elapsedTime < 500) {
-        await new Promise(resolve => setTimeout(resolve, 500 - elapsedTime));
+        await new Promise((resolve) => setTimeout(resolve, 500 - elapsedTime));
       }
 
       return data;
     } catch (error) {
+      // Détection spécifique des erreurs 401 et 429 pour un traitement approprié
+      if (
+        error.response &&
+        (error.response.status === 401 || error.response.status === 429)
+      ) {
+        const statusCode = error.response.status;
+        let errorMessage = "Échec de la connexion";
+
+        if (statusCode === 401) {
+          errorMessage =
+            "Identifiants incorrects. Veuillez vérifier votre nom d'utilisateur et mot de passe.";
+        } else if (statusCode === 429) {
+          errorMessage =
+            "Trop de tentatives de connexion. Veuillez réessayer plus tard.";
+        }
+
+        return rejectWithValue(errorMessage);
+      }
+
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
@@ -48,6 +67,66 @@ export const getCurrentUser = createAsyncThunk(
   }
 );
 
+// Action asynchrone pour gérer la déconnexion
+export const logoutUser = createAsyncThunk(
+  "auth/logout",
+  async (_, { dispatch }) => {
+    try {
+      // 1. Indiquer que la déconnexion est en cours
+      dispatch(prepareLogout());
+
+      // 2. Appeler le service de déconnexion
+      await authService.logout();
+
+      // 3. Finaliser la déconnexion
+      dispatch(completeLogout());
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error during logout:", error);
+
+      // Même en cas d'erreur, terminer la déconnexion
+      dispatch(completeLogout());
+
+      return { success: false, error: error.message };
+    }
+  }
+);
+
+// Action spécifique pour gérer la déconnexion forcée (erreurs 401/429)
+export const forceLogout = createAsyncThunk(
+  "auth/forceLogout",
+  async (errorMessage, { dispatch }) => {
+    try {
+      // 1. Indiquer que la déconnexion est en cours
+      dispatch(prepareLogout());
+
+      // 2. Appeler notre API locale pour supprimer le cookie
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      // 3. Finaliser la déconnexion
+      dispatch(completeLogout());
+
+      // 4. Stocker le message d'erreur pour affichage après redirection
+      if (errorMessage && typeof window !== "undefined") {
+        localStorage.setItem("auth_error", errorMessage);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error during forced logout:", error);
+
+      // Même en cas d'erreur, terminer la déconnexion
+      dispatch(completeLogout());
+
+      return { success: false, error: error.message };
+    }
+  }
+);
+
 // État initial
 const initialState = {
   user: null,
@@ -56,6 +135,7 @@ const initialState = {
   permissions: [],
   loading: false,
   error: null,
+  isLoggingOut: false,
 };
 
 // Créer le slice
@@ -123,6 +203,27 @@ const authSlice = createSlice({
         state.roles = [];
         state.permissions = [];
         state.error = action.payload;
+      })
+      // Gestion des états pour logoutUser et forceLogout
+      .addCase(logoutUser.pending, (state) => {
+        state.isLoggingOut = true;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        // Déjà géré par completeLogout
+      })
+      .addCase(logoutUser.rejected, (state) => {
+        // Même en cas d'erreur, on finit la déconnexion
+        state.isLoggingOut = false;
+      })
+      .addCase(forceLogout.pending, (state) => {
+        state.isLoggingOut = true;
+      })
+      .addCase(forceLogout.fulfilled, (state) => {
+        // Déjà géré par completeLogout
+      })
+      .addCase(forceLogout.rejected, (state) => {
+        // Même en cas d'erreur, on finit la déconnexion
+        state.isLoggingOut = false;
       });
   },
 });

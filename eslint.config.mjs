@@ -9,6 +9,18 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [...compat.extends("next/core-web-vitals")];
+// On récupère la config de Next.js…
+const base = compat.extends("next/core-web-vitals");
 
-export default eslintConfig;
+export default [
+  // … puis on y greffe notre override
+  ...base,
+  {
+    rules: {
+      // Désactive l’erreur sur les caractères non échappés dans JSX
+      "react/no-unescaped-entities": "off",
+      // Optionnel : passe les hooks missing deps en warning
+      "react-hooks/exhaustive-deps": "warn",
+    },
+  },
+];

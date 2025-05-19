@@ -8,22 +8,27 @@ import {
   clearError as clearErrorAction,
   prepareLogout,
   completeLogout,
+  logoutUser,
+  forceLogout,
 } from "../store/authSlice";
-import authService from "@/services/authService";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { user, isAuthenticated, loading, error, roles, permissions } =
-    useSelector((state) => state.auth);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const {
+    user,
+    isAuthenticated,
+    loading,
+    error,
+    roles,
+    permissions,
+    isLoggingOut,
+  } = useSelector((state) => state.auth);
 
   // Référence pour suivre si un appel est en cours
   const authCheckInProgressRef = useRef(false);
   // Référence pour suivre si nous avons déjà fait une vérification initiale
   const initialCheckDoneRef = useRef(false);
-
-
 
   const loginUser = async (username, password) => {
     try {
@@ -49,11 +54,13 @@ export const useAuth = () => {
         let errorMessage = resultAction.payload || "Échec de la connexion";
 
         // Traduction des codes d'erreur en messages plus clairs
-        if (typeof errorMessage === 'string') {
+        if (typeof errorMessage === "string") {
           if (errorMessage.includes("credentials")) {
-            errorMessage = "Identifiants incorrects. Veuillez vérifier votre nom d'utilisateur et mot de passe.";
+            errorMessage =
+              "Identifiants incorrects. Veuillez vérifier votre nom d'utilisateur et mot de passe.";
           } else if (errorMessage.includes("locked")) {
-            errorMessage = "Votre compte est temporairement verrouillé. Veuillez réessayer plus tard.";
+            errorMessage =
+              "Votre compte est temporairement verrouillé. Veuillez réessayer plus tard.";
           } else if (errorMessage.includes("expired")) {
             errorMessage = "Votre session a expiré. Veuillez vous reconnecter.";
           }
@@ -69,41 +76,43 @@ export const useAuth = () => {
     }
   };
 
-  const logoutUser = async () => {
+  const logoutUserNormal = async () => {
     // Évite les déconnexions multiples simultanées
     if (isLoggingOut) return;
 
     try {
-      setIsLoggingOut(true);
+      // Utiliser l'action asynchrone pour gérer la déconnexion
+      await dispatch(logoutUser());
 
-      // 1. Indiquer que la déconnexion est en cours
-      dispatch(prepareLogout());
-
-      // 2. Appeler le service qui gère à la fois l'appel API backend et le nettoyage côté client
-      await authService.logout();
-
-      // 3. Réinitialiser l'état de vérification
+      // Réinitialiser l'état de vérification
       initialCheckDoneRef.current = false;
 
-      // 4. Rediriger vers la page de login
+      // Rediriger vers la page de login
       router.push("/auth/login");
-
-      // 5. Terminer la déconnexion après redirection
-      setTimeout(() => {
-        dispatch(completeLogout());
-      }, 100);
     } catch (error) {
       console.error("Error during logout:", error);
 
-      // Même en cas d'erreur, on continue avec la redirection et le nettoyage
+      // Même en cas d'erreur, rediriger vers la page de login
       router.push("/auth/login");
+    }
+  };
 
-      // Terminer la déconnexion
-      setTimeout(() => {
-        dispatch(completeLogout());
-      }, 100);
-    } finally {
-      setIsLoggingOut(false);
+  // Nouvelle fonction pour gérer les déconnexions forcées (401/429)
+  const handleForceLogout = async (errorMessage) => {
+    try {
+      // Utiliser l'action asynchrone pour gérer la déconnexion forcée
+      await dispatch(forceLogout(errorMessage));
+
+      // Réinitialiser l'état de vérification
+      initialCheckDoneRef.current = false;
+
+      // Rediriger vers la page de login
+      router.push("/auth/login");
+    } catch (error) {
+      console.error("Error during forced logout:", error);
+
+      // Même en cas d'erreur, rediriger vers la page de login
+      router.push("/auth/login");
     }
   };
 
@@ -133,9 +142,25 @@ export const useAuth = () => {
         return resultAction;
       } catch (err) {
         authCheckInProgressRef.current = false;
-        if (err.message === "Not authenticated") {
+
+        // Gérer spécifiquement les erreurs 401 et 429
+        if (
+          err.response &&
+          (err.response.status === 401 || err.response.status === 429)
+        ) {
+          let errorMessage =
+            "Votre session a expiré. Veuillez vous reconnecter.";
+
+          if (err.response.status === 429) {
+            errorMessage = "Trop de requêtes. Veuillez réessayer plus tard.";
+          }
+
+          // Déconnexion forcée avec message d'erreur
+          await handleForceLogout(errorMessage);
+        } else if (err.message === "Not authenticated") {
           router.push("/auth/login");
         }
+
         throw err;
       }
     },
@@ -155,7 +180,8 @@ export const useAuth = () => {
     error,
     isLoggingOut,
     login: loginUser,
-    logout: logoutUser,
+    logout: logoutUserNormal,
+    forceLogout: handleForceLogout,
     checkAuthStatus,
     clearError,
     // Exposer cette propriété pour que les composants puissent savoir

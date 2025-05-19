@@ -34,6 +34,16 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
+  // Vérifier si un message d'erreur a été stocké dans le localStorage après une redirection
+  useEffect(() => {
+    const storedError = localStorage.getItem("auth_error");
+    if (storedError) {
+      setFormError(storedError);
+      // Effacer le message d'erreur du localStorage après l'avoir récupéré
+      localStorage.removeItem("auth_error");
+    }
+  }, []);
+
   // Synchroniser l'erreur du store Redux avec l'état local
   useEffect(() => {
     if (error) {
@@ -90,15 +100,24 @@ export default function LoginPage() {
       console.error("Login error in component:", err);
 
       // Personnaliser les messages d'erreur pour l'utilisateur
-      const errorMessage = err.message || "Une erreur est survenue lors de la connexion";
+      const errorMessage =
+        err.message || "Une erreur est survenue lors de la connexion";
 
       // Traduction des erreurs techniques en messages utilisateur
       if (errorMessage.includes("Network Error")) {
-        setFormError("Impossible de se connecter au serveur. Veuillez vérifier votre connexion internet.");
+        setFormError(
+          "Impossible de se connecter au serveur. Veuillez vérifier votre connexion internet."
+        );
       } else if (errorMessage.includes("401")) {
         setFormError("Nom d'utilisateur ou mot de passe incorrect");
       } else if (errorMessage.includes("404")) {
-        setFormError("Le service d'authentification est indisponible. Veuillez réessayer plus tard.");
+        setFormError(
+          "Le service d'authentification est indisponible. Veuillez réessayer plus tard."
+        );
+      } else if (errorMessage.includes("429")) {
+        setFormError(
+          "Trop de tentatives de connexion. Veuillez réessayer plus tard."
+        );
       } else {
         setFormError(errorMessage);
       }

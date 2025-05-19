@@ -11,6 +11,8 @@ permissions:
 jobs:
   build-publish:
     runs-on: ubuntu-latest
+    environment:
+        name: general
     env:
       NEXT_PUBLIC_API_BASE_URL: ${{ secrets.API_BASE_URL }}
 

@@ -1,3 +1,5 @@
+# Accept a build-arg for the API base URL
+ARG API_BASE_URL=""
 # Étape 1 : builder
 FROM node:18-alpine AS builder
 WORKDIR /app
@@ -14,6 +16,8 @@ RUN npm run build
 FROM node:18-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Expose that arg as an env var during build
+ENV NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL}
 
 # Copier seulement ce qui est nécessaire en prod
 COPY --from=builder /app/package*.json ./

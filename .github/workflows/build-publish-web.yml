@@ -11,6 +11,8 @@ permissions:
 jobs:
   build-publish:
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_BASE_URL: ${{ secrets.API_BASE_URL }}
 
     steps:
       - name: Checkout code

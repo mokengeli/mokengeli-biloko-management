@@ -1,4 +1,4 @@
-# 1) Declare the build‐arg at top (global to all stages)
+# 1) Declare the build‐arg at top (global to all stages)-- to be set in the actions launcher
 ARG API_BASE_URL=""
 
 ###############################################################################

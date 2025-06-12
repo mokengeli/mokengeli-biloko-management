@@ -375,7 +375,6 @@ export default function ProductsPage() {
                     <TableRow>
                       <TableHead>Nom</TableHead>
                       <TableHead>Catégorie</TableHead>
-                      <TableHead>Unité de mesure</TableHead>
                       <TableHead>Stock actuel</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -394,9 +393,6 @@ export default function ProductsPage() {
                               <Skeleton className="h-5 w-24" />
                             </TableCell>
                             <TableCell>
-                              <Skeleton className="h-5 w-16" />
-                            </TableCell>
-                            <TableCell>
                               <Skeleton className="h-5 w-20" />
                             </TableCell>
                             <TableCell className="text-right">
@@ -412,7 +408,7 @@ export default function ProductsPage() {
                     ) : products.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={5}
+                          colSpan={4}
                           className="text-center py-8 text-gray-500"
                         >
                           Aucun produit trouvé.{" "}
@@ -434,7 +430,6 @@ export default function ProductsPage() {
                           <TableCell>
                             {product.category?.name || "Non catégorisé"}
                           </TableCell>
-                          <TableCell>{product.unitOfMeasure}</TableCell>
                           <TableCell>{getStockBadge(product)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">

@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   Pagination,
   PaginationContent,
@@ -37,7 +38,7 @@ import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
 import AddProductModal from "@/components/inventory/AddProductModal";
-import { Plus, Eye, Trash2 } from "lucide-react";
+import { Plus, Eye, Trash2, AlertCircle } from "lucide-react";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -69,6 +70,50 @@ export default function ProductsPage() {
     }
     const options = { year: "numeric", month: "short", day: "numeric" };
     return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Fonction pour obtenir le statut du stock
+  const getStockStatus = (quantity) => {
+    if (quantity <= 0) return "out-of-stock";
+    if (quantity < 10) return "low-stock";
+    return "in-stock";
+  };
+
+  // Fonction pour obtenir le badge de stock
+  const getStockBadge = (product) => {
+    const stockQuantity = product?.article?.quantity || 0;
+    const status = getStockStatus(stockQuantity);
+    const unitOfMeasure = product?.unitOfMeasure || "unités";
+
+    if (status === "out-of-stock") {
+      return (
+        <div className="flex items-center gap-1">
+          <Badge variant="destructive" className="text-xs">
+            Rupture
+          </Badge>
+          <span className="text-xs text-muted-foreground">
+            0 {unitOfMeasure}
+          </span>
+        </div>
+      );
+    }
+
+    if (status === "low-stock") {
+      return (
+        <div className="flex items-center gap-1">
+          <AlertCircle className="h-3 w-3 text-amber-500" />
+          <span className="text-xs font-medium text-amber-600">
+            {stockQuantity} {unitOfMeasure}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <span className="text-xs font-medium text-green-600">
+        {stockQuantity} {unitOfMeasure}
+      </span>
+    );
   };
 
   // Définir le restaurant par défaut lors du chargement initial
@@ -330,15 +375,8 @@ export default function ProductsPage() {
                     <TableRow>
                       <TableHead>Nom</TableHead>
                       <TableHead>Catégorie</TableHead>
-                      <TableHead className="hidden md:table-cell">
-                        Unité de mesure
-                      </TableHead>
-                      <TableHead className="hidden md:table-cell">
-                        Date de création
-                      </TableHead>
-                      <TableHead className="hidden md:table-cell">
-                        Dernière modification
-                      </TableHead>
+                      <TableHead>Unité de mesure</TableHead>
+                      <TableHead>Stock actuel</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -355,14 +393,11 @@ export default function ProductsPage() {
                             <TableCell>
                               <Skeleton className="h-5 w-24" />
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">
+                            <TableCell>
                               <Skeleton className="h-5 w-16" />
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              <Skeleton className="h-5 w-28" />
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              <Skeleton className="h-5 w-28" />
+                            <TableCell>
+                              <Skeleton className="h-5 w-20" />
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">
@@ -377,7 +412,7 @@ export default function ProductsPage() {
                     ) : products.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={5}
                           className="text-center py-8 text-gray-500"
                         >
                           Aucun produit trouvé.{" "}
@@ -399,15 +434,8 @@ export default function ProductsPage() {
                           <TableCell>
                             {product.category?.name || "Non catégorisé"}
                           </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {product.unitOfMeasure}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {formatDate(product.createdAt)}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {formatDate(product.updatedAt)}
-                          </TableCell>
+                          <TableCell>{product.unitOfMeasure}</TableCell>
+                          <TableCell>{getStockBadge(product)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">
                               <Button

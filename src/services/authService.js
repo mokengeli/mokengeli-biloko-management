@@ -9,7 +9,7 @@ const authService = {
       const response = await apiClient.post("/api/auth/login", {
         username,
         password,
-        platformType
+        platformType,
       });
 
       console.log("Login request completed successfully");
@@ -74,7 +74,22 @@ const authService = {
   // Fonction pour enregistrer un nouvel utilisateur
   registerUser: async (userData) => {
     try {
-      const response = await apiClient.post("/api/auth/register", userData);
+      // S'assurer que toutes les données requises sont présentes
+      const registrationData = {
+        tenantCode: userData.tenantCode,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        postName: userData.postName || null,
+        userName: userData.userName,
+        email: userData.email || null,
+        password: userData.password,
+        role: userData.role,
+      };
+
+      const response = await apiClient.post(
+        "/api/auth/register",
+        registrationData
+      );
       return response.data;
     } catch (error) {
       console.error(

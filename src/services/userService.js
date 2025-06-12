@@ -124,6 +124,21 @@ const userService = {
       throw error;
     }
   },
+  // Fonction pour vérifier la disponibilité d'un nom d'utilisateur
+  checkUsernameAvailability: async (username) => {
+    try {
+      const response = await apiClient.get("/api/user/username/check", {
+        params: { userName: username },
+      });
+      return response.data; // retourne un boolean
+    } catch (error) {
+      console.error(
+        "Error checking username availability:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
 };
 
 export default userService;

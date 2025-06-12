@@ -1,4 +1,4 @@
-// src/components/inventory/AddProductModal.js (version corrigée)
+// src/components/inventory/AddProductModal.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -23,6 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 import inventoryService from "@/services/inventoryService";
 
 export default function AddProductModal({
@@ -173,6 +175,16 @@ export default function AddProductModal({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Alert d'information */}
+        <Alert className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            Ce formulaire ajoute un nouveau type de produit dans l'inventaire
+            avec un stock initial de 0. Vous pourrez ensuite ajuster le stock
+            depuis la liste des produits.
+          </AlertDescription>
+        </Alert>
+
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -285,17 +297,26 @@ export default function AddProductModal({
 
               {/* Volume */}
               <div className="space-y-2">
-                <Label htmlFor="volume">Volume *</Label>
+                <Label htmlFor="volume">
+                  Volume *
+                  <span className="text-xs text-muted-foreground ml-1">
+                    (par unité)
+                  </span>
+                </Label>
                 <Input
                   id="volume"
                   type="number"
-                  placeholder="Ex: 100, 250, 1000..."
+                  step="0.01"
+                  placeholder="Ex: 0.5, 1.5, 100, 250..."
                   {...register("volume", {
                     required: "Le volume est requis",
                     min: { value: 0, message: "Le volume doit être positif" },
                     valueAsNumber: true,
                   })}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Quantité contenue dans une unité de ce produit
+                </p>
                 {errors.volume && (
                   <p className="text-sm text-red-500">
                     {errors.volume.message}

@@ -101,7 +101,7 @@ export function UserMenu({ showSubscriptionBadge = false }) {
               {user.firstName} {user.lastName.charAt(0)}.
             </span>
             <span className="text-xs text-muted-foreground">
-              {user.postName || user.tenantCode || ""}
+              {user.userName}
             </span>
           </div>
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -155,10 +155,11 @@ export function UserMenu({ showSubscriptionBadge = false }) {
                 <span className="text-xs text-muted-foreground">
                   Plan:{" "}
                   <span
-                    className={`font-medium ${user.subscriptionCode === "PREMIUM"
+                    className={`font-medium ${
+                      user.subscriptionCode === "PREMIUM"
                         ? "text-amber-500"
                         : ""
-                      }`}
+                    }`}
                   >
                     {user.subscriptionCode === "PREMIUM"
                       ? "Premium"

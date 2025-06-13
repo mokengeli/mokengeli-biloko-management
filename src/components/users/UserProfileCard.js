@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { RoleBadge } from "@/components/common/RoleBadge";
-import { Mail, Calendar, Building, Badge, Clock } from "lucide-react";
+import { Mail, Calendar, Building, Badge, Clock, Contact } from "lucide-react";
 
 /**
  * Composant réutilisable pour afficher le profil d'un utilisateur
@@ -79,8 +79,16 @@ export default function UserProfileCard({
           {user.employeeNumber && (
             <div className="flex items-center gap-2 text-sm py-1.5 border-t">
               <Badge className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">N° Employé:</span>
+              <span className="text-muted-foreground">Matricule:</span>
               <span className="font-medium ml-auto">{user.employeeNumber}</span>
+            </div>
+          )}
+
+          {user.userName && (
+            <div className="flex items-center gap-2 text-sm py-1.5 border-t">
+              <Contact className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">UserName:</span>
+              <span className="font-medium ml-auto">{user.userName}</span>
             </div>
           )}
 

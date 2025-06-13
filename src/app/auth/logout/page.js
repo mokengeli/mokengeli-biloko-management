@@ -1,28 +1,44 @@
-// src/app/auth/logout/page.js
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 
 export default function LogoutPage() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, isAuthenticated } = useAuth();
+  const [logoutAttempted, setLogoutAttempted] = useState(false);
 
   useEffect(() => {
+    // Si déjà déconnecté, rediriger immédiatement
+    if (!isAuthenticated && logoutAttempted) {
+      router.push("/auth/login");
+      return;
+    }
+
     const performLogout = async () => {
       try {
         await logout();
-        // La redirection est gérée dans la fonction logout
+        setLogoutAttempted(true);
+
+        // Redirection avec délai pour l'animation
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 1000);
       } catch (error) {
-        // En cas d'erreur, on redirige vers login
-        router.push("/auth/login");
+        console.error("Logout error:", error);
+        // Redirection même en cas d'erreur
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 500);
       }
     };
 
-    performLogout();
-  }, [logout, router]);
+    if (!logoutAttempted) {
+      performLogout();
+    }
+  }, [logout, router, isAuthenticated, logoutAttempted]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">

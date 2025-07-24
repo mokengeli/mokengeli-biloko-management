@@ -187,6 +187,7 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }) {
                 control={form.control}
                 name="email"
                 rules={{
+                  required: "L'email est requis",
                   pattern: {
                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                     message: "Adresse email invalide",
@@ -194,16 +195,16 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }) {
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email*</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="contact@restaurant.com (optionnel)"
+                        placeholder="contact@restaurant.com"
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Adresse email du restaurant (optionnel)
+                      Adresse email du restaurant
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

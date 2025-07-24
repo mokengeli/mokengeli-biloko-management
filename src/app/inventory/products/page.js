@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RestaurantSelector from "@/components/inventory/RestaurantSelector";
 import useInventory from "@/hooks/useInventory";
@@ -38,7 +39,7 @@ import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
 import AddProductModal from "@/components/inventory/AddProductModal";
-import { Plus, Eye, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Eye, Trash2, AlertCircle, Search, X } from "lucide-react";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -57,6 +58,8 @@ export default function ProductsPage() {
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
   // Vérifier si l'utilisateur a la permission d'éditer l'inventaire
@@ -126,15 +129,33 @@ export default function ProductsPage() {
   // Définir le callback de changement de restaurant
   const handleRestaurantChange = useCallback((value) => {
     setSelectedRestaurant(value);
+    // Réinitialiser la recherche lors du changement de restaurant
+    setSearchInput("");
+    setSearchTerm("");
   }, []);
 
-  // Charger les produits au montage du composant ou au changement de restaurant
+  // Charger les produits au montage du composant ou au changement de restaurant/recherche
   useEffect(() => {
     if (selectedRestaurant) {
-      // MISE À JOUR: Passer le code du tenant à fetchProducts
-      fetchProducts(selectedRestaurant, 0, 10);
+      // MISE À JOUR: Passer le code du tenant et le terme de recherche à fetchProducts
+      fetchProducts(selectedRestaurant, 0, 10, searchTerm);
     }
-  }, [fetchProducts, selectedRestaurant]);
+  }, [fetchProducts, selectedRestaurant, searchTerm]);
+
+  // Fonction pour gérer la recherche avec debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 500); // Attendre 500ms après que l'utilisateur arrête de taper
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Fonction pour réinitialiser la recherche
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+  };
 
   // Fonction pour gérer les actions non implémentées
   const handleNotImplementedAction = (action, itemName) => {
@@ -144,12 +165,12 @@ export default function ProductsPage() {
 
   // Fonction pour gérer le changement de page
   const handlePageChange = (page) => {
-    changeProductPage(selectedRestaurant, page);
+    changeProductPage(selectedRestaurant, page, searchTerm);
   };
 
   // Fonction pour gérer le changement de taille de page
   const handlePageSizeChange = (size) => {
-    changeProductPageSize(selectedRestaurant, size);
+    changeProductPageSize(selectedRestaurant, size, searchTerm);
   };
 
   // Fonction pour générer les items de pagination
@@ -342,6 +363,34 @@ export default function ProductsPage() {
           </div>
         </div>
 
+        {/* Barre de recherche - affichée seulement si un restaurant est sélectionné */}
+        {selectedRestaurant && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="relative max-w-md"
+          >
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Rechercher un produit..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {searchInput && (
+              <button
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Effacer la recherche"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </motion.div>
+        )}
+
         {!selectedRestaurant ? (
           <div className="p-8 text-center bg-gray-50 rounded-md border">
             <p className="text-gray-500">
@@ -362,7 +411,14 @@ export default function ProductsPage() {
                 <p className="text-red-500">{error}</p>
                 <Button
                   variant="outline"
-                  onClick={() => fetchProducts(selectedRestaurant)}
+                  onClick={() =>
+                    fetchProducts(
+                      selectedRestaurant,
+                      0,
+                      pagination.pageSize,
+                      searchTerm
+                    )
+                  }
                   className="mt-4"
                 >
                   Réessayer
@@ -411,10 +467,25 @@ export default function ProductsPage() {
                           colSpan={4}
                           className="text-center py-8 text-gray-500"
                         >
-                          Aucun produit trouvé.{" "}
-                          {canEditInventory
-                            ? "Commencez par en créer un !"
-                            : ""}
+                          {searchTerm ? (
+                            <>
+                              Aucun produit trouvé pour "{searchTerm}".
+                              <Button
+                                variant="link"
+                                onClick={handleClearSearch}
+                                className="ml-2"
+                              >
+                                Effacer la recherche
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              Aucun produit trouvé.{" "}
+                              {canEditInventory
+                                ? "Commencez par en créer un !"
+                                : ""}
+                            </>
+                          )}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -474,6 +545,11 @@ export default function ProductsPage() {
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       {/* Informations sur la pagination */}
                       <div className="text-sm text-muted-foreground">
+                        {searchTerm && (
+                          <span className="mr-2">
+                            Recherche: "{searchTerm}" -
+                          </span>
+                        )}
                         Affichage{" "}
                         {pagination.currentPage * pagination.pageSize + 1}-
                         {Math.min(
@@ -586,7 +662,8 @@ export default function ProductsPage() {
             fetchProducts(
               selectedRestaurant,
               pagination.currentPage,
-              pagination.pageSize
+              pagination.pageSize,
+              searchTerm
             );
           }}
         />

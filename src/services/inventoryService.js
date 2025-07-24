@@ -2,11 +2,17 @@
 import apiClient from "@/lib/api";
 
 const inventoryService = {
-  // Fonction pour récupérer toutes les catégories avec pagination
-  getAllCategories: async (page = 0, size = 10) => {
+  // Fonction pour récupérer toutes les catégories avec pagination et recherche
+  getAllCategories: async (page = 0, size = 10, search = "") => {
     try {
+      const params = { page, size };
+      // Ajouter le paramètre search seulement s'il n'est pas vide
+      if (search && search.trim()) {
+        params.search = search.trim();
+      }
+
       const response = await apiClient.get("/api/inventory/category/all", {
-        params: { page, size },
+        params,
       });
       return response.data;
     } catch (error) {

@@ -14,26 +14,35 @@ export const useInventory = () => {
     pageSize: 10,
   });
 
-  // Fonction pour récupérer les catégories avec pagination
-  const fetchCategories = useCallback(async (page = 0, size = 10) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await inventoryService.getAllCategories(page, size);
-      setCategories(data.content || []);
-      setPagination({
-        currentPage: data.number || 0,
-        totalPages: data.totalPages || 0,
-        totalElements: data.totalElements || 0,
-        pageSize: data.size || size,
-      });
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-      setError(err.message || "Erreur lors de la récupération des catégories");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Fonction pour récupérer les catégories avec pagination et recherche
+  const fetchCategories = useCallback(
+    async (page = 0, size = 10, search = "") => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await inventoryService.getAllCategories(
+          page,
+          size,
+          search
+        );
+        setCategories(data.content || []);
+        setPagination({
+          currentPage: data.number || 0,
+          totalPages: data.totalPages || 0,
+          totalElements: data.totalElements || 0,
+          pageSize: data.size || size,
+        });
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+        setError(
+          err.message || "Erreur lors de la récupération des catégories"
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   // Fonction pour récupérer les produits - MISE À JOUR pour utiliser le code du tenant et la pagination
   const fetchProducts = useCallback(async (tenantCode, page = 0, size = 10) => {

@@ -38,7 +38,6 @@ import useInventory from "@/hooks/useInventory";
 import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
-import AddProductModal from "@/components/inventory/AddProductModal";
 import { Plus, Eye, Trash2, AlertCircle, Search, X } from "lucide-react";
 
 export default function ProductsPage() {
@@ -56,7 +55,6 @@ export default function ProductsPage() {
   const { user, roles } = useAuth();
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -354,7 +352,13 @@ export default function ProductsPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                <Button onClick={() => setIsAddModalOpen(true)}>
+                <Button
+                  onClick={() =>
+                    router.push(
+                      `/inventory/products/new?tenant=${selectedRestaurant}`
+                    )
+                  }
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Ajouter un produit
                 </Button>
@@ -650,24 +654,6 @@ export default function ProductsPage() {
         onClose={() => setIsAlertModalOpen(false)}
         title={`Action non disponible : ${alertAction}`}
       />
-
-      {/* Modal d'ajout de produit */}
-      {selectedRestaurant && (
-        <AddProductModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          tenantCode={selectedRestaurant}
-          onSuccess={() => {
-            // Rafraîchir la liste des produits après création réussie
-            fetchProducts(
-              selectedRestaurant,
-              pagination.currentPage,
-              pagination.pageSize,
-              searchTerm
-            );
-          }}
-        />
-      )}
     </DashboardLayout>
   );
 }

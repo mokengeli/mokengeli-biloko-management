@@ -312,7 +312,13 @@ export default function DishesPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                <Button onClick={() => router.push("/menu/dishes/create")}>
+                <Button
+                  onClick={() =>
+                    router.push(
+                      `/menu/dishes/create?tenant=${selectedRestaurant}`
+                    )
+                  }
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Créer un plat
                 </Button>

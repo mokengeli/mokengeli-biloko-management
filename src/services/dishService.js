@@ -3,17 +3,22 @@ import apiClient from "@/lib/api";
 
 const dishService = {
   // Mise à jour pour prendre en compte la pagination
-  getAllDishes: async (tenantCode, page = 0, size = 10) => {
+  getAllDishes: async (tenantCode, page = 0, size = 10, search = "") => {
     try {
       if (!tenantCode) {
         throw new Error("Code de restaurant requis");
       }
+      const params = {
+        code: tenantCode,
+        page,
+        size,
+      };
+      // Ajouter le paramètre search seulement s'il n'est pas vide
+      if (search && search.trim()) {
+        params.search = search.trim();
+      }
       const response = await apiClient.get(`/api/order/dish`, {
-        params: {
-          code: tenantCode,
-          page,
-          size,
-        },
+        params,
       });
       return response.data;
     } catch (error) {

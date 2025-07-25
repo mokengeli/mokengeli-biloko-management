@@ -14,16 +14,20 @@ export const useMenu = () => {
   });
 
   // Fonction pour récupérer les catégories de menu d'un restaurant spécifique
-  // Mise à jour pour supporter la pagination
   const fetchCategories = useCallback(
-    async (tenantCode, page = 0, size = 10) => {
+    async (tenantCode, page = 0, size = 10, search = "") => {
       setLoading(true);
       setError(null);
       try {
         if (!tenantCode) {
           throw new Error("Code de restaurant requis");
         }
-        const data = await menuService.getAllCategories(tenantCode, page, size);
+        const data = await menuService.getAllCategories(
+          tenantCode,
+          page,
+          size,
+          search
+        );
         setCategories(data.content || []);
         setPagination({
           currentPage: data.number || 0,
@@ -42,15 +46,17 @@ export const useMenu = () => {
     },
     []
   );
-
   // Fonction pour récupérer toutes les catégories disponibles
-  // Mise à jour pour supporter la pagination
   const fetchAllAvailableCategories = useCallback(
-    async (page = 0, size = 10) => {
+    async (page = 0, size = 10, search = "") => {
       setLoading(true);
       setError(null);
       try {
-        const data = await menuService.getAllAvailableCategories(page, size);
+        const data = await menuService.getAllAvailableCategories(
+          page,
+          size,
+          search
+        );
         setCategories(data.content || []);
         setPagination({
           currentPage: data.number || 0,
@@ -78,15 +84,15 @@ export const useMenu = () => {
     pagination,
     fetchCategories,
     fetchAllAvailableCategories,
-    // Helpers pour la pagination
-    changePage: (tenantCode, newPage) =>
-      fetchCategories(tenantCode, newPage, pagination.pageSize),
-    changePageSize: (tenantCode, newSize) =>
-      fetchCategories(tenantCode, 0, newSize),
-    changeAllCategoriesPage: (newPage) =>
-      fetchAllAvailableCategories(newPage, pagination.pageSize),
-    changeAllCategoriesPageSize: (newSize) =>
-      fetchAllAvailableCategories(0, newSize),
+    // Helpers pour la pagination avec search
+    changePage: (tenantCode, newPage, search = "") =>
+      fetchCategories(tenantCode, newPage, pagination.pageSize, search),
+    changePageSize: (tenantCode, newSize, search = "") =>
+      fetchCategories(tenantCode, 0, newSize, search),
+    changeAllCategoriesPage: (newPage, search = "") =>
+      fetchAllAvailableCategories(newPage, pagination.pageSize, search),
+    changeAllCategoriesPageSize: (newSize, search = "") =>
+      fetchAllAvailableCategories(0, newSize, search),
   };
 };
 

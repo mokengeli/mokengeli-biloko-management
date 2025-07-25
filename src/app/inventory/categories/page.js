@@ -30,12 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import useInventory from "@/hooks/useInventory";
 import usePermissions from "@/hooks/usePermissions";
 import AddCategoryModal from "@/components/inventory/AddCategoryModal";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, X } from "lucide-react";
 
 export default function CategoriesPage() {
   const {
@@ -51,6 +52,8 @@ export default function CategoriesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
   // Vérifier si l'utilisateur a la permission d'éditer l'inventaire
   const canEditInventory = hasPermission("EDIT_INVENTORY");
@@ -64,15 +67,40 @@ export default function CategoriesPage() {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Charger les catégories au montage du composant
+  // Charger les catégories au montage du composant et quand la recherche change
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    fetchCategories(0, 10, searchTerm);
+  }, [fetchCategories, searchTerm]);
+
+  // Fonction pour gérer la recherche avec debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 500); // Attendre 500ms après que l'utilisateur arrête de taper
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Fonction pour réinitialiser la recherche
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+  };
 
   // Fonction pour gérer les actions non implémentées
   const handleNotImplementedAction = (action, itemName) => {
     setAlertAction(`${action} ${itemName}`);
     setIsAlertModalOpen(true);
+  };
+
+  // Fonction pour gérer le changement de page
+  const handlePageChange = (page) => {
+    changePage(page, searchTerm);
+  };
+
+  // Fonction pour gérer le changement de taille de page
+  const handlePageSizeChange = (size) => {
+    changePageSize(size, searchTerm);
   };
 
   // Fonction pour générer les items de pagination
@@ -87,7 +115,7 @@ export default function CategoriesPage() {
           <PaginationItem key={i}>
             <PaginationLink
               isActive={currentPage === i}
-              onClick={() => changePage(i)}
+              onClick={() => handlePageChange(i)}
             >
               {i + 1}
             </PaginationLink>
@@ -102,7 +130,7 @@ export default function CategoriesPage() {
       <PaginationItem key={0}>
         <PaginationLink
           isActive={currentPage === 0}
-          onClick={() => changePage(0)}
+          onClick={() => handlePageChange(0)}
         >
           1
         </PaginationLink>
@@ -124,7 +152,7 @@ export default function CategoriesPage() {
             <PaginationItem key={pageNum}>
               <PaginationLink
                 isActive={currentPage === pageNum}
-                onClick={() => changePage(pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum + 1}
               </PaginationLink>
@@ -161,7 +189,7 @@ export default function CategoriesPage() {
             <PaginationItem key={pageNum}>
               <PaginationLink
                 isActive={currentPage === pageNum}
-                onClick={() => changePage(pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum + 1}
               </PaginationLink>
@@ -188,7 +216,7 @@ export default function CategoriesPage() {
             <PaginationItem key={pageNum}>
               <PaginationLink
                 isActive={currentPage === pageNum}
-                onClick={() => changePage(pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum + 1}
               </PaginationLink>
@@ -213,7 +241,7 @@ export default function CategoriesPage() {
         <PaginationItem key={totalPages - 1}>
           <PaginationLink
             isActive={currentPage === totalPages - 1}
-            onClick={() => changePage(totalPages - 1)}
+            onClick={() => handlePageChange(totalPages - 1)}
           >
             {totalPages}
           </PaginationLink>
@@ -250,6 +278,32 @@ export default function CategoriesPage() {
           )}
         </div>
 
+        {/* Barre de recherche */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="relative max-w-md"
+        >
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Rechercher une catégorie..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="pl-10 pr-10"
+          />
+          {searchInput && (
+            <button
+              onClick={handleClearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Effacer la recherche"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -261,7 +315,9 @@ export default function CategoriesPage() {
               <p className="text-red-500">{error}</p>
               <Button
                 variant="outline"
-                onClick={fetchCategories}
+                onClick={() =>
+                  fetchCategories(0, pagination.pageSize, searchTerm)
+                }
                 className="mt-4"
               >
                 Réessayer
@@ -316,8 +372,25 @@ export default function CategoriesPage() {
                         colSpan={canEditInventory ? 4 : 3}
                         className="text-center py-8 text-gray-500"
                       >
-                        Aucune catégorie trouvée.{" "}
-                        {canEditInventory ? "Commencez par en créer une !" : ""}
+                        {searchTerm ? (
+                          <>
+                            Aucune catégorie trouvée pour "{searchTerm}".
+                            <Button
+                              variant="link"
+                              onClick={handleClearSearch}
+                              className="ml-2"
+                            >
+                              Effacer la recherche
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            Aucune catégorie trouvée.{" "}
+                            {canEditInventory
+                              ? "Commencez par en créer une !"
+                              : ""}
+                          </>
+                        )}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -370,12 +443,16 @@ export default function CategoriesPage() {
               </Table>
 
               {/* Pagination avec les composants shadcn */}
-              {/* Pagination avec les composants shadcn */}
               {!loading && categories.length > 0 && (
                 <div className="border-t py-4 px-6">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     {/* Informations sur la pagination */}
                     <div className="text-sm text-muted-foreground">
+                      {searchTerm && (
+                        <span className="mr-2">
+                          Recherche: "{searchTerm}" -
+                        </span>
+                      )}
                       Affichage{" "}
                       {pagination.currentPage * pagination.pageSize + 1}-
                       {Math.min(
@@ -394,7 +471,7 @@ export default function CategoriesPage() {
                         <Select
                           value={pagination.pageSize.toString()}
                           onValueChange={(value) =>
-                            changePageSize(parseInt(value, 10))
+                            handlePageSizeChange(parseInt(value, 10))
                           }
                         >
                           <SelectTrigger className="w-[70px] h-8">
@@ -416,7 +493,7 @@ export default function CategoriesPage() {
                           <PaginationItem>
                             <PaginationPrevious
                               onClick={() =>
-                                changePage(pagination.currentPage - 1)
+                                handlePageChange(pagination.currentPage - 1)
                               }
                               disabled={pagination.currentPage === 0}
                               aria-disabled={pagination.currentPage === 0}
@@ -434,7 +511,7 @@ export default function CategoriesPage() {
                           <PaginationItem>
                             <PaginationNext
                               onClick={() =>
-                                changePage(pagination.currentPage + 1)
+                                handlePageChange(pagination.currentPage + 1)
                               }
                               disabled={
                                 pagination.currentPage >=
@@ -476,7 +553,7 @@ export default function CategoriesPage() {
           onClose={() => setIsAddModalOpen(false)}
           onSuccess={() => {
             // Rafraîchir la liste des catégories après création réussie
-            fetchCategories();
+            fetchCategories(0, pagination.pageSize, searchTerm);
           }}
         />
       )}

@@ -38,7 +38,6 @@ import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
 import AddMenuCategoryModal from "@/components/menu/AddMenuCategoryModal";
-import AssignCategoryModal from "@/components/menu/AssignCategoryModal";
 import { Plus, Pencil, Trash2, Link, Search, X } from "lucide-react";
 
 export default function MenuCategoriesPage() {
@@ -57,7 +56,6 @@ export default function MenuCategoriesPage() {
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -123,6 +121,13 @@ export default function MenuCategoriesPage() {
   // Fonction pour gérer le changement de taille de page
   const handlePageSizeChange = (size) => {
     changePageSize(selectedRestaurant, size, searchTerm);
+  };
+
+  // Fonction pour naviguer vers la page d'assignation
+  const handleAssignCategory = () => {
+    if (selectedRestaurant) {
+      router.push(`/menu/categories/assign?tenant=${selectedRestaurant}`);
+    }
   };
 
   // Fonction pour générer les items de pagination
@@ -315,10 +320,7 @@ export default function MenuCategoriesPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.2 }}
                   >
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsAssignModalOpen(true)}
-                    >
+                    <Button variant="outline" onClick={handleAssignCategory}>
                       <Link className="mr-2 h-4 w-4" />
                       Assigner une catégorie
                     </Button>
@@ -615,24 +617,6 @@ export default function MenuCategoriesPage() {
           tenantCode={selectedRestaurant}
           onSuccess={() => {
             // Rafraîchir la liste des catégories après création réussie
-            fetchCategories(
-              selectedRestaurant,
-              pagination.currentPage,
-              pagination.pageSize,
-              searchTerm
-            );
-          }}
-        />
-      )}
-
-      {/* Modal d'assignation de catégorie */}
-      {selectedRestaurant && (
-        <AssignCategoryModal
-          isOpen={isAssignModalOpen}
-          onClose={() => setIsAssignModalOpen(false)}
-          tenantCode={selectedRestaurant}
-          onSuccess={() => {
-            // Rafraîchir la liste des catégories après assignation réussie
             fetchCategories(
               selectedRestaurant,
               pagination.currentPage,

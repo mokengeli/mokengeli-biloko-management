@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RestaurantSelector from "@/components/inventory/RestaurantSelector";
 import useMenu from "@/hooks/useMenu";
@@ -38,7 +39,7 @@ import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
 import AddMenuCategoryModal from "@/components/menu/AddMenuCategoryModal";
 import AssignCategoryModal from "@/components/menu/AssignCategoryModal";
-import { Plus, Pencil, Trash2, Link } from "lucide-react";
+import { Plus, Pencil, Trash2, Link, Search, X } from "lucide-react";
 
 export default function MenuCategoriesPage() {
   const router = useRouter();
@@ -58,6 +59,8 @@ export default function MenuCategoriesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
   // Vérifier si l'utilisateur a les permissions nécessaires
@@ -79,15 +82,32 @@ export default function MenuCategoriesPage() {
   // Définir le callback de changement de restaurant
   const handleRestaurantChange = useCallback((value) => {
     setSelectedRestaurant(value);
+    // Réinitialiser la recherche lors du changement de restaurant
+    setSearchInput("");
+    setSearchTerm("");
   }, []);
 
-  // Charger les catégories au changement de restaurant
+  // Charger les catégories au changement de restaurant ou de recherche
   useEffect(() => {
     if (selectedRestaurant) {
-      // Mise à jour: Utilisation de fetchCategories avec pagination
-      fetchCategories(selectedRestaurant, 0, 10);
+      fetchCategories(selectedRestaurant, 0, 10, searchTerm);
     }
-  }, [fetchCategories, selectedRestaurant]);
+  }, [fetchCategories, selectedRestaurant, searchTerm]);
+
+  // Fonction pour gérer la recherche avec debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 500); // Attendre 500ms après que l'utilisateur arrête de taper
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Fonction pour réinitialiser la recherche
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+  };
 
   // Fonction pour gérer les actions non implémentées
   const handleNotImplementedAction = (action, itemName) => {
@@ -97,12 +117,12 @@ export default function MenuCategoriesPage() {
 
   // Fonction pour gérer le changement de page
   const handlePageChange = (page) => {
-    changePage(selectedRestaurant, page);
+    changePage(selectedRestaurant, page, searchTerm);
   };
 
   // Fonction pour gérer le changement de taille de page
   const handlePageSizeChange = (size) => {
-    changePageSize(selectedRestaurant, size);
+    changePageSize(selectedRestaurant, size, searchTerm);
   };
 
   // Fonction pour générer les items de pagination
@@ -318,212 +338,272 @@ export default function MenuCategoriesPage() {
             </p>
           </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-md border"
-          >
-            {error ? (
-              <div className="p-8 text-center">
-                <p className="text-red-500">{error}</p>
-                <Button
-                  variant="outline"
-                  onClick={() => fetchCategories(selectedRestaurant)}
-                  className="mt-4"
+          <>
+            {/* Barre de recherche */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="relative max-w-md"
+            >
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Rechercher une catégorie..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchInput && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Effacer la recherche"
                 >
-                  Réessayer
-                </Button>
-              </div>
-            ) : (
-              <div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nom</TableHead>
-                      {canEditCategory && (
-                        <TableHead className="text-right">Actions</TableHead>
-                      )}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      // Squelettes de chargement
-                      Array(5)
-                        .fill(0)
-                        .map((_, index) => (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <Skeleton className="h-5 w-40" />
-                            </TableCell>
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="rounded-md border"
+            >
+              {error ? (
+                <div className="p-8 text-center">
+                  <p className="text-red-500">{error}</p>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      fetchCategories(
+                        selectedRestaurant,
+                        0,
+                        pagination.pageSize,
+                        searchTerm
+                      )
+                    }
+                    className="mt-4"
+                  >
+                    Réessayer
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nom</TableHead>
+                        {canEditCategory && (
+                          <TableHead className="text-right">Actions</TableHead>
+                        )}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        // Squelettes de chargement
+                        Array(5)
+                          .fill(0)
+                          .map((_, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <Skeleton className="h-5 w-40" />
+                              </TableCell>
+                              {canEditCategory && (
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end space-x-2">
+                                    <Skeleton className="h-8 w-8 rounded-md" />
+                                    <Skeleton className="h-8 w-8 rounded-md" />
+                                  </div>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          ))
+                      ) : categories.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={canEditCategory ? 2 : 1}
+                            className="text-center py-8 text-gray-500"
+                          >
+                            {searchTerm ? (
+                              <>
+                                Aucune catégorie trouvée pour "{searchTerm}".
+                                <Button
+                                  variant="link"
+                                  onClick={handleClearSearch}
+                                  className="ml-2"
+                                >
+                                  Effacer la recherche
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                Aucune catégorie de menu trouvée.{" "}
+                                {canCreateCategory
+                                  ? "Commencez par en créer une !"
+                                  : ""}
+                                {!canCreateCategory && canAssignCategory
+                                  ? "Commencez par assigner une catégorie existante !"
+                                  : ""}
+                              </>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        // Données réelles
+                        categories.map((category) => (
+                          <TableRow
+                            key={category.id}
+                            className="hover:bg-muted/50"
+                          >
+                            <TableCell>{category.name}</TableCell>
                             {canEditCategory && (
                               <TableCell className="text-right">
                                 <div className="flex justify-end space-x-2">
-                                  <Skeleton className="h-8 w-8 rounded-md" />
-                                  <Skeleton className="h-8 w-8 rounded-md" />
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-blue-500"
+                                    onClick={() =>
+                                      handleNotImplementedAction(
+                                        "modifier",
+                                        `la catégorie "${category.name}"`
+                                      )
+                                    }
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-red-500"
+                                    onClick={() =>
+                                      handleNotImplementedAction(
+                                        "supprimer",
+                                        `la catégorie "${category.name}"`
+                                      )
+                                    }
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </TableCell>
                             )}
                           </TableRow>
                         ))
-                    ) : categories.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={canEditCategory ? 2 : 1}
-                          className="text-center py-8 text-gray-500"
-                        >
-                          Aucune catégorie de menu trouvée.{" "}
-                          {canCreateCategory
-                            ? "Commencez par en créer une !"
-                            : ""}
-                          {!canCreateCategory && canAssignCategory
-                            ? "Commencez par assigner une catégorie existante !"
-                            : ""}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      // Données réelles
-                      categories.map((category) => (
-                        <TableRow
-                          key={category.id}
-                          className="hover:bg-muted/50"
-                        >
-                          <TableCell>{category.name}</TableCell>
-                          {canEditCategory && (
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-8 w-8 text-blue-500"
-                                  onClick={() =>
-                                    handleNotImplementedAction(
-                                      "modifier",
-                                      `la catégorie "${category.name}"`
-                                    )
-                                  }
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-8 w-8 text-red-500"
-                                  onClick={() =>
-                                    handleNotImplementedAction(
-                                      "supprimer",
-                                      `la catégorie "${category.name}"`
-                                    )
-                                  }
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                      )}
+                    </TableBody>
+                  </Table>
+
+                  {/* Pagination */}
+                  {!loading && categories.length > 0 && (
+                    <div className="border-t py-4 px-6">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        {/* Informations sur la pagination */}
+                        <div className="text-sm text-muted-foreground">
+                          {searchTerm && (
+                            <span className="mr-2">
+                              Recherche: "{searchTerm}" -
+                            </span>
                           )}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-
-                {/* Pagination */}
-                {!loading && categories.length > 0 && (
-                  <div className="border-t py-4 px-6">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                      {/* Informations sur la pagination */}
-                      <div className="text-sm text-muted-foreground">
-                        Affichage{" "}
-                        {pagination.currentPage * pagination.pageSize + 1}-
-                        {Math.min(
-                          (pagination.currentPage + 1) * pagination.pageSize,
-                          pagination.totalElements
-                        )}{" "}
-                        sur {pagination.totalElements} éléments
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-center gap-4">
-                        {/* Sélecteur du nombre d'éléments par page */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            Éléments par page:
-                          </span>
-                          <Select
-                            value={pagination.pageSize.toString()}
-                            onValueChange={(value) =>
-                              handlePageSizeChange(parseInt(value, 10))
-                            }
-                          >
-                            <SelectTrigger className="w-[70px] h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[5, 10, 25, 50].map((size) => (
-                                <SelectItem key={size} value={size.toString()}>
-                                  {size}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          Affichage{" "}
+                          {pagination.currentPage * pagination.pageSize + 1}-
+                          {Math.min(
+                            (pagination.currentPage + 1) * pagination.pageSize,
+                            pagination.totalElements
+                          )}{" "}
+                          sur {pagination.totalElements} éléments
                         </div>
 
-                        {/* Composant de pagination de shadcn */}
-                        <Pagination className="mt-0">
-                          <PaginationContent>
-                            <PaginationItem>
-                              <PaginationPrevious
-                                onClick={() =>
-                                  handlePageChange(pagination.currentPage - 1)
-                                }
-                                disabled={pagination.currentPage === 0}
-                                aria-disabled={pagination.currentPage === 0}
-                                tabIndex={pagination.currentPage === 0 ? -1 : 0}
-                                className={
-                                  pagination.currentPage === 0
-                                    ? "pointer-events-none opacity-50"
-                                    : ""
-                                }
-                              />
-                            </PaginationItem>
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                          {/* Sélecteur du nombre d'éléments par page */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">
+                              Éléments par page:
+                            </span>
+                            <Select
+                              value={pagination.pageSize.toString()}
+                              onValueChange={(value) =>
+                                handlePageSizeChange(parseInt(value, 10))
+                              }
+                            >
+                              <SelectTrigger className="w-[70px] h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[5, 10, 25, 50].map((size) => (
+                                  <SelectItem
+                                    key={size}
+                                    value={size.toString()}
+                                  >
+                                    {size}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
 
-                            {generatePaginationItems()}
+                          {/* Composant de pagination de shadcn */}
+                          <Pagination className="mt-0">
+                            <PaginationContent>
+                              <PaginationItem>
+                                <PaginationPrevious
+                                  onClick={() =>
+                                    handlePageChange(pagination.currentPage - 1)
+                                  }
+                                  disabled={pagination.currentPage === 0}
+                                  aria-disabled={pagination.currentPage === 0}
+                                  tabIndex={
+                                    pagination.currentPage === 0 ? -1 : 0
+                                  }
+                                  className={
+                                    pagination.currentPage === 0
+                                      ? "pointer-events-none opacity-50"
+                                      : ""
+                                  }
+                                />
+                              </PaginationItem>
 
-                            <PaginationItem>
-                              <PaginationNext
-                                onClick={() =>
-                                  handlePageChange(pagination.currentPage + 1)
-                                }
-                                disabled={
-                                  pagination.currentPage >=
-                                  pagination.totalPages - 1
-                                }
-                                aria-disabled={
-                                  pagination.currentPage >=
-                                  pagination.totalPages - 1
-                                }
-                                tabIndex={
-                                  pagination.currentPage >=
-                                  pagination.totalPages - 1
-                                    ? -1
-                                    : 0
-                                }
-                                className={
-                                  pagination.currentPage >=
-                                  pagination.totalPages - 1
-                                    ? "pointer-events-none opacity-50"
-                                    : ""
-                                }
-                              />
-                            </PaginationItem>
-                          </PaginationContent>
-                        </Pagination>
+                              {generatePaginationItems()}
+
+                              <PaginationItem>
+                                <PaginationNext
+                                  onClick={() =>
+                                    handlePageChange(pagination.currentPage + 1)
+                                  }
+                                  disabled={
+                                    pagination.currentPage >=
+                                    pagination.totalPages - 1
+                                  }
+                                  aria-disabled={
+                                    pagination.currentPage >=
+                                    pagination.totalPages - 1
+                                  }
+                                  tabIndex={
+                                    pagination.currentPage >=
+                                    pagination.totalPages - 1
+                                      ? -1
+                                      : 0
+                                  }
+                                  className={
+                                    pagination.currentPage >=
+                                    pagination.totalPages - 1
+                                      ? "pointer-events-none opacity-50"
+                                      : ""
+                                  }
+                                />
+                              </PaginationItem>
+                            </PaginationContent>
+                          </Pagination>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </motion.div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </>
         )}
       </div>
 
@@ -538,7 +618,8 @@ export default function MenuCategoriesPage() {
             fetchCategories(
               selectedRestaurant,
               pagination.currentPage,
-              pagination.pageSize
+              pagination.pageSize,
+              searchTerm
             );
           }}
         />
@@ -555,7 +636,8 @@ export default function MenuCategoriesPage() {
             fetchCategories(
               selectedRestaurant,
               pagination.currentPage,
-              pagination.pageSize
+              pagination.pageSize,
+              searchTerm
             );
           }}
         />

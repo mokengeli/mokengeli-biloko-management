@@ -30,13 +30,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import useTenants from "@/hooks/useTenants";
 import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
 import CreateTenantModal from "@/components/tenants/CreateTenantModal";
-import { Plus, Eye, Trash2, Building } from "lucide-react";
+import { Plus, Eye, Trash2, Building, Search, X } from "lucide-react";
 
 export default function RestaurantsPage() {
   const router = useRouter();
@@ -54,6 +55,8 @@ export default function RestaurantsPage() {
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
   // Vérifier si l'utilisateur a la permission de voir et gérer les restaurants
@@ -84,14 +87,39 @@ export default function RestaurantsPage() {
 
   // Fonction pour gérer le succès de la création d'un restaurant
   const handleCreateSuccess = useCallback(() => {
-    fetchTenants(0, pagination.pageSize);
+    fetchTenants(0, pagination.pageSize, searchTerm);
     setIsCreateModalOpen(false);
-  }, [fetchTenants, pagination.pageSize]);
+  }, [fetchTenants, pagination.pageSize, searchTerm]);
 
-  // Charger les restaurants au montage du composant
+  // Charger les restaurants au montage du composant et quand la recherche change
   useEffect(() => {
-    fetchTenants(0, 10);
-  }, [fetchTenants]);
+    fetchTenants(0, 10, searchTerm);
+  }, [fetchTenants, searchTerm]);
+
+  // Fonction pour gérer la recherche avec debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 500); // Attendre 500ms après que l'utilisateur arrête de taper
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Fonction pour réinitialiser la recherche
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+  };
+
+  // Fonction pour gérer le changement de page
+  const handlePageChange = (page) => {
+    changePage(page, searchTerm);
+  };
+
+  // Fonction pour gérer le changement de taille de page
+  const handlePageSizeChange = (size) => {
+    changePageSize(size, searchTerm);
+  };
 
   // Fonction pour générer les items de pagination
   const generatePaginationItems = useCallback(() => {
@@ -105,7 +133,7 @@ export default function RestaurantsPage() {
           <PaginationItem key={i}>
             <PaginationLink
               isActive={currentPage === i}
-              onClick={() => changePage(i)}
+              onClick={() => handlePageChange(i)}
             >
               {i + 1}
             </PaginationLink>
@@ -120,7 +148,7 @@ export default function RestaurantsPage() {
       <PaginationItem key={0}>
         <PaginationLink
           isActive={currentPage === 0}
-          onClick={() => changePage(0)}
+          onClick={() => handlePageChange(0)}
         >
           1
         </PaginationLink>
@@ -142,7 +170,7 @@ export default function RestaurantsPage() {
             <PaginationItem key={pageNum}>
               <PaginationLink
                 isActive={currentPage === pageNum}
-                onClick={() => changePage(pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum + 1}
               </PaginationLink>
@@ -179,7 +207,7 @@ export default function RestaurantsPage() {
             <PaginationItem key={pageNum}>
               <PaginationLink
                 isActive={currentPage === pageNum}
-                onClick={() => changePage(pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum + 1}
               </PaginationLink>
@@ -206,7 +234,7 @@ export default function RestaurantsPage() {
             <PaginationItem key={pageNum}>
               <PaginationLink
                 isActive={currentPage === pageNum}
-                onClick={() => changePage(pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum + 1}
               </PaginationLink>
@@ -231,7 +259,7 @@ export default function RestaurantsPage() {
         <PaginationItem key={totalPages - 1}>
           <PaginationLink
             isActive={currentPage === totalPages - 1}
-            onClick={() => changePage(totalPages - 1)}
+            onClick={() => handlePageChange(totalPages - 1)}
           >
             {totalPages}
           </PaginationLink>
@@ -240,7 +268,7 @@ export default function RestaurantsPage() {
     }
 
     return items;
-  }, [pagination, changePage]);
+  }, [pagination, handlePageChange]);
 
   // Si l'utilisateur n'a pas la permission de voir les restaurants, rediriger
   if (!canViewTenants) {
@@ -275,6 +303,32 @@ export default function RestaurantsPage() {
             )}
           </div>
         </div>
+
+        {/* Barre de recherche */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="relative max-w-md"
+        >
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Rechercher un restaurant..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="pl-10 pr-10"
+          />
+          {searchInput && (
+            <button
+              onClick={handleClearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Effacer la recherche"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -342,8 +396,25 @@ export default function RestaurantsPage() {
                         colSpan={6}
                         className="text-center py-8 text-gray-500"
                       >
-                        Aucun restaurant trouvé.
-                        {canCreateTenant ? " Commencez par en créer un !" : ""}
+                        {searchTerm ? (
+                          <>
+                            Aucun restaurant trouvé pour "{searchTerm}".
+                            <Button
+                              variant="link"
+                              onClick={handleClearSearch}
+                              className="ml-2"
+                            >
+                              Effacer la recherche
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            Aucun restaurant trouvé.
+                            {canCreateTenant
+                              ? " Commencez par en créer un !"
+                              : ""}
+                          </>
+                        )}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -400,6 +471,11 @@ export default function RestaurantsPage() {
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     {/* Informations sur la pagination */}
                     <div className="text-sm text-muted-foreground">
+                      {searchTerm && (
+                        <span className="mr-2">
+                          Recherche: "{searchTerm}" -
+                        </span>
+                      )}
                       Affichage{" "}
                       {pagination.currentPage * pagination.pageSize + 1}-
                       {Math.min(
@@ -418,7 +494,7 @@ export default function RestaurantsPage() {
                         <Select
                           value={pagination.pageSize.toString()}
                           onValueChange={(value) =>
-                            changePageSize(parseInt(value, 10))
+                            handlePageSizeChange(parseInt(value, 10))
                           }
                         >
                           <SelectTrigger className="w-[70px] h-8">
@@ -440,7 +516,7 @@ export default function RestaurantsPage() {
                           <PaginationItem>
                             <PaginationPrevious
                               onClick={() =>
-                                changePage(pagination.currentPage - 1)
+                                handlePageChange(pagination.currentPage - 1)
                               }
                               disabled={pagination.currentPage === 0}
                               aria-disabled={pagination.currentPage === 0}
@@ -458,7 +534,7 @@ export default function RestaurantsPage() {
                           <PaginationItem>
                             <PaginationNext
                               onClick={() =>
-                                changePage(pagination.currentPage + 1)
+                                handlePageChange(pagination.currentPage + 1)
                               }
                               disabled={
                                 pagination.currentPage >=

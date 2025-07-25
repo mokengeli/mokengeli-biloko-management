@@ -3,19 +3,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -48,6 +41,7 @@ export default function NewProductPage() {
   const [units, setUnits] = useState([]);
   const [loadingUnits, setLoadingUnits] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedUnit, setSelectedUnit] = useState("");
   const [tenant, setTenant] = useState(null);
 
   const isAdmin = roles.includes("ROLE_ADMIN");
@@ -60,7 +54,18 @@ export default function NewProductPage() {
     currentPage: 0,
     totalPages: 0,
     totalElements: 0,
-    pageSize: 6, // Afficher 6 catégories par page
+    pageSize: 6,
+  });
+
+  // Pagination et recherche pour les unités de mesure
+  const [unitPage, setUnitPage] = useState(0);
+  const [unitSearch, setUnitSearch] = useState("");
+  const [unitSearchInput, setUnitSearchInput] = useState("");
+  const [unitPagination, setUnitPagination] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    pageSize: 8,
   });
 
   const canEditInventory = hasPermission("EDIT_INVENTORY");
@@ -72,17 +77,12 @@ export default function NewProductPage() {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors },
-    setValue,
-    watch,
   } = useForm({
     defaultValues: {
       name: "",
       description: "",
-      unitOfMeasure: "",
       volume: "",
-      categoryId: null,
     },
   });
 
@@ -116,15 +116,29 @@ export default function NewProductPage() {
     fetchTenant();
   }, [canEditInventory, effectiveTenantCode, router]);
 
-  // Charger les unités de mesure
+  // Charger les unités de mesure avec pagination
   useEffect(() => {
     const fetchUnits = async () => {
       setLoadingUnits(true);
       try {
-        const unitsData = await inventoryService.getAllUnitOfMeasurement();
-        setUnits(unitsData);
-        if (unitsData && unitsData.length > 0) {
-          setValue("unitOfMeasure", unitsData[0]);
+        const response = await inventoryService.getAllUnitOfMeasurement(
+          unitPage,
+          unitPagination.pageSize,
+          unitSearch
+        );
+
+        // L'API retourne maintenant un objet paginé avec content
+        if (response.content) {
+          setUnits(response.content);
+          setUnitPagination({
+            currentPage: response.number || 0,
+            totalPages: response.totalPages || 0,
+            totalElements: response.totalElements || 0,
+            pageSize: response.size || unitPagination.pageSize,
+          });
+        } else {
+          // Fallback si l'API retourne encore un array simple
+          setUnits(Array.isArray(response) ? response : []);
         }
       } catch (err) {
         console.error("Error fetching units:", err);
@@ -134,7 +148,16 @@ export default function NewProductPage() {
       }
     };
     fetchUnits();
-  }, [setValue]);
+  }, [unitPage, unitSearch, unitPagination.pageSize]);
+
+  // Debounce pour la recherche d'unités
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setUnitSearch(unitSearchInput);
+      setUnitPage(0); // Reset à la première page lors d'une recherche
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [unitSearchInput]);
 
   // Charger les catégories avec pagination
   useEffect(() => {
@@ -161,7 +184,7 @@ export default function NewProductPage() {
       }
     };
     fetchCategories();
-  }, [categoryPage, categorySearch]);
+  }, [categoryPage, categorySearch, categoryPagination.pageSize]);
 
   // Debounce pour la recherche de catégories
   useEffect(() => {
@@ -178,6 +201,11 @@ export default function NewProductPage() {
       return;
     }
 
+    if (!selectedUnit) {
+      toast.error("Veuillez sélectionner une unité de mesure");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -185,7 +213,7 @@ export default function NewProductPage() {
       const productData = {
         name: data.name,
         description: data.description,
-        unitOfMeasure: data.unitOfMeasure,
+        unitOfMeasure: selectedUnit,
         volume: parseFloat(data.volume),
         category: {
           id: selectedCategory.id,
@@ -292,71 +320,31 @@ export default function NewProductPage() {
                     </p>
                   )}
                 </div>
+              </div>
 
-                {/* Unité de mesure */}
-                <div className="space-y-2">
-                  <Label htmlFor="unitOfMeasure">Unité de mesure *</Label>
-                  {loadingUnits ? (
-                    <Skeleton className="h-10 w-full" />
-                  ) : units.length > 0 ? (
-                    <Controller
-                      name="unitOfMeasure"
-                      control={control}
-                      rules={{ required: "L'unité de mesure est requise" }}
-                      render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choisir une unité" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {units.map((unit) => (
-                              <SelectItem key={unit} value={unit}>
-                                {unit}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      Aucune unité disponible
-                    </p>
-                  )}
-                  {errors.unitOfMeasure && (
-                    <p className="text-sm text-red-500">
-                      {errors.unitOfMeasure.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Volume */}
-                <div className="space-y-2">
-                  <Label htmlFor="volume">
-                    Volume par unité *
-                    <span className="text-xs text-muted-foreground ml-1">
-                      (quantité contenue dans une unité)
-                    </span>
-                  </Label>
-                  <Input
-                    id="volume"
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 0.5, 1.5, 100, 250..."
-                    {...register("volume", {
-                      required: "Le volume est requis",
-                      min: { value: 0, message: "Le volume doit être positif" },
-                    })}
-                  />
-                  {errors.volume && (
-                    <p className="text-sm text-red-500">
-                      {errors.volume.message}
-                    </p>
-                  )}
-                </div>
+              {/* Volume */}
+              <div className="space-y-2">
+                <Label htmlFor="volume">
+                  Volume par unité *
+                  <span className="text-xs text-muted-foreground ml-1">
+                    (quantité contenue dans une unité)
+                  </span>
+                </Label>
+                <Input
+                  id="volume"
+                  type="number"
+                  step="0.01"
+                  placeholder="Ex: 0.5, 1.5, 100, 250..."
+                  {...register("volume", {
+                    required: "Le volume est requis",
+                    min: { value: 0, message: "Le volume doit être positif" },
+                  })}
+                />
+                {errors.volume && (
+                  <p className="text-sm text-red-500">
+                    {errors.volume.message}
+                  </p>
+                )}
               </div>
 
               {/* Description */}
@@ -369,6 +357,142 @@ export default function NewProductPage() {
                   {...register("description")}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Sélection d'unité de mesure */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Unité de mesure</CardTitle>
+              <div className="relative mt-2">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Rechercher une unité..."
+                  value={unitSearchInput}
+                  onChange={(e) => setUnitSearchInput(e.target.value)}
+                  className="pl-10 pr-10"
+                />
+                {unitSearchInput && (
+                  <button
+                    type="button"
+                    onClick={() => setUnitSearchInput("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingUnits ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <Skeleton key={index} className="h-12" />
+                  ))}
+                </div>
+              ) : units.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {unitSearch
+                    ? `Aucune unité trouvée pour "${unitSearch}"`
+                    : "Aucune unité disponible"}
+                </div>
+              ) : (
+                <>
+                  <RadioGroup
+                    value={selectedUnit}
+                    onValueChange={setSelectedUnit}
+                  >
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {units.map((unit) => (
+                        <motion.div
+                          key={unit}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className={`relative flex items-center space-x-2 rounded-lg border p-3 cursor-pointer transition-colors ${
+                            selectedUnit === unit
+                              ? "border-primary bg-primary/5"
+                              : "border-gray-200 hover:bg-gray-50"
+                          }`}
+                          onClick={() => setSelectedUnit(unit)}
+                        >
+                          <RadioGroupItem value={unit} id={`unit-${unit}`} />
+                          <Label
+                            htmlFor={`unit-${unit}`}
+                            className="flex-1 cursor-pointer text-sm font-medium"
+                          >
+                            {unit}
+                          </Label>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+
+                  {/* Pagination */}
+                  {unitPagination.totalPages > 1 && (
+                    <div className="mt-6 flex justify-center">
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              onClick={() =>
+                                setUnitPage(Math.max(0, unitPage - 1))
+                              }
+                              disabled={unitPage === 0}
+                              className={
+                                unitPage === 0
+                                  ? "pointer-events-none opacity-50"
+                                  : ""
+                              }
+                            />
+                          </PaginationItem>
+
+                          {Array.from({ length: unitPagination.totalPages })
+                            .slice(
+                              Math.max(0, unitPage - 2),
+                              Math.min(unitPagination.totalPages, unitPage + 3)
+                            )
+                            .map((_, index) => {
+                              const pageNumber =
+                                Math.max(0, unitPage - 2) + index;
+                              return (
+                                <PaginationItem key={pageNumber}>
+                                  <PaginationLink
+                                    isActive={unitPage === pageNumber}
+                                    onClick={() => setUnitPage(pageNumber)}
+                                  >
+                                    {pageNumber + 1}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            })}
+
+                          <PaginationItem>
+                            <PaginationNext
+                              onClick={() =>
+                                setUnitPage(
+                                  Math.min(
+                                    unitPagination.totalPages - 1,
+                                    unitPage + 1
+                                  )
+                                )
+                              }
+                              disabled={
+                                unitPage >= unitPagination.totalPages - 1
+                              }
+                              className={
+                                unitPage >= unitPagination.totalPages - 1
+                                  ? "pointer-events-none opacity-50"
+                                  : ""
+                              }
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -543,7 +667,10 @@ export default function NewProductPage() {
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={isSubmitting || !selectedCategory}>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !selectedCategory || !selectedUnit}
+            >
               {isSubmitting ? (
                 <>
                   <div className="animate-spin mr-2 h-4 w-4 border-2 border-white rounded-full border-t-transparent" />

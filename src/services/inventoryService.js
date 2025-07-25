@@ -103,9 +103,17 @@ const inventoryService = {
       throw error;
     }
   },
-  getAllUnitOfMeasurement: async () => {
+  getAllUnitOfMeasurement: async (page = 0, size = 10, search = "") => {
     try {
-      const response = await apiClient.get("/api/inventory/product/unitm/all");
+      const params = { page, size };
+      // Ajouter le paramètre search seulement s'il n'est pas vide
+      if (search && search.trim()) {
+        params.search = search.trim();
+      }
+
+      const response = await apiClient.get("/api/inventory/product/unitm/all", {
+        params,
+      });
       return response.data;
     } catch (error) {
       console.error(
@@ -115,7 +123,6 @@ const inventoryService = {
       throw error;
     }
   },
-
   // 1. Fonction pour ajouter un article avec une quantité (volume)
   addArticle: async (articleData) => {
     try {

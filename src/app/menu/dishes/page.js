@@ -30,13 +30,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RestaurantSelector from "@/components/inventory/RestaurantSelector";
 import useDishes from "@/hooks/useDishes";
 import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
-import { Plus, Eye, Trash2 } from "lucide-react";
+import { Plus, Eye, Trash2, Search, X } from "lucide-react";
 
 export default function DishesPage() {
   const router = useRouter();
@@ -54,6 +55,8 @@ export default function DishesPage() {
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
   // Vérifier si l'utilisateur a les permissions nécessaires
@@ -72,15 +75,33 @@ export default function DishesPage() {
   // Définir le callback de changement de restaurant
   const handleRestaurantChange = useCallback((value) => {
     setSelectedRestaurant(value);
+    // Réinitialiser la recherche lors du changement de restaurant
+    setSearchInput("");
+    setSearchTerm("");
   }, []);
 
-  // Charger les plats au changement de restaurant
+  // Charger les plats au changement de restaurant ou de recherche
   useEffect(() => {
     if (selectedRestaurant) {
-      // Mise à jour: Utilisation de fetchDishes avec pagination
-      fetchDishes(selectedRestaurant, 0, 10);
+      // Mise à jour: Utilisation de fetchDishes avec pagination et recherche
+      fetchDishes(selectedRestaurant, 0, 10, searchTerm);
     }
-  }, [fetchDishes, selectedRestaurant]);
+  }, [fetchDishes, selectedRestaurant, searchTerm]);
+
+  // Fonction pour gérer la recherche avec debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 500); // Attendre 500ms après que l'utilisateur arrête de taper
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Fonction pour réinitialiser la recherche
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+  };
 
   // Fonction pour gérer les actions non implémentées
   const handleNotImplementedAction = (action, itemName) => {
@@ -105,14 +126,14 @@ export default function DishesPage() {
   // Fonction pour gérer le changement de page
   const handlePageChange = (page) => {
     if (selectedRestaurant) {
-      changePage(selectedRestaurant, page);
+      changePage(selectedRestaurant, page, searchTerm);
     }
   };
 
   // Fonction pour gérer le changement de taille de page
   const handlePageSizeChange = (size) => {
     if (selectedRestaurant) {
-      changePageSize(selectedRestaurant, size);
+      changePageSize(selectedRestaurant, size, searchTerm);
     }
   };
 
@@ -300,6 +321,34 @@ export default function DishesPage() {
           </div>
         </div>
 
+        {/* Barre de recherche - affichée seulement si un restaurant est sélectionné */}
+        {selectedRestaurant && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="relative max-w-md"
+          >
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Rechercher un plat..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {searchInput && (
+              <button
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Effacer la recherche"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </motion.div>
+        )}
+
         {!selectedRestaurant ? (
           <div className="p-8 text-center bg-gray-50 rounded-md border">
             <p className="text-gray-500">
@@ -320,7 +369,14 @@ export default function DishesPage() {
                 <p className="text-red-500">{error}</p>
                 <Button
                   variant="outline"
-                  onClick={() => fetchDishes(selectedRestaurant)}
+                  onClick={() =>
+                    fetchDishes(
+                      selectedRestaurant,
+                      0,
+                      pagination.pageSize,
+                      searchTerm
+                    )
+                  }
                   className="mt-4"
                 >
                   Réessayer
@@ -369,8 +425,25 @@ export default function DishesPage() {
                           colSpan={4}
                           className="text-center py-8 text-gray-500"
                         >
-                          Aucun plat trouvé.{" "}
-                          {canCreateDish ? "Commencez par en créer un !" : ""}
+                          {searchTerm ? (
+                            <>
+                              Aucun plat trouvé pour "{searchTerm}".
+                              <Button
+                                variant="link"
+                                onClick={handleClearSearch}
+                                className="ml-2"
+                              >
+                                Effacer la recherche
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              Aucun plat trouvé.{" "}
+                              {canCreateDish
+                                ? "Commencez par en créer un !"
+                                : ""}
+                            </>
+                          )}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -425,6 +498,11 @@ export default function DishesPage() {
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       {/* Informations sur la pagination */}
                       <div className="text-sm text-muted-foreground">
+                        {searchTerm && (
+                          <span className="mr-2">
+                            Recherche: "{searchTerm}" -
+                          </span>
+                        )}
                         Affichage{" "}
                         {pagination.currentPage * pagination.pageSize + 1}-
                         {Math.min(

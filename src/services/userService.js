@@ -69,15 +69,22 @@ const userService = {
   },
 
   // Fonction pour récupérer tous les utilisateurs d'un restaurant avec pagination
-  getAllUsers: async (tenantCode, page = 0, size = 10) => {
+  getAllUsers: async (tenantCode, page = 0, size = 10, search = "") => {
     try {
+      const params = {
+        code: tenantCode,
+        page,
+        size,
+      };
+      // Ajouter le paramètre search seulement s'il n'est pas vide
+      if (search && search.trim()) {
+        params.search = search.trim();
+      }
+
       const response = await apiClient.get("/api/user", {
-        params: {
-          code: tenantCode,
-          page,
-          size,
-        },
+        params,
       });
+
       return response.data;
     } catch (error) {
       console.error(

@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RestaurantSelector from "@/components/inventory/RestaurantSelector";
 import useUsers from "@/hooks/useUsers";
@@ -38,7 +39,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PrimaryRoleBadge } from "@/components/common/RoleBadge";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
 import CreateUserModal from "@/components/users/CreateUserModal";
-import { Plus, Eye, Trash2 } from "lucide-react";
+import { Plus, Eye, Trash2, Search, X } from "lucide-react";
 
 export default function UsersPage() {
   const router = useRouter();
@@ -57,6 +58,8 @@ export default function UsersPage() {
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [alertAction, setAlertAction] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const isAdmin = roles.includes("ROLE_ADMIN");
 
   // Vérifier si l'utilisateur a les permissions nécessaires pour gérer les utilisateurs
@@ -73,14 +76,32 @@ export default function UsersPage() {
   // Définir le callback de changement de restaurant
   const handleRestaurantChange = useCallback((value) => {
     setSelectedRestaurant(value);
+    // Réinitialiser la recherche lors du changement de restaurant
+    setSearchInput("");
+    setSearchTerm("");
   }, []);
 
-  // Charger les utilisateurs au changement de restaurant
+  // Charger les utilisateurs au changement de restaurant ou de recherche
   useEffect(() => {
     if (selectedRestaurant) {
-      fetchUsers(selectedRestaurant, 0, 10);
+      fetchUsers(selectedRestaurant, 0, 10, searchTerm);
     }
-  }, [fetchUsers, selectedRestaurant]);
+  }, [fetchUsers, selectedRestaurant, searchTerm]);
+
+  // Fonction pour gérer la recherche avec debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 500); // Attendre 500ms après que l'utilisateur arrête de taper
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Fonction pour réinitialiser la recherche
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+  };
 
   // Fonction pour gérer les actions non implémentées
   const handleNotImplementedAction = (action, itemName) => {
@@ -97,9 +118,19 @@ export default function UsersPage() {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Redirection vers la page de détail d'un utilisateur (non implémentée)
+  // Redirection vers la page de détail d'un utilisateur
   const handleViewUser = (userId) => {
     router.push(`/users/${userId}`);
+  };
+
+  // Fonction pour gérer le changement de page
+  const handlePageChange = (page) => {
+    changePage(selectedRestaurant, page, searchTerm);
+  };
+
+  // Fonction pour gérer le changement de taille de page
+  const handlePageSizeChange = (size) => {
+    changePageSize(selectedRestaurant, size, searchTerm);
   };
 
   // Fonction pour générer les items de pagination
@@ -114,7 +145,7 @@ export default function UsersPage() {
           <PaginationItem key={i}>
             <PaginationLink
               isActive={currentPage === i}
-              onClick={() => changePage(selectedRestaurant, i)}
+              onClick={() => handlePageChange(i)}
             >
               {i + 1}
             </PaginationLink>
@@ -129,7 +160,7 @@ export default function UsersPage() {
       <PaginationItem key={0}>
         <PaginationLink
           isActive={currentPage === 0}
-          onClick={() => changePage(selectedRestaurant, 0)}
+          onClick={() => handlePageChange(0)}
         >
           1
         </PaginationLink>
@@ -151,7 +182,7 @@ export default function UsersPage() {
             <PaginationItem key={pageNum}>
               <PaginationLink
                 isActive={currentPage === pageNum}
-                onClick={() => changePage(selectedRestaurant, pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum + 1}
               </PaginationLink>
@@ -188,7 +219,7 @@ export default function UsersPage() {
             <PaginationItem key={pageNum}>
               <PaginationLink
                 isActive={currentPage === pageNum}
-                onClick={() => changePage(selectedRestaurant, pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum + 1}
               </PaginationLink>
@@ -215,7 +246,7 @@ export default function UsersPage() {
             <PaginationItem key={pageNum}>
               <PaginationLink
                 isActive={currentPage === pageNum}
-                onClick={() => changePage(selectedRestaurant, pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum + 1}
               </PaginationLink>
@@ -240,7 +271,7 @@ export default function UsersPage() {
         <PaginationItem key={totalPages - 1}>
           <PaginationLink
             isActive={currentPage === totalPages - 1}
-            onClick={() => changePage(selectedRestaurant, totalPages - 1)}
+            onClick={() => handlePageChange(totalPages - 1)}
           >
             {totalPages}
           </PaginationLink>
@@ -301,229 +332,285 @@ export default function UsersPage() {
             </p>
           </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-md border"
-          >
-            {error ? (
-              <div className="p-8 text-center">
-                <p className="text-red-500">{error}</p>
-                <Button
-                  variant="outline"
-                  onClick={() => fetchUsers(selectedRestaurant)}
-                  className="mt-4"
+          <>
+            {/* Barre de recherche */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="relative max-w-md"
+            >
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Rechercher par nom de famille..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchInput && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Effacer la recherche"
                 >
-                  Réessayer
-                </Button>
-              </div>
-            ) : (
-              <div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nom</TableHead>
-                      <TableHead>Prénom</TableHead>
-                      <TableHead>Rôle</TableHead>
-                      <TableHead className="hidden md:table-cell">
-                        Date de création
-                      </TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      // Squelettes de chargement
-                      Array(5)
-                        .fill(0)
-                        .map((_, index) => (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <Skeleton className="h-5 w-32" />
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="rounded-md border"
+            >
+              {error ? (
+                <div className="p-8 text-center">
+                  <p className="text-red-500">{error}</p>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      fetchUsers(
+                        selectedRestaurant,
+                        0,
+                        pagination.pageSize,
+                        searchTerm
+                      )
+                    }
+                    className="mt-4"
+                  >
+                    Réessayer
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nom</TableHead>
+                        <TableHead>Prénom</TableHead>
+                        <TableHead>Rôle</TableHead>
+                        <TableHead className="hidden md:table-cell">
+                          Date de création
+                        </TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        // Squelettes de chargement
+                        Array(5)
+                          .fill(0)
+                          .map((_, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <Skeleton className="h-5 w-32" />
+                              </TableCell>
+                              <TableCell>
+                                <Skeleton className="h-5 w-24" />
+                              </TableCell>
+                              <TableCell>
+                                <Skeleton className="h-5 w-24" />
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                <Skeleton className="h-5 w-28" />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-2">
+                                  <Skeleton className="h-8 w-8 rounded-md" />
+                                  <Skeleton className="h-8 w-8 rounded-md" />
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                      ) : users.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="text-center py-8 text-gray-500"
+                          >
+                            {searchTerm ? (
+                              <>
+                                Aucun utilisateur trouvé pour "{searchTerm}".
+                                <Button
+                                  variant="link"
+                                  onClick={handleClearSearch}
+                                  className="ml-2"
+                                >
+                                  Effacer la recherche
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                Aucun utilisateur trouvé.
+                                {canCreateUser
+                                  ? " Commencez par en créer un !"
+                                  : ""}
+                              </>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        // Données réelles
+                        users.map((user) => (
+                          <TableRow key={user.id} className="hover:bg-muted/50">
+                            <TableCell className="font-medium">
+                              {user.lastName}
                             </TableCell>
+                            <TableCell>{user.firstName}</TableCell>
                             <TableCell>
-                              <Skeleton className="h-5 w-24" />
-                            </TableCell>
-                            <TableCell>
-                              <Skeleton className="h-5 w-24" />
+                              {user.roles && user.roles.length > 0 && (
+                                <PrimaryRoleBadge
+                                  roles={user.roles}
+                                  size="sm"
+                                />
+                              )}
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
-                              <Skeleton className="h-5 w-28" />
+                              {formatDate(user.createdAt)}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">
-                                <Skeleton className="h-8 w-8 rounded-md" />
-                                <Skeleton className="h-8 w-8 rounded-md" />
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-blue-500"
+                                  onClick={() =>
+                                    handleViewUser(user.employeeNumber)
+                                  }
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-red-500"
+                                  onClick={() =>
+                                    handleNotImplementedAction(
+                                      "supprimer",
+                                      `l'utilisateur "${user.firstName} ${user.lastName}"`
+                                    )
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
                         ))
-                    ) : users.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={5}
-                          className="text-center py-8 text-gray-500"
-                        >
-                          Aucun utilisateur trouvé.
-                          {canCreateUser ? " Commencez par en créer un !" : ""}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      // Données réelles
-                      users.map((user) => (
-                        <TableRow key={user.id} className="hover:bg-muted/50">
-                          <TableCell className="font-medium">
-                            {user.lastName}
-                          </TableCell>
-                          <TableCell>{user.firstName}</TableCell>
-                          <TableCell>
-                            {user.roles && user.roles.length > 0 && (
-                              <PrimaryRoleBadge roles={user.roles} size="sm" />
-                            )}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {formatDate(user.createdAt)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-2">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-blue-500"
-                                onClick={() =>
-                                  handleViewUser(user.employeeNumber)
-                                }
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-red-500"
-                                onClick={() =>
-                                  handleNotImplementedAction(
-                                    "supprimer",
-                                    `l'utilisateur "${user.firstName} ${user.lastName}"`
-                                  )
-                                }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      )}
+                    </TableBody>
+                  </Table>
 
-                {/* Pagination */}
-                {!loading && users.length > 0 && (
-                  <div className="border-t py-4 px-6">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                      {/* Informations sur la pagination */}
-                      <div className="text-sm text-muted-foreground">
-                        Affichage{" "}
-                        {pagination.currentPage * pagination.pageSize + 1}-
-                        {Math.min(
-                          (pagination.currentPage + 1) * pagination.pageSize,
-                          pagination.totalElements
-                        )}{" "}
-                        sur {pagination.totalElements} éléments
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-center gap-4">
-                        {/* Sélecteur du nombre d'éléments par page */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            Éléments par page:
-                          </span>
-                          <Select
-                            value={pagination.pageSize.toString()}
-                            onValueChange={(value) =>
-                              changePageSize(
-                                selectedRestaurant,
-                                parseInt(value, 10)
-                              )
-                            }
-                          >
-                            <SelectTrigger className="w-[70px] h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[5, 10, 25, 50].map((size) => (
-                                <SelectItem key={size} value={size.toString()}>
-                                  {size}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                  {/* Pagination */}
+                  {!loading && users.length > 0 && (
+                    <div className="border-t py-4 px-6">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        {/* Informations sur la pagination */}
+                        <div className="text-sm text-muted-foreground">
+                          {searchTerm && (
+                            <span className="mr-2">
+                              Recherche: "{searchTerm}" -
+                            </span>
+                          )}
+                          Affichage{" "}
+                          {pagination.currentPage * pagination.pageSize + 1}-
+                          {Math.min(
+                            (pagination.currentPage + 1) * pagination.pageSize,
+                            pagination.totalElements
+                          )}{" "}
+                          sur {pagination.totalElements} éléments
                         </div>
 
-                        {/* Composant de pagination */}
-                        <Pagination className="mt-0">
-                          <PaginationContent>
-                            <PaginationItem>
-                              <PaginationPrevious
-                                onClick={() =>
-                                  changePage(
-                                    selectedRestaurant,
-                                    pagination.currentPage - 1
-                                  )
-                                }
-                                disabled={pagination.currentPage === 0}
-                                aria-disabled={pagination.currentPage === 0}
-                                tabIndex={pagination.currentPage === 0 ? -1 : 0}
-                                className={
-                                  pagination.currentPage === 0
-                                    ? "pointer-events-none opacity-50"
-                                    : ""
-                                }
-                              />
-                            </PaginationItem>
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                          {/* Sélecteur du nombre d'éléments par page */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">
+                              Éléments par page:
+                            </span>
+                            <Select
+                              value={pagination.pageSize.toString()}
+                              onValueChange={(value) =>
+                                handlePageSizeChange(parseInt(value, 10))
+                              }
+                            >
+                              <SelectTrigger className="w-[70px] h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[5, 10, 25, 50].map((size) => (
+                                  <SelectItem
+                                    key={size}
+                                    value={size.toString()}
+                                  >
+                                    {size}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
 
-                            {generatePaginationItems()}
+                          {/* Composant de pagination */}
+                          <Pagination className="mt-0">
+                            <PaginationContent>
+                              <PaginationItem>
+                                <PaginationPrevious
+                                  onClick={() =>
+                                    handlePageChange(pagination.currentPage - 1)
+                                  }
+                                  disabled={pagination.currentPage === 0}
+                                  aria-disabled={pagination.currentPage === 0}
+                                  tabIndex={
+                                    pagination.currentPage === 0 ? -1 : 0
+                                  }
+                                  className={
+                                    pagination.currentPage === 0
+                                      ? "pointer-events-none opacity-50"
+                                      : ""
+                                  }
+                                />
+                              </PaginationItem>
 
-                            <PaginationItem>
-                              <PaginationNext
-                                onClick={() =>
-                                  changePage(
-                                    selectedRestaurant,
-                                    pagination.currentPage + 1
-                                  )
-                                }
-                                disabled={
-                                  pagination.currentPage >=
-                                  pagination.totalPages - 1
-                                }
-                                aria-disabled={
-                                  pagination.currentPage >=
-                                  pagination.totalPages - 1
-                                }
-                                tabIndex={
-                                  pagination.currentPage >=
-                                  pagination.totalPages - 1
-                                    ? -1
-                                    : 0
-                                }
-                                className={
-                                  pagination.currentPage >=
-                                  pagination.totalPages - 1
-                                    ? "pointer-events-none opacity-50"
-                                    : ""
-                                }
-                              />
-                            </PaginationItem>
-                          </PaginationContent>
-                        </Pagination>
+                              {generatePaginationItems()}
+
+                              <PaginationItem>
+                                <PaginationNext
+                                  onClick={() =>
+                                    handlePageChange(pagination.currentPage + 1)
+                                  }
+                                  disabled={
+                                    pagination.currentPage >=
+                                    pagination.totalPages - 1
+                                  }
+                                  aria-disabled={
+                                    pagination.currentPage >=
+                                    pagination.totalPages - 1
+                                  }
+                                  tabIndex={
+                                    pagination.currentPage >=
+                                    pagination.totalPages - 1
+                                      ? -1
+                                      : 0
+                                  }
+                                  className={
+                                    pagination.currentPage >=
+                                    pagination.totalPages - 1
+                                      ? "pointer-events-none opacity-50"
+                                      : ""
+                                  }
+                                />
+                              </PaginationItem>
+                            </PaginationContent>
+                          </Pagination>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </motion.div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </>
         )}
       </div>
 
@@ -533,6 +620,7 @@ export default function UsersPage() {
         onClose={() => setIsAlertModalOpen(false)}
         title={`Action non disponible : ${alertAction}`}
       />
+
       {/* Modal de création d'utilisateur */}
       {selectedRestaurant && (
         <CreateUserModal
@@ -544,7 +632,8 @@ export default function UsersPage() {
             fetchUsers(
               selectedRestaurant,
               pagination.currentPage,
-              pagination.pageSize
+              pagination.pageSize,
+              searchTerm
             );
           }}
         />

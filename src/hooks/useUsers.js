@@ -13,31 +13,39 @@ export const useUsers = () => {
     pageSize: 10,
   });
 
-  // Fonction pour récupérer les utilisateurs d'un restaurant spécifique
-  const fetchUsers = useCallback(async (tenantCode, page = 0, size = 10) => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (!tenantCode) {
-        throw new Error("Code de restaurant requis");
+  // Fonction pour récupérer les utilisateurs d'un restaurant spécifique avec recherche
+  const fetchUsers = useCallback(
+    async (tenantCode, page = 0, size = 10, search = "") => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (!tenantCode) {
+          throw new Error("Code de restaurant requis");
+        }
+        const data = await userService.getAllUsers(
+          tenantCode,
+          page,
+          size,
+          search
+        );
+        setUsers(data.content || []);
+        setPagination({
+          currentPage: data.number || 0,
+          totalPages: data.totalPages || 0,
+          totalElements: data.totalElements || 0,
+          pageSize: data.size || size,
+        });
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        setError(
+          err.message || "Erreur lors de la récupération des utilisateurs"
+        );
+      } finally {
+        setLoading(false);
       }
-      const data = await userService.getAllUsers(tenantCode, page, size);
-      setUsers(data.content || []);
-      setPagination({
-        currentPage: data.number || 0,
-        totalPages: data.totalPages || 0,
-        totalElements: data.totalElements || 0,
-        pageSize: data.size || size,
-      });
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      setError(
-        err.message || "Erreur lors de la récupération des utilisateurs"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   return {
     users,
@@ -45,10 +53,11 @@ export const useUsers = () => {
     error,
     pagination,
     fetchUsers,
-    // Helpers pour la pagination
-    changePage: (tenantCode, newPage) =>
-      fetchUsers(tenantCode, newPage, pagination.pageSize),
-    changePageSize: (tenantCode, newSize) => fetchUsers(tenantCode, 0, newSize),
+    // Helpers pour la pagination avec support de la recherche
+    changePage: (tenantCode, newPage, search = "") =>
+      fetchUsers(tenantCode, newPage, pagination.pageSize, search),
+    changePageSize: (tenantCode, newSize, search = "") =>
+      fetchUsers(tenantCode, 0, newSize, search),
   };
 };
 

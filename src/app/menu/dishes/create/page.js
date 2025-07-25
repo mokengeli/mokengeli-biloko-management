@@ -49,11 +49,11 @@ import {
 import { toast } from "sonner";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { ProductSearchCombobox } from "@/components/menu/ProductSearchCombobox";
 import { useAuth } from "@/hooks/useAuth";
 import usePermissions from "@/hooks/usePermissions";
 import dishService from "@/services/dishService";
 import menuService from "@/services/menuService";
-import inventoryService from "@/services/inventoryService";
 import userService from "@/services/userService";
 
 export default function CreateDishPage() {
@@ -69,13 +69,11 @@ export default function CreateDishPage() {
   // États pour stocker les données récupérées
   const [currencies, setCurrencies] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState({
     page: true,
     submitting: false,
     currencies: false,
     categories: false,
-    products: false,
   });
   const [error, setError] = useState(null);
 
@@ -88,14 +86,6 @@ export default function CreateDishPage() {
     totalPages: 0,
     totalElements: 0,
     pageSize: 6,
-  });
-
-  // État pour la pagination des produits
-  const [productPagination, setProductPagination] = useState({
-    currentPage: 0,
-    totalPages: 0,
-    totalElements: 0,
-    pageSize: 100,
   });
 
   // Déterminer le tenantCode à utiliser
@@ -193,9 +183,6 @@ export default function CreateDishPage() {
 
     // Charger les catégories avec pagination
     await loadCategories(tenantCode);
-
-    // Charger les produits d'inventaire avec pagination
-    await loadProducts(tenantCode);
   };
 
   // Fonction pour charger les catégories avec pagination
@@ -239,45 +226,6 @@ export default function CreateDishPage() {
       loadCategories(effectiveTenantCode, categoryPage, categorySearch);
     }
   }, [effectiveTenantCode, categoryPage, categorySearch]);
-
-  // Fonction pour charger les produits avec pagination
-  const loadProducts = async (tenantCode, page = 0, size = 100) => {
-    setLoading((prev) => ({ ...prev, products: true }));
-    try {
-      const productsData = await inventoryService.getAllProducts(
-        tenantCode,
-        page,
-        size
-      );
-
-      setProducts(productsData.content || []);
-      setProductPagination({
-        currentPage: productsData.number || 0,
-        totalPages: productsData.totalPages || 0,
-        totalElements: productsData.totalElements || 0,
-        pageSize: productsData.size || size,
-      });
-
-      if (productsData.totalPages > 1 && productsData.number === 0) {
-        toast.info(
-          `${productsData.totalElements} produits trouvés. Les 100 premiers sont affichés.`
-        );
-      }
-    } catch (err) {
-      console.error("Error loading products:", err);
-      setError("Erreur lors du chargement des produits");
-      toast.error("Impossible de charger les produits d'inventaire");
-    } finally {
-      setLoading((prev) => ({ ...prev, products: false }));
-    }
-  };
-
-  // Fonction pour gérer le changement de page des produits
-  const handleProductPageChange = (page) => {
-    if (effectiveTenantCode) {
-      loadProducts(effectiveTenantCode, page, productPagination.pageSize);
-    }
-  };
 
   // Fonction pour ajouter un produit au plat
   const handleAddProduct = () => {
@@ -672,33 +620,12 @@ export default function CreateDishPage() {
                     Ajoutez les ingrédients qui composent ce plat
                   </CardDescription>
                 </div>
-                <Button
-                  type="button"
-                  onClick={handleAddProduct}
-                  disabled={loading.products || products.length === 0}
-                >
+                <Button type="button" onClick={handleAddProduct}>
                   <Plus className="h-4 w-4 mr-1" /> Ajouter un ingrédient
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {loading.products ? (
-                  <div className="p-4 text-center">
-                    <div className="animate-spin inline-block h-8 w-8 border-2 border-primary rounded-full border-t-transparent mb-4"></div>
-                    <p className="text-gray-500">
-                      Chargement des produits d'inventaire...
-                    </p>
-                  </div>
-                ) : products.length === 0 ? (
-                  <div className="bg-amber-50 p-6 rounded-lg border border-amber-200">
-                    <h3 className="text-lg font-medium text-amber-800 mb-2">
-                      Aucun produit disponible
-                    </h3>
-                    <p className="text-amber-700">
-                      Veuillez ajouter des produits dans l'inventaire avant de
-                      créer un plat.
-                    </p>
-                  </div>
-                ) : fields.length === 0 ? (
+                {fields.length === 0 ? (
                   <div className="text-center py-8 border-2 border-dashed rounded-lg">
                     <div className="mb-2">
                       <Info className="h-12 w-12 text-muted-foreground inline-block" />
@@ -736,7 +663,7 @@ export default function CreateDishPage() {
                         </CardHeader>
                         <CardContent className="p-4 pt-0 space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Produit */}
+                            {/* Produit avec recherche */}
                             <div className="space-y-2">
                               <Label
                                 htmlFor={`dishProducts.${index}.productId`}
@@ -748,25 +675,12 @@ export default function CreateDishPage() {
                                 control={control}
                                 rules={{ required: "Le produit est requis" }}
                                 render={({ field }) => (
-                                  <Select
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value?.toString()}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Sélectionner un produit" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {products.map((product) => (
-                                        <SelectItem
-                                          key={product.id}
-                                          value={product.id.toString()}
-                                        >
-                                          {product.name} (
-                                          {product.unitOfMeasure})
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                  <ProductSearchCombobox
+                                    tenantCode={effectiveTenantCode}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    placeholder="Rechercher un produit..."
+                                  />
                                 )}
                               />
                               {errors.dishProducts?.[index]?.productId && (
@@ -838,40 +752,14 @@ export default function CreateDishPage() {
                   </p>
                 )}
               </CardContent>
-              <CardFooter className="flex justify-between pt-0">
-                {productPagination.totalPages > 1 && (
-                  <div className="text-sm text-muted-foreground">
-                    Page {productPagination.currentPage + 1} sur{" "}
-                    {productPagination.totalPages} (
-                    {productPagination.totalElements} produits au total)
-                    {productPagination.currentPage <
-                      productPagination.totalPages - 1 && (
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={() =>
-                          handleProductPageChange(
-                            productPagination.currentPage + 1
-                          )
-                        }
-                        className="ml-2"
-                      >
-                        Voir plus de produits
-                      </Button>
-                    )}
-                  </div>
-                )}
-                {fields.length > 0 && (
-                  <Button
-                    type="button"
-                    onClick={handleAddProduct}
-                    disabled={loading.products}
-                  >
+              {fields.length > 0 && (
+                <CardFooter className="flex justify-end pt-0">
+                  <Button type="button" onClick={handleAddProduct}>
                     <Plus className="h-4 w-4 mr-1" /> Ajouter un autre
                     ingrédient
                   </Button>
-                )}
-              </CardFooter>
+                </CardFooter>
+              )}
             </Card>
 
             {/* Affichage des erreurs */}

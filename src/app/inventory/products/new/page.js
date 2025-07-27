@@ -1,6 +1,7 @@
 // src/app/inventory/products/new/page.js
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -28,7 +29,7 @@ import inventoryService from "@/services/inventoryService";
 import { ArrowLeft, Info, Search, X, Package, Store } from "lucide-react";
 import { toast } from "sonner";
 
-export default function NewProductPage() {
+function NewProductFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tenantCode = searchParams.get("tenant");
@@ -243,459 +244,463 @@ export default function NewProductPage() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="h-8 w-8"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <motion.h1
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-2xl font-bold tracking-tight"
-          >
-            Ajouter un nouveau produit
-          </motion.h1>
-        </div>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+          className="h-8 w-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-2xl font-bold tracking-tight"
+        >
+          Ajouter un nouveau produit
+        </motion.h1>
+      </div>
 
-        {/* Affichage du restaurant */}
-        {tenant && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="flex items-center gap-2 text-sm text-muted-foreground"
-          >
-            <Store className="h-4 w-4" />
-            <span>Restaurant :</span>
-            <span className="font-medium text-foreground">{tenant.name}</span>
-          </motion.div>
-        )}
+      {/* Affichage du restaurant */}
+      {tenant && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex items-center gap-2 text-sm text-muted-foreground"
+        >
+          <Store className="h-4 w-4" />
+          <span>Restaurant :</span>
+          <span className="font-medium text-foreground">{tenant.name}</span>
+        </motion.div>
+      )}
 
-        {/* Alert d'information */}
-        <Alert className="bg-blue-50 border-blue-200">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
-            Ce formulaire ajoute un nouveau type de produit dans l'inventaire
-            avec un stock initial de 0. Vous pourrez ensuite ajuster le stock
-            depuis la liste des produits.
-          </AlertDescription>
-        </Alert>
+      {/* Alert d'information */}
+      <Alert className="bg-blue-50 border-blue-200">
+        <Info className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          Ce formulaire ajoute un nouveau type de produit dans l'inventaire avec
+          un stock initial de 0. Vous pourrez ensuite ajuster le stock depuis la
+          liste des produits.
+        </AlertDescription>
+      </Alert>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Informations de base */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informations du produit</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Nom du produit */}
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nom du produit *</Label>
-                  <Input
-                    id="name"
-                    placeholder="Ex: Tomate, Farine, Sel..."
-                    {...register("name", {
-                      required: "Le nom est requis",
-                      minLength: {
-                        value: 2,
-                        message: "Le nom doit contenir au moins 2 caractères",
-                      },
-                      maxLength: {
-                        value: 50,
-                        message: "Le nom ne peut pas dépasser 50 caractères",
-                      },
-                    })}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-500">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Volume */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Informations de base */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Informations du produit</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Nom du produit */}
               <div className="space-y-2">
-                <Label htmlFor="volume">
-                  Volume par unité *
-                  <span className="text-xs text-muted-foreground ml-1">
-                    (quantité contenue dans une unité)
-                  </span>
-                </Label>
+                <Label htmlFor="name">Nom du produit *</Label>
                 <Input
-                  id="volume"
-                  type="number"
-                  step="0.01"
-                  placeholder="Ex: 0.5, 1.5, 100, 250..."
-                  {...register("volume", {
-                    required: "Le volume est requis",
-                    min: { value: 0, message: "Le volume doit être positif" },
+                  id="name"
+                  placeholder="Ex: Tomate, Farine, Sel..."
+                  {...register("name", {
+                    required: "Le nom est requis",
+                    minLength: {
+                      value: 2,
+                      message: "Le nom doit contenir au moins 2 caractères",
+                    },
+                    maxLength: {
+                      value: 50,
+                      message: "Le nom ne peut pas dépasser 50 caractères",
+                    },
                   })}
                 />
-                {errors.volume && (
-                  <p className="text-sm text-red-500">
-                    {errors.volume.message}
-                  </p>
+                {errors.name && (
+                  <p className="text-sm text-red-500">{errors.name.message}</p>
                 )}
               </div>
+            </div>
 
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Décrivez ce produit..."
-                  className="resize-none h-20"
-                  {...register("description")}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Sélection d'unité de mesure */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Unité de mesure</CardTitle>
-              <div className="relative mt-2">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Rechercher une unité..."
-                  value={unitSearchInput}
-                  onChange={(e) => setUnitSearchInput(e.target.value)}
-                  className="pl-10 pr-10"
-                />
-                {unitSearchInput && (
-                  <button
-                    type="button"
-                    onClick={() => setUnitSearchInput("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loadingUnits ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {Array.from({ length: 8 }).map((_, index) => (
-                    <Skeleton key={index} className="h-12" />
-                  ))}
-                </div>
-              ) : units.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  {unitSearch
-                    ? `Aucune unité trouvée pour "${unitSearch}"`
-                    : "Aucune unité disponible"}
-                </div>
-              ) : (
-                <>
-                  <RadioGroup
-                    value={selectedUnit}
-                    onValueChange={setSelectedUnit}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {units.map((unit) => (
-                        <motion.div
-                          key={unit}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className={`relative flex items-center space-x-2 rounded-lg border p-3 cursor-pointer transition-colors ${
-                            selectedUnit === unit
-                              ? "border-primary bg-primary/5"
-                              : "border-gray-200 hover:bg-gray-50"
-                          }`}
-                          onClick={() => setSelectedUnit(unit)}
-                        >
-                          <RadioGroupItem value={unit} id={`unit-${unit}`} />
-                          <Label
-                            htmlFor={`unit-${unit}`}
-                            className="flex-1 cursor-pointer text-sm font-medium"
-                          >
-                            {unit}
-                          </Label>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </RadioGroup>
-
-                  {/* Pagination */}
-                  {unitPagination.totalPages > 1 && (
-                    <div className="mt-6 flex justify-center">
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious
-                              onClick={() =>
-                                setUnitPage(Math.max(0, unitPage - 1))
-                              }
-                              disabled={unitPage === 0}
-                              className={
-                                unitPage === 0
-                                  ? "pointer-events-none opacity-50"
-                                  : ""
-                              }
-                            />
-                          </PaginationItem>
-
-                          {Array.from({ length: unitPagination.totalPages })
-                            .slice(
-                              Math.max(0, unitPage - 2),
-                              Math.min(unitPagination.totalPages, unitPage + 3)
-                            )
-                            .map((_, index) => {
-                              const pageNumber =
-                                Math.max(0, unitPage - 2) + index;
-                              return (
-                                <PaginationItem key={pageNumber}>
-                                  <PaginationLink
-                                    isActive={unitPage === pageNumber}
-                                    onClick={() => setUnitPage(pageNumber)}
-                                  >
-                                    {pageNumber + 1}
-                                  </PaginationLink>
-                                </PaginationItem>
-                              );
-                            })}
-
-                          <PaginationItem>
-                            <PaginationNext
-                              onClick={() =>
-                                setUnitPage(
-                                  Math.min(
-                                    unitPagination.totalPages - 1,
-                                    unitPage + 1
-                                  )
-                                )
-                              }
-                              disabled={
-                                unitPage >= unitPagination.totalPages - 1
-                              }
-                              className={
-                                unitPage >= unitPagination.totalPages - 1
-                                  ? "pointer-events-none opacity-50"
-                                  : ""
-                              }
-                            />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
-                    </div>
-                  )}
-                </>
+            {/* Volume */}
+            <div className="space-y-2">
+              <Label htmlFor="volume">
+                Volume par unité *
+                <span className="text-xs text-muted-foreground ml-1">
+                  (quantité contenue dans une unité)
+                </span>
+              </Label>
+              <Input
+                id="volume"
+                type="number"
+                step="0.01"
+                placeholder="Ex: 0.5, 1.5, 100, 250..."
+                {...register("volume", {
+                  required: "Le volume est requis",
+                  min: { value: 0, message: "Le volume doit être positif" },
+                })}
+              />
+              {errors.volume && (
+                <p className="text-sm text-red-500">{errors.volume.message}</p>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Sélection de catégorie */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Catégorie du produit</CardTitle>
-              <div className="relative mt-2">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Rechercher une catégorie..."
-                  value={categorySearchInput}
-                  onChange={(e) => setCategorySearchInput(e.target.value)}
-                  className="pl-10 pr-10"
-                />
-                {categorySearchInput && (
-                  <button
-                    type="button"
-                    onClick={() => setCategorySearchInput("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Décrivez ce produit..."
+                className="resize-none h-20"
+                {...register("description")}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sélection d'unité de mesure */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Unité de mesure</CardTitle>
+            <div className="relative mt-2">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Rechercher une unité..."
+                value={unitSearchInput}
+                onChange={(e) => setUnitSearchInput(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {unitSearchInput && (
+                <button
+                  type="button"
+                  onClick={() => setUnitSearchInput("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingUnits ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <Skeleton key={index} className="h-12" />
+                ))}
               </div>
-            </CardHeader>
-            <CardContent>
-              {loadingCategories ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Array.from({ length: 6 }).map((_, index) => (
-                    <Skeleton key={index} className="h-16" />
-                  ))}
-                </div>
-              ) : categories.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  {categorySearch
-                    ? `Aucune catégorie trouvée pour "${categorySearch}"`
-                    : "Aucune catégorie disponible"}
-                </div>
-              ) : (
-                <>
-                  <RadioGroup
-                    value={selectedCategory?.id?.toString()}
-                    onValueChange={(value) => {
-                      const category = categories.find(
-                        (cat) => cat.id.toString() === value
-                      );
-                      setSelectedCategory(category);
-                    }}
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {categories.map((category) => (
-                        <motion.div
-                          key={category.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className={`relative flex items-center space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${
-                            selectedCategory?.id === category.id
-                              ? "border-primary bg-primary/5"
-                              : "border-gray-200 hover:bg-gray-50"
-                          }`}
-                          onClick={() => setSelectedCategory(category)}
+            ) : units.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                {unitSearch
+                  ? `Aucune unité trouvée pour "${unitSearch}"`
+                  : "Aucune unité disponible"}
+              </div>
+            ) : (
+              <>
+                <RadioGroup
+                  value={selectedUnit}
+                  onValueChange={setSelectedUnit}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {units.map((unit) => (
+                      <motion.div
+                        key={unit}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`relative flex items-center space-x-2 rounded-lg border p-3 cursor-pointer transition-colors ${
+                          selectedUnit === unit
+                            ? "border-primary bg-primary/5"
+                            : "border-gray-200 hover:bg-gray-50"
+                        }`}
+                        onClick={() => setSelectedUnit(unit)}
+                      >
+                        <RadioGroupItem value={unit} id={`unit-${unit}`} />
+                        <Label
+                          htmlFor={`unit-${unit}`}
+                          className="flex-1 cursor-pointer text-sm font-medium"
                         >
-                          <RadioGroupItem
-                            value={category.id.toString()}
-                            id={`category-${category.id}`}
+                          {unit}
+                        </Label>
+                      </motion.div>
+                    ))}
+                  </div>
+                </RadioGroup>
+
+                {/* Pagination */}
+                {unitPagination.totalPages > 1 && (
+                  <div className="mt-6 flex justify-center">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() =>
+                              setUnitPage(Math.max(0, unitPage - 1))
+                            }
+                            disabled={unitPage === 0}
+                            className={
+                              unitPage === 0
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
                           />
-                          <Label
-                            htmlFor={`category-${category.id}`}
-                            className="flex-1 cursor-pointer"
-                          >
-                            <div className="font-medium">{category.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              Créée le{" "}
-                              {new Date(
-                                category.createdAt
-                              ).toLocaleDateString()}
-                            </div>
-                          </Label>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </RadioGroup>
+                        </PaginationItem>
 
-                  {/* Pagination */}
-                  {categoryPagination.totalPages > 1 && (
-                    <div className="mt-6 flex justify-center">
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious
-                              onClick={() =>
-                                setCategoryPage(Math.max(0, categoryPage - 1))
-                              }
-                              disabled={categoryPage === 0}
-                              className={
-                                categoryPage === 0
-                                  ? "pointer-events-none opacity-50"
-                                  : ""
-                              }
-                            />
-                          </PaginationItem>
+                        {Array.from({ length: unitPagination.totalPages })
+                          .slice(
+                            Math.max(0, unitPage - 2),
+                            Math.min(unitPagination.totalPages, unitPage + 3)
+                          )
+                          .map((_, index) => {
+                            const pageNumber =
+                              Math.max(0, unitPage - 2) + index;
+                            return (
+                              <PaginationItem key={pageNumber}>
+                                <PaginationLink
+                                  isActive={unitPage === pageNumber}
+                                  onClick={() => setUnitPage(pageNumber)}
+                                >
+                                  {pageNumber + 1}
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
+                          })}
 
-                          {Array.from({ length: categoryPagination.totalPages })
-                            .slice(
-                              Math.max(0, categoryPage - 2),
-                              Math.min(
-                                categoryPagination.totalPages,
-                                categoryPage + 3
-                              )
-                            )
-                            .map((_, index) => {
-                              const pageNumber =
-                                Math.max(0, categoryPage - 2) + index;
-                              return (
-                                <PaginationItem key={pageNumber}>
-                                  <PaginationLink
-                                    isActive={categoryPage === pageNumber}
-                                    onClick={() => setCategoryPage(pageNumber)}
-                                  >
-                                    {pageNumber + 1}
-                                  </PaginationLink>
-                                </PaginationItem>
-                              );
-                            })}
-
-                          <PaginationItem>
-                            <PaginationNext
-                              onClick={() =>
-                                setCategoryPage(
-                                  Math.min(
-                                    categoryPagination.totalPages - 1,
-                                    categoryPage + 1
-                                  )
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() =>
+                              setUnitPage(
+                                Math.min(
+                                  unitPagination.totalPages - 1,
+                                  unitPage + 1
                                 )
-                              }
-                              disabled={
-                                categoryPage >=
-                                categoryPagination.totalPages - 1
-                              }
-                              className={
-                                categoryPage >=
-                                categoryPagination.totalPages - 1
-                                  ? "pointer-events-none opacity-50"
-                                  : ""
-                              }
-                            />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
-                    </div>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
+                              )
+                            }
+                            disabled={unitPage >= unitPagination.totalPages - 1}
+                            className={
+                              unitPage >= unitPagination.totalPages - 1
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (tenantCode) {
-                  router.push(`/inventory/products?tenant=${tenantCode}`);
-                } else {
-                  router.back();
-                }
-              }}
-              disabled={isSubmitting}
-            >
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !selectedCategory || !selectedUnit}
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-white rounded-full border-t-transparent" />
-                  Création...
-                </>
-              ) : (
-                <>
-                  <Package className="mr-2 h-4 w-4" />
-                  Créer le produit
-                </>
+        {/* Sélection de catégorie */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Catégorie du produit</CardTitle>
+            <div className="relative mt-2">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Rechercher une catégorie..."
+                value={categorySearchInput}
+                onChange={(e) => setCategorySearchInput(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {categorySearchInput && (
+                <button
+                  type="button"
+                  onClick={() => setCategorySearchInput("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               )}
-            </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingCategories ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Skeleton key={index} className="h-16" />
+                ))}
+              </div>
+            ) : categories.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                {categorySearch
+                  ? `Aucune catégorie trouvée pour "${categorySearch}"`
+                  : "Aucune catégorie disponible"}
+              </div>
+            ) : (
+              <>
+                <RadioGroup
+                  value={selectedCategory?.id?.toString()}
+                  onValueChange={(value) => {
+                    const category = categories.find(
+                      (cat) => cat.id.toString() === value
+                    );
+                    setSelectedCategory(category);
+                  }}
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {categories.map((category) => (
+                      <motion.div
+                        key={category.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`relative flex items-center space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${
+                          selectedCategory?.id === category.id
+                            ? "border-primary bg-primary/5"
+                            : "border-gray-200 hover:bg-gray-50"
+                        }`}
+                        onClick={() => setSelectedCategory(category)}
+                      >
+                        <RadioGroupItem
+                          value={category.id.toString()}
+                          id={`category-${category.id}`}
+                        />
+                        <Label
+                          htmlFor={`category-${category.id}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <div className="font-medium">{category.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Créée le{" "}
+                            {new Date(category.createdAt).toLocaleDateString()}
+                          </div>
+                        </Label>
+                      </motion.div>
+                    ))}
+                  </div>
+                </RadioGroup>
+
+                {/* Pagination */}
+                {categoryPagination.totalPages > 1 && (
+                  <div className="mt-6 flex justify-center">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() =>
+                              setCategoryPage(Math.max(0, categoryPage - 1))
+                            }
+                            disabled={categoryPage === 0}
+                            className={
+                              categoryPage === 0
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
+                          />
+                        </PaginationItem>
+
+                        {Array.from({ length: categoryPagination.totalPages })
+                          .slice(
+                            Math.max(0, categoryPage - 2),
+                            Math.min(
+                              categoryPagination.totalPages,
+                              categoryPage + 3
+                            )
+                          )
+                          .map((_, index) => {
+                            const pageNumber =
+                              Math.max(0, categoryPage - 2) + index;
+                            return (
+                              <PaginationItem key={pageNumber}>
+                                <PaginationLink
+                                  isActive={categoryPage === pageNumber}
+                                  onClick={() => setCategoryPage(pageNumber)}
+                                >
+                                  {pageNumber + 1}
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
+                          })}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() =>
+                              setCategoryPage(
+                                Math.min(
+                                  categoryPagination.totalPages - 1,
+                                  categoryPage + 1
+                                )
+                              )
+                            }
+                            disabled={
+                              categoryPage >= categoryPagination.totalPages - 1
+                            }
+                            className={
+                              categoryPage >= categoryPagination.totalPages - 1
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (tenantCode) {
+                router.push(`/inventory/products?tenant=${tenantCode}`);
+              } else {
+                router.back();
+              }
+            }}
+            disabled={isSubmitting}
+          >
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting || !selectedCategory || !selectedUnit}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin mr-2 h-4 w-4 border-2 border-white rounded-full border-t-transparent" />
+                Création...
+              </>
+            ) : (
+              <>
+                <Package className="mr-2 h-4 w-4" />
+                Créer le produit
+              </>
+            )}
+          </Button>
+        </div>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-3 rounded-md bg-red-50 text-red-500 text-sm"
+          >
+            {error}
+          </motion.div>
+        )}
+      </form>
+    </div>
+  );
+}
+
+export default function NewProductPage() {
+  return (
+    <DashboardLayout>
+      <Suspense
+        fallback={
+          <div className="flex justify-center items-center min-h-screen">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
-
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 rounded-md bg-red-50 text-red-500 text-sm"
-            >
-              {error}
-            </motion.div>
-          )}
-        </form>
-      </div>
+        }
+      >
+        <NewProductFormContent />
+      </Suspense>
     </DashboardLayout>
   );
 }

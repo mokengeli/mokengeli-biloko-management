@@ -4,9 +4,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Utensils, Award, TrendingUp, Loader2 } from "lucide-react";
+import { Award, TrendingUp, Loader2, Info } from "lucide-react";
 import { formatCurrency } from "@/lib/dashboardUtils";
 import orderService from "@/services/orderService";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 /**
  * Composant TopDishesKPI
@@ -72,13 +77,25 @@ export const TopDishesKPI = ({ tenantCode, startDate, endDate, limit = 5 }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="col-span-full"
+      className="col-span-1 md:col-span-2"
     >
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="hover:shadow-md transition-shadow h-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Plats les plus vendus
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Plats les plus vendus
+            </CardTitle>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-4 w-4 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs text-xs">
+                  Classement des plats les plus vendus
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <Award className="h-5 w-5 text-yellow-500" />
         </CardHeader>
         <CardContent>

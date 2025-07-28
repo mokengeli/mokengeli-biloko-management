@@ -28,8 +28,8 @@ import useProductDetail from "@/hooks/useProductDetail";
 import usePermissions from "@/hooks/usePermissions";
 import RemoveArticleModal from "@/components/inventory/RemoveArticleModal";
 
-import AddArticleVolumeModal from "@/components/inventory/AddArticleVolumeModal";
-import AddArticleUnitsModal from "@/components/inventory/AddArticleUnitsModal";
+import AddArticleModal from "@/components/inventory/AddArticleModal";
+import AddVolumeModal from "@/components/inventory/AddVolumeModal";
 
 export default function ProductDetailPage() {
   const router = useRouter();
@@ -44,8 +44,8 @@ export default function ProductDetailPage() {
   const canViewInventory = hasPermission("VIEW_INVENTORY");
   const canEditInventory = hasPermission("EDIT_INVENTORY");
 
+  const [isAddArticleModalOpen, setIsAddArticleModalOpen] = useState(false);
   const [isAddVolumeModalOpen, setIsAddVolumeModalOpen] = useState(false);
-  const [isAddUnitsModalOpen, setIsAddUnitsModalOpen] = useState(false);
 
   // Fonction pour formater la date
   const formatDate = (dateString) => {
@@ -285,7 +285,7 @@ export default function ProductDetailPage() {
               {canEditInventory && (
                 <CardFooter className="flex flex-wrap gap-3 pt-6 border-t justify-start">
                   <Button
-                    onClick={() => setIsAddVolumeModalOpen(true)}
+                    onClick={() => setIsAddArticleModalOpen(true)}
                     className="w-full sm:w-auto"
                   >
                     <PackagePlus className="mr-2 h-4 w-4" />
@@ -303,7 +303,7 @@ export default function ProductDetailPage() {
                   </Button>
 
                   <Button
-                    onClick={() => setIsAddUnitsModalOpen(true)}
+                    onClick={() => setIsAddVolumeModalOpen(true)}
                     className="w-full sm:w-auto"
                     variant="secondary"
                   >
@@ -319,16 +319,16 @@ export default function ProductDetailPage() {
         {/* Modaux pour gérer le stock */}
         {product && (
           <>
-            <AddArticleVolumeModal
-              isOpen={isAddVolumeModalOpen}
-              onClose={() => setIsAddVolumeModalOpen(false)}
+            <AddArticleModal
+              isOpen={isAddArticleModalOpen}
+              onClose={() => setIsAddArticleModalOpen(false)}
               product={product}
               onSuccess={() => refreshProduct(productId)}
             />
 
-            <AddArticleUnitsModal
-              isOpen={isAddUnitsModalOpen}
-              onClose={() => setIsAddUnitsModalOpen(false)}
+            <AddVolumeModal
+              isOpen={isAddVolumeModalOpen}
+              onClose={() => setIsAddVolumeModalOpen(false)}
               product={product}
               onSuccess={() => refreshProduct(productId)}
             />

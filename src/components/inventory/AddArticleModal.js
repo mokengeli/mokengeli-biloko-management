@@ -1,4 +1,4 @@
-// src/components/inventory/AddArticleUnitsModal.js
+// src/components/inventory/AddArticleVolumeModal.js
 "use client";
 
 import { useState } from "react";
@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import inventoryService from "@/services/inventoryService";
 
-export default function AddArticleUnitsModal({
+export default function AddArticleModal({
   isOpen,
   onClose,
   product,
@@ -33,7 +33,7 @@ export default function AddArticleUnitsModal({
     formState: { errors },
   } = useForm({
     defaultValues: {
-      numberOfUnits: 1,
+      quantity: 1,
     },
   });
 
@@ -43,13 +43,13 @@ export default function AddArticleUnitsModal({
 
     try {
       // Préparer les données pour l'API
-      const productRequest = {
+      const articleData = {
         productId: product.id,
-        numberOfUnits: parseInt(data.numberOfUnits),
+        quantity: parseFloat(data.quantity),
       };
 
       // Ajouter l'article via l'API
-      await inventoryService.addArticleByProduct(productRequest);
+      await inventoryService.addArticle(articleData);
 
       // Réinitialiser le formulaire
       reset();
@@ -58,7 +58,7 @@ export default function AddArticleUnitsModal({
       onClose();
       if (onSuccess) onSuccess();
     } catch (err) {
-      console.error("Error adding article units:", err);
+      console.error("Error adding article volume:", err);
       setError(
         err.response?.data?.message || "Erreur lors de l'ajout à l'inventaire"
       );
@@ -80,31 +80,33 @@ export default function AddArticleUnitsModal({
         <DialogHeader>
           <DialogTitle>Ajouter au stock (Unités)</DialogTitle>
           <DialogDescription>
-            Ajoutez un nombre d'unités de {product?.name || "produit"} à
-            l'inventaire.
+            Ajoutez un volume de {product?.name || "produit"} à l'inventaire.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="numberOfUnits">Nombre d'unités à ajouter</Label>
+              <Label htmlFor="quantity">
+                Quantité à ajouter ({product?.unitOfMeasure})
+              </Label>
               <Input
-                id="numberOfUnits"
+                id="quantity"
                 type="number"
-                placeholder="Entrez le nombre d'unités..."
-                {...register("numberOfUnits", {
-                  required: "Le nombre d'unités est requis",
+                step="any"
+                placeholder="Entrez la quantité..."
+                {...register("quantity", {
+                  required: "La quantité est requise",
                   min: {
-                    value: 1,
-                    message: "Le nombre d'unités doit être positif",
+                    value: 0.01,
+                    message: "La quantité doit être positive",
                   },
                   valueAsNumber: true,
                 })}
               />
-              {errors.numberOfUnits && (
+              {errors.quantity && (
                 <p className="text-sm text-red-500">
-                  {errors.numberOfUnits.message}
+                  {errors.quantity.message}
                 </p>
               )}
             </div>
@@ -139,7 +141,7 @@ export default function AddArticleUnitsModal({
                   Ajout en cours...
                 </div>
               ) : (
-                "Ajouter les unités"
+                "Ajouter le volume"
               )}
             </Button>
           </DialogFooter>

@@ -1,4 +1,4 @@
-// src/components/inventory/AddArticleVolumeModal.js
+// src/components/inventory/AddArticleUnitsModal.js
 "use client";
 
 import { useState } from "react";
@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import inventoryService from "@/services/inventoryService";
 
-export default function AddArticleVolumeModal({
+export default function AddVolumeModal({
   isOpen,
   onClose,
   product,
@@ -33,7 +33,7 @@ export default function AddArticleVolumeModal({
     formState: { errors },
   } = useForm({
     defaultValues: {
-      quantity: 1,
+      numberOfUnits: 1,
     },
   });
 
@@ -43,13 +43,13 @@ export default function AddArticleVolumeModal({
 
     try {
       // Préparer les données pour l'API
-      const articleData = {
+      const productRequest = {
         productId: product.id,
-        quantity: parseFloat(data.quantity),
+        numberOfUnits: parseInt(data.numberOfUnits),
       };
 
       // Ajouter l'article via l'API
-      await inventoryService.addArticle(articleData);
+      await inventoryService.addArticleByProduct(productRequest);
 
       // Réinitialiser le formulaire
       reset();
@@ -58,7 +58,7 @@ export default function AddArticleVolumeModal({
       onClose();
       if (onSuccess) onSuccess();
     } catch (err) {
-      console.error("Error adding article volume:", err);
+      console.error("Error adding article units:", err);
       setError(
         err.response?.data?.message || "Erreur lors de l'ajout à l'inventaire"
       );
@@ -79,34 +79,35 @@ export default function AddArticleVolumeModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Ajouter au stock (Volume)</DialogTitle>
-          <DialogDescription>
-            Ajoutez un volume de {product?.name || "produit"} à l'inventaire.
-          </DialogDescription>
+          <DialogDescription>Ajoutez un volume au stcok</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="quantity">
-                Quantité à ajouter ({product?.unitOfMeasure})
+              <Label htmlFor="numberOfUnits">
+                Volume a ajouter (
+                {product?.volume !== undefined && product?.volume !== null
+                  ? `${product.volume} ${product.unitOfMeasure}`
+                  : "Non spécifié"}
+                ) par unité
               </Label>
               <Input
-                id="quantity"
+                id="numberOfUnits"
                 type="number"
-                step="any"
-                placeholder="Entrez la quantité..."
-                {...register("quantity", {
-                  required: "La quantité est requise",
+                placeholder="Entrez le nombre d'unités..."
+                {...register("numberOfUnits", {
+                  required: "Le nombre d'unités est requis",
                   min: {
-                    value: 0.01,
-                    message: "La quantité doit être positive",
+                    value: 1,
+                    message: "Le nombre d'unités doit être positif",
                   },
                   valueAsNumber: true,
                 })}
               />
-              {errors.quantity && (
+              {errors.numberOfUnits && (
                 <p className="text-sm text-red-500">
-                  {errors.quantity.message}
+                  {errors.numberOfUnits.message}
                 </p>
               )}
             </div>
@@ -141,7 +142,7 @@ export default function AddArticleVolumeModal({
                   Ajout en cours...
                 </div>
               ) : (
-                "Ajouter le volume"
+                "Ajouter les unités"
               )}
             </Button>
           </DialogFooter>

@@ -410,12 +410,22 @@ function NewProductFormContent() {
                             ? "border-primary bg-primary/5"
                             : "border-gray-200 hover:bg-gray-50"
                         }`}
-                        onClick={() => setSelectedUnit(unit)}
                       >
-                        <RadioGroupItem value={unit} id={`unit-${unit}`} />
+                        <RadioGroupItem
+                          value={unit}
+                          id={`unit-${unit}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedUnit(unit);
+                          }}
+                        />
                         <Label
                           htmlFor={`unit-${unit}`}
                           className="flex-1 cursor-pointer text-sm font-medium"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSelectedUnit(unit);
+                          }}
                         >
                           {unit}
                         </Label>
@@ -530,7 +540,7 @@ function NewProductFormContent() {
             ) : (
               <>
                 <RadioGroup
-                  value={selectedCategory?.id?.toString()}
+                  value={selectedCategory?.id?.toString() || ""}
                   onValueChange={(value) => {
                     const category = categories.find(
                       (cat) => cat.id.toString() === value
@@ -549,21 +559,24 @@ function NewProductFormContent() {
                             ? "border-primary bg-primary/5"
                             : "border-gray-200 hover:bg-gray-50"
                         }`}
-                        onClick={() => setSelectedCategory(category)}
                       >
                         <RadioGroupItem
                           value={category.id.toString()}
                           id={`category-${category.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCategory(category);
+                          }}
                         />
                         <Label
                           htmlFor={`category-${category.id}`}
                           className="flex-1 cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSelectedCategory(category);
+                          }}
                         >
                           <div className="font-medium">{category.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            Créée le{" "}
-                            {new Date(category.createdAt).toLocaleDateString()}
-                          </div>
                         </Label>
                       </motion.div>
                     ))}

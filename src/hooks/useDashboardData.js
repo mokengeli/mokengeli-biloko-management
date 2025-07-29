@@ -56,6 +56,9 @@ export const useDashboardData = (
     topDishes: null,
   });
 
+  // État pour forcer le refetch
+  const [fetchTrigger, setFetchTrigger] = useState(0);
+
   // Références pour les abort controllers
   const abortControllersRef = useRef({});
   const fetchTimeoutRef = useRef(null);
@@ -177,179 +180,173 @@ export const useDashboardData = (
     []
   );
 
-  // Fonction principale de fetch avec debouncing
-  const fetchDashboardData = useCallback(async () => {
-    if (!tenantCode) return;
-
-    // Annuler le timeout précédent
-    if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-    }
-
-    // Debouncing de 300ms
-    fetchTimeoutRef.current = setTimeout(async () => {
-      // Annuler les requêtes en cours
-      cancelPendingRequests();
-
-      // Déterminer quelles APIs appeler
-      const requiredAPIs = getRequiredAPIs(selectedMetrics);
-
-      if (requiredAPIs.length === 0) {
-        console.log("No metrics selected, skipping API calls");
-        return;
-      }
-
-      console.log("Required APIs:", requiredAPIs);
-
-      // Réinitialiser les erreurs
-      setErrors({
-        revenue: null,
-        categoryBreakdown: null,
-        hourlyDistribution: null,
-        topDishes: null,
-      });
-
-      // Créer les abort controllers
-      const controllers = {};
-      requiredAPIs.forEach((api) => {
-        controllers[api] = new AbortController();
-      });
-      abortControllersRef.current = controllers;
-
-      // Fetch conditionnel basé sur les métriques sélectionnées
-      const fetchPromises = [];
-      const newLoading = { ...loading };
-      const newData = { ...data };
-
-      // 1. Revenue data (pour métriques financières et opérationnelles)
-      if (requiredAPIs.includes("revenue")) {
-        newLoading.revenue = true;
-        fetchPromises.push(
-          fetchRevenueData(
-            tenantCode,
-            startDate,
-            endDate,
-            controllers.revenue?.signal
-          )
-            .then(({ current, previous }) => {
-              newData.revenue = current;
-              newData.previousRevenue = previous;
-              newLoading.revenue = false;
-            })
-            .catch((error) => {
-              if (error.name !== "AbortError") {
-                setErrors((prev) => ({ ...prev, revenue: error.message }));
-              }
-              newLoading.revenue = false;
-            })
-        );
-      }
-
-      // 2. Category breakdown
-      if (requiredAPIs.includes("categoryBreakdown")) {
-        newLoading.categoryBreakdown = true;
-        fetchPromises.push(
-          fetchCategoryData(
-            tenantCode,
-            startDate,
-            endDate,
-            controllers.categoryBreakdown?.signal
-          )
-            .then((result) => {
-              newData.categoryBreakdown = result || [];
-              newLoading.categoryBreakdown = false;
-            })
-            .catch((error) => {
-              if (error.name !== "AbortError") {
-                setErrors((prev) => ({
-                  ...prev,
-                  categoryBreakdown: error.message,
-                }));
-              }
-              newLoading.categoryBreakdown = false;
-            })
-        );
-      }
-
-      // 3. Hourly distribution
-      if (requiredAPIs.includes("hourlyDistribution")) {
-        newLoading.hourlyDistribution = true;
-        fetchPromises.push(
-          fetchHourlyData(
-            tenantCode,
-            endDate,
-            controllers.hourlyDistribution?.signal
-          )
-            .then((result) => {
-              newData.hourlyDistribution = result || [];
-              newLoading.hourlyDistribution = false;
-            })
-            .catch((error) => {
-              if (error.name !== "AbortError") {
-                setErrors((prev) => ({
-                  ...prev,
-                  hourlyDistribution: error.message,
-                }));
-              }
-              newLoading.hourlyDistribution = false;
-            })
-        );
-      }
-
-      // 4. Top dishes
-      if (requiredAPIs.includes("topDishes")) {
-        newLoading.topDishes = true;
-        fetchPromises.push(
-          fetchTopDishesData(
-            tenantCode,
-            startDate,
-            endDate,
-            controllers.topDishes?.signal
-          )
-            .then((result) => {
-              newData.topDishes = result || [];
-              newLoading.topDishes = false;
-            })
-            .catch((error) => {
-              if (error.name !== "AbortError") {
-                setErrors((prev) => ({ ...prev, topDishes: error.message }));
-              }
-              newLoading.topDishes = false;
-            })
-        );
-      }
-
-      // Mettre à jour l'état de chargement immédiatement
-      setLoading(newLoading);
-
-      // Attendre toutes les promesses
-      await Promise.allSettled(fetchPromises);
-
-      // Mettre à jour les données
-      setData(newData);
-      setLoading({
-        revenue: false,
-        categoryBreakdown: false,
-        hourlyDistribution: false,
-        topDishes: false,
-      });
-    }, 300); // Délai de debouncing
-  }, [
-    tenantCode,
-    startDate,
-    endDate,
-    selectedMetrics,
-    cancelPendingRequests,
-    getRequiredAPIs,
-    fetchRevenueData,
-    fetchCategoryData,
-    fetchHourlyData,
-    fetchTopDishesData,
-  ]);
-
-  // Effect pour fetch les données quand les dépendances changent
+  // Effect pour fetch les données
   useEffect(() => {
-    fetchDashboardData();
+    // Fonction interne pour éviter les problèmes de dépendances
+    const fetchData = async () => {
+      if (!tenantCode) return;
+
+      // Annuler le timeout précédent
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+
+      // Debouncing de 300ms
+      fetchTimeoutRef.current = setTimeout(async () => {
+        // Annuler les requêtes en cours
+        cancelPendingRequests();
+
+        // Déterminer quelles APIs appeler
+        const requiredAPIs = getRequiredAPIs(selectedMetrics);
+
+        if (requiredAPIs.length === 0) {
+          console.log("No metrics selected, skipping API calls");
+          return;
+        }
+
+        console.log("Required APIs:", requiredAPIs);
+
+        // Réinitialiser les erreurs
+        setErrors({
+          revenue: null,
+          categoryBreakdown: null,
+          hourlyDistribution: null,
+          topDishes: null,
+        });
+
+        // Créer les abort controllers
+        const controllers = {};
+        requiredAPIs.forEach((api) => {
+          controllers[api] = new AbortController();
+        });
+        abortControllersRef.current = controllers;
+
+        // Fetch conditionnel basé sur les métriques sélectionnées
+        const fetchPromises = [];
+        const newLoading = {
+          revenue: false,
+          categoryBreakdown: false,
+          hourlyDistribution: false,
+          topDishes: false,
+        };
+        const newData = { ...data };
+
+        // 1. Revenue data (pour métriques financières et opérationnelles)
+        if (requiredAPIs.includes("revenue")) {
+          newLoading.revenue = true;
+          fetchPromises.push(
+            fetchRevenueData(
+              tenantCode,
+              startDate,
+              endDate,
+              controllers.revenue?.signal
+            )
+              .then(({ current, previous }) => {
+                newData.revenue = current;
+                newData.previousRevenue = previous;
+                newLoading.revenue = false;
+              })
+              .catch((error) => {
+                if (error.name !== "AbortError") {
+                  setErrors((prev) => ({ ...prev, revenue: error.message }));
+                }
+                newLoading.revenue = false;
+              })
+          );
+        }
+
+        // 2. Category breakdown
+        if (requiredAPIs.includes("categoryBreakdown")) {
+          newLoading.categoryBreakdown = true;
+          fetchPromises.push(
+            fetchCategoryData(
+              tenantCode,
+              startDate,
+              endDate,
+              controllers.categoryBreakdown?.signal
+            )
+              .then((result) => {
+                newData.categoryBreakdown = result || [];
+                newLoading.categoryBreakdown = false;
+              })
+              .catch((error) => {
+                if (error.name !== "AbortError") {
+                  setErrors((prev) => ({
+                    ...prev,
+                    categoryBreakdown: error.message,
+                  }));
+                }
+                newLoading.categoryBreakdown = false;
+              })
+          );
+        }
+
+        // 3. Hourly distribution
+        if (requiredAPIs.includes("hourlyDistribution")) {
+          newLoading.hourlyDistribution = true;
+          fetchPromises.push(
+            fetchHourlyData(
+              tenantCode,
+              endDate,
+              controllers.hourlyDistribution?.signal
+            )
+              .then((result) => {
+                newData.hourlyDistribution = result || [];
+                newLoading.hourlyDistribution = false;
+              })
+              .catch((error) => {
+                if (error.name !== "AbortError") {
+                  setErrors((prev) => ({
+                    ...prev,
+                    hourlyDistribution: error.message,
+                  }));
+                }
+                newLoading.hourlyDistribution = false;
+              })
+          );
+        }
+
+        // 4. Top dishes
+        if (requiredAPIs.includes("topDishes")) {
+          newLoading.topDishes = true;
+          fetchPromises.push(
+            fetchTopDishesData(
+              tenantCode,
+              startDate,
+              endDate,
+              controllers.topDishes?.signal
+            )
+              .then((result) => {
+                newData.topDishes = result || [];
+                newLoading.topDishes = false;
+              })
+              .catch((error) => {
+                if (error.name !== "AbortError") {
+                  setErrors((prev) => ({ ...prev, topDishes: error.message }));
+                }
+                newLoading.topDishes = false;
+              })
+          );
+        }
+
+        // Mettre à jour l'état de chargement immédiatement
+        setLoading(newLoading);
+
+        // Attendre toutes les promesses
+        await Promise.allSettled(fetchPromises);
+
+        // Mettre à jour les données
+        setData(newData);
+        setLoading({
+          revenue: false,
+          categoryBreakdown: false,
+          hourlyDistribution: false,
+          topDishes: false,
+        });
+      }, 300); // Délai de debouncing
+    };
+
+    fetchData();
 
     // Cleanup
     return () => {
@@ -358,12 +355,26 @@ export const useDashboardData = (
       }
       cancelPendingRequests();
     };
-  }, [fetchDashboardData, cancelPendingRequests]);
+  }, [
+    tenantCode,
+    startDate,
+    endDate,
+    selectedMetrics,
+    fetchTrigger, // Ajout du trigger pour forcer le refetch
+    // Les fonctions stables n'ont pas besoin d'être dans les dépendances
+    cancelPendingRequests,
+    getRequiredAPIs,
+    fetchRevenueData,
+    fetchCategoryData,
+    fetchHourlyData,
+    fetchTopDishesData,
+  ]);
 
   // Fonction pour forcer le refresh
   const refetch = useCallback(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    console.log("Manual refetch triggered");
+    setFetchTrigger((prev) => prev + 1);
+  }, []);
 
   // Calculer l'état de chargement global
   const isLoading = Object.values(loading).some((l) => l);

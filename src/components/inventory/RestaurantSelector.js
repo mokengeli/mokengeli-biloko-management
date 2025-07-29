@@ -1,85 +1,169 @@
 // src/components/inventory/RestaurantSelector.js
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Check, ChevronsUpDown, Store } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useAuth } from "@/hooks/useAuth";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import userService from "@/services/userService";
 
-export default function RestaurantSelector({ onChange, value }) {
+// Cache statique pour stocker les restaurants
+let restaurantsCache = null;
+let cacheTimestamp = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+export default function RestaurantSelector({ value, onChange, className }) {
+  const [open, setOpen] = useState(false);
   const [restaurants, setRestaurants] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { user, roles } = useAuth();
-  const isAdmin = roles.includes("ROLE_ADMIN");
+
+  // Ref pour éviter les doubles appels
+  const fetchingRef = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    // Si l'utilisateur n'est pas admin, pas besoin de charger les restaurants
-    if (!isAdmin) {
-      setLoading(false);
-      return;
-    }
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
+  useEffect(() => {
     const fetchRestaurants = async () => {
+      // Éviter les appels multiples simultanés
+      if (fetchingRef.current) return;
+
+      // Vérifier le cache
+      if (restaurantsCache && cacheTimestamp) {
+        const now = Date.now();
+        if (now - cacheTimestamp < CACHE_DURATION) {
+          console.log("Using cached restaurants data");
+          setRestaurants(restaurantsCache);
+          return;
+        }
+      }
+
+      fetchingRef.current = true;
       setLoading(true);
       setError(null);
-      try {
-        const data = await userService.getAllTenants();
-        setRestaurants(data);
 
-        // Si pas de restaurant sélectionné et qu'il y a des restaurants,
-        // sélectionner automatiquement le premier
-        if (!value && data.length > 0) {
-          onChange(data[0].code);
-        }
+      try {
+        console.log("Fetching restaurants from API");
+        const data = await userService.getAllTenants();
+
+        if (!mountedRef.current) return;
+
+        // Mettre en cache
+        restaurantsCache = data;
+        cacheTimestamp = Date.now();
+
+        setRestaurants(data);
       } catch (err) {
+        if (!mountedRef.current) return;
+
         console.error("Error fetching restaurants:", err);
-        setError(
-          err.message || "Erreur lors de la récupération des restaurants"
-        );
+        setError("Erreur lors du chargement des restaurants");
+
+        // Si erreur mais cache disponible, utiliser le cache
+        if (restaurantsCache) {
+          setRestaurants(restaurantsCache);
+        }
       } finally {
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+          fetchingRef.current = false;
+        }
       }
     };
 
     fetchRestaurants();
-  }, [isAdmin, onChange, value]);
+  }, []); // Tableau de dépendances vide = appelé une seule fois
 
-  // Si l'utilisateur n'est pas admin, on n'affiche pas le sélecteur
-  if (!isAdmin) return null;
+  // Fonction pour forcer le rechargement (si nécessaire)
+  const refreshRestaurants = async () => {
+    restaurantsCache = null;
+    cacheTimestamp = null;
+    fetchingRef.current = false;
+
+    // Déclencher un nouveau chargement
+    const data = await userService.getAllTenants();
+    restaurantsCache = data;
+    cacheTimestamp = Date.now();
+    setRestaurants(data);
+  };
+
+  // Trouver le restaurant sélectionné
+  const selectedRestaurant = restaurants.find((r) => r.code === value);
 
   return (
-    <div className="w-full max-w-xs">
-      {error ? (
-        <div className="text-sm text-red-500 mb-2">
-          Erreur: Impossible de charger les restaurants
-        </div>
-      ) : null}
-
-      <Select value={value || ""} onValueChange={onChange} disabled={loading}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Sélectionner un restaurant" />
-        </SelectTrigger>
-        <SelectContent>
-          {restaurants.map((restaurant) => (
-            <SelectItem key={restaurant.id} value={restaurant.code}>
-              {restaurant.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {loading && (
-        <div className="text-sm text-gray-500 mt-2">
-          Chargement des restaurants...
-        </div>
-      )}
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn("w-[300px] justify-between", className)}
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="text-muted-foreground">Chargement...</span>
+          ) : selectedRestaurant ? (
+            <span className="flex items-center gap-2">
+              <Store className="h-4 w-4" />
+              {selectedRestaurant.name}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              Sélectionner un restaurant...
+            </span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] p-0">
+        <Command>
+          <CommandInput placeholder="Rechercher un restaurant..." />
+          <CommandEmpty>Aucun restaurant trouvé.</CommandEmpty>
+          <CommandGroup className="max-h-64 overflow-auto">
+            {restaurants.map((restaurant) => (
+              <CommandItem
+                key={restaurant.code}
+                value={restaurant.name}
+                onSelect={() => {
+                  onChange(restaurant.code);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === restaurant.code ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div className="flex-1">
+                  <div className="font-medium">{restaurant.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {restaurant.code}
+                  </div>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

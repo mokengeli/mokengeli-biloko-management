@@ -63,6 +63,9 @@ export const useDashboardData = (
   const abortControllersRef = useRef({});
   const fetchTimeoutRef = useRef(null);
 
+  const isFirstMount = useRef(true);
+  const lastFetchParams = useRef(null);
+
   // Fonction pour calculer la période précédente
   const calculatePreviousPeriod = useCallback((start, end) => {
     const duration = end.getTime() - start.getTime();
@@ -182,6 +185,27 @@ export const useDashboardData = (
 
   // Effect pour fetch les données
   useEffect(() => {
+    // Créer une clé unique pour les paramètres actuels
+    const currentParams = JSON.stringify({
+      tenantCode,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+      selectedMetrics,
+      fetchTrigger,
+    });
+
+    // Si c'est le premier mount, sauvegarder les paramètres
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      lastFetchParams.current = currentParams;
+    } else {
+      // Vérifier si les paramètres ont vraiment changé
+      if (lastFetchParams.current === currentParams && fetchTrigger === 0) {
+        console.log("Parameters unchanged, skipping fetch");
+        return;
+      }
+      lastFetchParams.current = currentParams;
+    }
     // Fonction interne pour éviter les problèmes de dépendances
     const fetchData = async () => {
       if (!tenantCode) return;

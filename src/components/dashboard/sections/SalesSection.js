@@ -1,4 +1,4 @@
-// src/components/dashboard/sections/SalesSection.js (version optimisée)
+// src/components/dashboard/sections/SalesSection.js (version mise à jour)
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
@@ -107,12 +107,13 @@ const SalesSection = ({
                 />
               )}
 
-              {/* Graphique Distribution Horaire */}
+              {/* Graphique Distribution Horaire - avec la date */}
               {visibleMetrics.hourlyDistribution && (
                 <HourlyDistributionKPI
                   data={hourlyData}
                   loading={loading.hourlyDistribution}
                   error={errors.hourlyDistribution}
+                  date={endDate} // Passage de la date de fin utilisée pour l'API
                 />
               )}
             </div>

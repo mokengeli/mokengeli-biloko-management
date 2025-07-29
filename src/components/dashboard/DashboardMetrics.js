@@ -1,14 +1,12 @@
-// src/components/dashboard/DashboardMetrics.js (mis à jour)
+// src/components/dashboard/DashboardMetrics.js
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AlertTriangle, Calendar, ArrowRight, RefreshCw } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
+import DashboardFilters from "./DashboardFilters";
 import FinancialSection from "./sections/FinancialSection";
 import OperationalSection from "./sections/OperationalSection";
 import SalesSection from "./sections/SalesSection";
@@ -29,6 +27,35 @@ const getThirtyDaysAgo = () => {
   return date;
 };
 
+// Configuration initiale des métriques visibles
+const getInitialMetricsConfig = () => ({
+  financial: {
+    enabled: true,
+    metrics: {
+      realRevenue: true,
+      theoreticalRevenue: true,
+      revenueGap: true,
+      discountRate: true,
+    },
+  },
+  operational: {
+    enabled: true,
+    metrics: {
+      orderCount: true,
+      averageTicket: true,
+      fullPayments: true,
+    },
+  },
+  sales: {
+    enabled: false,
+    metrics: {
+      topDishes: false,
+      categoryBreakdown: false,
+      hourlyDistribution: false,
+    },
+  },
+});
+
 // Composant principal DashboardMetrics
 export const DashboardMetrics = () => {
   const { user, roles } = useAuth();
@@ -45,6 +72,11 @@ export const DashboardMetrics = () => {
 
   // État pour le tenant sélectionné (pour les admins)
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
+
+  // État pour les métriques visibles
+  const [visibleMetrics, setVisibleMetrics] = useState(
+    getInitialMetricsConfig()
+  );
 
   // État pour suivre si les données ont été chargées au moins une fois
   const [initialLoadDone, setInitialLoadDone] = useState(false);
@@ -119,7 +151,7 @@ export const DashboardMetrics = () => {
           formattedEndDate,
           tenantCode
         ),
-        orderService.getHourlyDistribution(formattedEndDate, tenantCode), // On utilise la date de fin pour la distribution horaire
+        orderService.getHourlyDistribution(formattedEndDate, tenantCode),
       ]);
 
       setRevenueData(currentRevenueData);
@@ -135,11 +167,26 @@ export const DashboardMetrics = () => {
     }
   };
 
-  // Définir le callback de changement de restaurant
+  // Callback pour le changement de restaurant
   const handleRestaurantChange = (value) => {
     setSelectedRestaurant(value);
-    // Réinitialiser l'état de chargement initial pour déclencher un nouveau chargement
     setInitialLoadDone(false);
+  };
+
+  // Callback pour le changement de dates
+  const handleDateChange = (newStartDate, newEndDate) => {
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+  };
+
+  // Callback pour le changement de métriques visibles
+  const handleMetricsChange = (newMetrics) => {
+    setVisibleMetrics(newMetrics);
+  };
+
+  // Callback pour appliquer les filtres
+  const handleApplyFilters = () => {
+    fetchDashboardData();
   };
 
   // Chargement initial des données
@@ -148,12 +195,6 @@ export const DashboardMetrics = () => {
       fetchDashboardData();
     }
   }, [tenantCode, initialLoadDone]);
-
-  // Fonction pour gérer la soumission du formulaire de date
-  const handleDateSubmit = (e) => {
-    e.preventDefault();
-    fetchDashboardData();
-  };
 
   // Message si pas de restaurant assigné/sélectionné
   if (!tenantCode && !loading) {
@@ -195,95 +236,53 @@ export const DashboardMetrics = () => {
         </motion.div>
       )}
 
-      {/* Sélecteur de période */}
+      {/* Nouveau composant de filtres */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <Card>
-          <CardContent className="pt-6">
-            <form
-              onSubmit={handleDateSubmit}
-              className="flex flex-col sm:flex-row gap-4 items-end"
-            >
-              <div className="space-y-2 flex-1">
-                <label htmlFor="startDate" className="text-sm font-medium">
-                  Date de début
-                </label>
-                <div className="relative">
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={formatDateForAPI(startDate)}
-                    onChange={(e) => setStartDate(new Date(e.target.value))}
-                    className="pl-10"
-                  />
-                  <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center mt-2 sm:mt-0">
-                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-
-              <div className="space-y-2 flex-1">
-                <label htmlFor="endDate" className="text-sm font-medium">
-                  Date de fin
-                </label>
-                <div className="relative">
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={formatDateForAPI(endDate)}
-                    onChange={(e) => setEndDate(new Date(e.target.value))}
-                    className="pl-10"
-                  />
-                  <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="min-w-[120px] h-10"
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Chargement
-                  </>
-                ) : (
-                  "Appliquer"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <DashboardFilters
+          startDate={startDate}
+          endDate={endDate}
+          onDateChange={handleDateChange}
+          onMetricsChange={handleMetricsChange}
+          onApply={handleApplyFilters}
+          loading={loading}
+        />
       </motion.div>
 
       {/* Section des métriques financières */}
-      <FinancialSection
-        revenueData={revenueData}
-        previousPeriodData={previousPeriodData}
-        loading={loading}
-      />
+      {visibleMetrics.financial.enabled && (
+        <FinancialSection
+          revenueData={revenueData}
+          previousPeriodData={previousPeriodData}
+          loading={loading}
+          visibleMetrics={visibleMetrics.financial.metrics}
+        />
+      )}
 
       {/* Section des métriques opérationnelles */}
-      <OperationalSection
-        revenueData={revenueData}
-        previousPeriodData={previousPeriodData}
-        loading={loading}
-      />
+      {visibleMetrics.operational.enabled && (
+        <OperationalSection
+          revenueData={revenueData}
+          previousPeriodData={previousPeriodData}
+          loading={loading}
+          visibleMetrics={visibleMetrics.operational.metrics}
+        />
+      )}
 
       {/* Section d'analyse des ventes */}
-      <SalesSection
-        tenantCode={tenantCode}
-        startDate={formatDateForAPI(startDate)}
-        endDate={formatDateForAPI(endDate)}
-        categoryData={categoryData}
-        hourlyData={hourlyData}
-        loading={loading}
-      />
+      {visibleMetrics.sales.enabled && (
+        <SalesSection
+          tenantCode={tenantCode}
+          startDate={formatDateForAPI(startDate)}
+          endDate={formatDateForAPI(endDate)}
+          categoryData={categoryData}
+          hourlyData={hourlyData}
+          loading={loading}
+          visibleMetrics={visibleMetrics.sales.metrics}
+        />
+      )}
     </div>
   );
 };

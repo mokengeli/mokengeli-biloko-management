@@ -12,9 +12,20 @@ const OperationalSection = ({
   revenueData,
   previousPeriodData,
   loading,
+  visibleMetrics = {
+    orderCount: true,
+    averageTicket: true,
+    fullPayments: true,
+  },
   defaultExpanded = true,
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  // Compter le nombre de métriques visibles
+  const visibleCount = Object.values(visibleMetrics).filter((v) => v).length;
+
+  // Si aucune métrique n'est visible, ne rien afficher
+  if (visibleCount === 0) return null;
 
   return (
     <div className="space-y-6">
@@ -22,7 +33,12 @@ const OperationalSection = ({
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h2 className="text-xl font-semibold">Métriques Opérationnelles</h2>
+        <h2 className="text-xl font-semibold">
+          Métriques Opérationnelles
+          <span className="text-sm text-muted-foreground ml-2">
+            ({visibleCount} métriques)
+          </span>
+        </h2>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
           {isExpanded ? (
             <ChevronUp className="h-5 w-5" />
@@ -41,25 +57,31 @@ const OperationalSection = ({
           className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
         >
           {/* KPI Nombre de Commandes */}
-          <OrderCountKPI
-            data={revenueData}
-            loading={loading}
-            previousData={previousPeriodData}
-          />
+          {visibleMetrics.orderCount && (
+            <OrderCountKPI
+              data={revenueData}
+              loading={loading}
+              previousData={previousPeriodData}
+            />
+          )}
 
           {/* KPI Ticket Moyen */}
-          <AverageTicketKPI
-            data={revenueData}
-            loading={loading}
-            previousData={previousPeriodData}
-          />
+          {visibleMetrics.averageTicket && (
+            <AverageTicketKPI
+              data={revenueData}
+              loading={loading}
+              previousData={previousPeriodData}
+            />
+          )}
 
           {/* KPI Paiements Complets */}
-          <FullPaymentsKPI
-            data={revenueData}
-            loading={loading}
-            previousData={previousPeriodData}
-          />
+          {visibleMetrics.fullPayments && (
+            <FullPaymentsKPI
+              data={revenueData}
+              loading={loading}
+              previousData={previousPeriodData}
+            />
+          )}
         </motion.div>
       )}
     </div>

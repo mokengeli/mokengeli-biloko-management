@@ -1,10 +1,10 @@
-// src/components/dashboard/kpis/HourlyDistributionKPI.js
+// src/components/dashboard/kpis/SalesKPIs/HourlyDistributionKPI.js
 "use client";
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Clock, Loader2, Info } from "lucide-react";
+import { Clock, Loader2, Info, Calendar } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -22,12 +22,13 @@ import {
 
 /**
  * Composant HourlyDistributionKPI
- * Affiche la distribution horaire des commandes
+ * Affiche la distribution horaire des commandes pour une date spécifique
  *
  * @param {Object[]} data - Données de distribution horaire
  * @param {boolean} loading - État de chargement
+ * @param {Date} date - Date pour laquelle les données sont affichées
  */
-export const HourlyDistributionKPI = ({ data = [], loading = false }) => {
+export const HourlyDistributionKPI = ({ data = [], loading = false, date }) => {
   // État pour stocker les données formatées pour le graphique
   const [chartData, setChartData] = useState([]);
 
@@ -64,6 +65,32 @@ export const HourlyDistributionKPI = ({ data = [], loading = false }) => {
     });
 
     return peakHour;
+  };
+
+  // Formater la date pour l'affichage
+  const formatDisplayDate = (dateObj) => {
+    if (!dateObj) return "";
+
+    // Si c'est déjà une date
+    if (dateObj instanceof Date) {
+      return dateObj.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+
+    // Si c'est une string, la parser d'abord
+    const parsedDate = new Date(dateObj);
+    if (isNaN(parsedDate)) return "";
+
+    return parsedDate.toLocaleDateString("fr-FR", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   // Rendu personnalisé pour le tooltip
@@ -106,7 +133,8 @@ export const HourlyDistributionKPI = ({ data = [], loading = false }) => {
               </TooltipTrigger>
               <TooltipContent>
                 <p className="max-w-xs text-xs">
-                  Nombre de commandes par heure de la journée
+                  Répartition du nombre de commandes par heure pour la journée
+                  sélectionnée
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -125,6 +153,14 @@ export const HourlyDistributionKPI = ({ data = [], loading = false }) => {
             </div>
           ) : (
             <>
+              {/* Affichage de la date */}
+              {date && (
+                <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span className="capitalize">{formatDisplayDate(date)}</span>
+                </div>
+              )}
+
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
@@ -151,6 +187,7 @@ export const HourlyDistributionKPI = ({ data = [], loading = false }) => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+
               {peakHour && (
                 <div className="text-center mt-2 text-xs text-muted-foreground">
                   Heure de pointe:{" "}

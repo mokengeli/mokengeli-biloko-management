@@ -2,14 +2,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import orderService from "@/services/orderService";
 
-// Configuration du cache avec TTL (Time To Live)
-const CACHE_CONFIG = {
-  revenue: { ttl: 0 }, // 5 * 60 * 1000  : 5 minutes
-  categoryBreakdown: { ttl: 0 }, // 10 * 60 * 1000 :10 minutes
-  hourlyDistribution: { ttl: 0 }, // 15 * 60 * 1000 :15 minutes
-  topDishes: { ttl: 0 }, // 10 * 60 * 1000 :10 minutes
-};
-
 // Mapping des métriques vers les dépendances API
 const API_DEPENDENCIES = {
   // Métriques financières
@@ -64,8 +56,7 @@ export const useDashboardData = (
     topDishes: null,
   });
 
-  // Références pour le cache et les abort controllers
-  const cacheRef = useRef({});
+  // Références pour les abort controllers
   const abortControllersRef = useRef({});
   const fetchTimeoutRef = useRef(null);
 
@@ -78,38 +69,6 @@ export const useDashboardData = (
     prevStart.setTime(prevEnd.getTime() - duration);
     return { prevStart, prevEnd };
   }, []);
-
-  // Fonction pour vérifier si une donnée est en cache et valide
-  const getCachedData = useCallback((key, tenantCode, startDate, endDate) => {
-    const cacheKey = `${key}-${tenantCode}-${startDate}-${endDate}`;
-    const cached = cacheRef.current[cacheKey];
-
-    if (!cached) return null;
-
-    const now = Date.now();
-    const ttl = CACHE_CONFIG[key]?.ttl || 0;
-
-    if (cached.timestamp && now - cached.timestamp < ttl) {
-      console.log(`Using cached data for ${key}`);
-      return cached.data;
-    }
-
-    // Cache expiré
-    delete cacheRef.current[cacheKey];
-    return null;
-  }, []);
-
-  // Fonction pour mettre en cache
-  const setCachedData = useCallback(
-    (key, data, tenantCode, startDate, endDate) => {
-      const cacheKey = `${key}-${tenantCode}-${startDate}-${endDate}`;
-      cacheRef.current[cacheKey] = {
-        data,
-        timestamp: Date.now(),
-      };
-    },
-    []
-  );
 
   // Fonction pour annuler les requêtes en cours
   const cancelPendingRequests = useCallback(() => {
@@ -144,15 +103,6 @@ export const useDashboardData = (
       const formattedStartDate = formatDateForAPI(startDate);
       const formattedEndDate = formatDateForAPI(endDate);
 
-      // Vérifier le cache
-      const cached = getCachedData(
-        "revenue",
-        tenantCode,
-        formattedStartDate,
-        formattedEndDate
-      );
-      if (cached) return { current: cached, previous: null };
-
       // Calculer la période précédente
       const { prevStart, prevEnd } = calculatePreviousPeriod(
         startDate,
@@ -175,18 +125,9 @@ export const useDashboardData = (
         ),
       ]);
 
-      // Mettre en cache
-      setCachedData(
-        "revenue",
-        currentRevenue,
-        tenantCode,
-        formattedStartDate,
-        formattedEndDate
-      );
-
       return { current: currentRevenue, previous: previousRevenue };
     },
-    [getCachedData, setCachedData, calculatePreviousPeriod]
+    [calculatePreviousPeriod]
   );
 
   // Fonction pour fetch les données de catégories
@@ -195,82 +136,34 @@ export const useDashboardData = (
       const formattedStartDate = formatDateForAPI(startDate);
       const formattedEndDate = formatDateForAPI(endDate);
 
-      // Vérifier le cache
-      const cached = getCachedData(
-        "categoryBreakdown",
-        tenantCode,
-        formattedStartDate,
-        formattedEndDate
-      );
-      if (cached) return cached;
-
       const data = await orderService.getCategoryBreakdown(
         formattedStartDate,
         formattedEndDate,
         tenantCode
       );
 
-      // Mettre en cache
-      setCachedData(
-        "categoryBreakdown",
-        data,
-        tenantCode,
-        formattedStartDate,
-        formattedEndDate
-      );
-
       return data;
     },
-    [getCachedData, setCachedData]
+    []
   );
 
   // Fonction pour fetch les données horaires
-  const fetchHourlyData = useCallback(
-    async (tenantCode, endDate, signal) => {
-      const formattedEndDate = formatDateForAPI(endDate);
+  const fetchHourlyData = useCallback(async (tenantCode, endDate, signal) => {
+    const formattedEndDate = formatDateForAPI(endDate);
 
-      // Vérifier le cache
-      const cached = getCachedData(
-        "hourlyDistribution",
-        tenantCode,
-        formattedEndDate,
-        formattedEndDate
-      );
-      if (cached) return cached;
+    const data = await orderService.getHourlyDistribution(
+      formattedEndDate,
+      tenantCode
+    );
 
-      const data = await orderService.getHourlyDistribution(
-        formattedEndDate,
-        tenantCode
-      );
-
-      // Mettre en cache
-      setCachedData(
-        "hourlyDistribution",
-        data,
-        tenantCode,
-        formattedEndDate,
-        formattedEndDate
-      );
-
-      return data;
-    },
-    [getCachedData, setCachedData]
-  );
+    return data;
+  }, []);
 
   // Fonction pour fetch les top dishes
   const fetchTopDishesData = useCallback(
     async (tenantCode, startDate, endDate, signal) => {
       const formattedStartDate = formatDateForAPI(startDate);
       const formattedEndDate = formatDateForAPI(endDate);
-
-      // Vérifier le cache
-      const cached = getCachedData(
-        "topDishes",
-        tenantCode,
-        formattedStartDate,
-        formattedEndDate
-      );
-      if (cached) return cached;
 
       const data = await orderService.getTopDishes(
         formattedStartDate,
@@ -279,18 +172,9 @@ export const useDashboardData = (
         5
       );
 
-      // Mettre en cache
-      setCachedData(
-        "topDishes",
-        data,
-        tenantCode,
-        formattedStartDate,
-        formattedEndDate
-      );
-
       return data;
     },
-    [getCachedData, setCachedData]
+    []
   );
 
   // Fonction principale de fetch avec debouncing
@@ -476,17 +360,10 @@ export const useDashboardData = (
     };
   }, [fetchDashboardData, cancelPendingRequests]);
 
-  // Fonction pour forcer le refresh (ignore le cache)
+  // Fonction pour forcer le refresh
   const refetch = useCallback(() => {
-    // Vider le cache pour forcer un nouveau fetch
-    cacheRef.current = {};
     fetchDashboardData();
   }, [fetchDashboardData]);
-
-  // Fonction pour vider le cache
-  const clearCache = useCallback(() => {
-    cacheRef.current = {};
-  }, []);
 
   // Calculer l'état de chargement global
   const isLoading = Object.values(loading).some((l) => l);
@@ -497,7 +374,6 @@ export const useDashboardData = (
     errors,
     isLoading,
     refetch,
-    clearCache,
   };
 };
 

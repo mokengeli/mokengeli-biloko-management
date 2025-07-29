@@ -80,8 +80,12 @@ export const DashboardMetrics = () => {
   const tenantCode = isAdmin ? selectedRestaurant : user?.tenantCode;
 
   // Utiliser le hook optimisé pour les données
-  const { data, loading, errors, isLoading, refetch, clearCache } =
-    useDashboardData(tenantCode, startDate, endDate, visibleMetrics);
+  const { data, loading, errors, isLoading, refetch } = useDashboardData(
+    tenantCode,
+    startDate,
+    endDate,
+    visibleMetrics
+  );
 
   // Mettre à jour le restaurant sélectionné si l'utilisateur change (pour les non-admins)
   useEffect(() => {
@@ -93,8 +97,6 @@ export const DashboardMetrics = () => {
   // Callback pour le changement de restaurant
   const handleRestaurantChange = (value) => {
     setSelectedRestaurant(value);
-    // Vider le cache lors du changement de restaurant
-    clearCache();
   };
 
   // Callback pour le changement de dates

@@ -10,9 +10,9 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Euro,
-  ShoppingCart,
   TrendingUp,
+  ShoppingCart,
+  BarChart3,
   RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ const METRIC_SECTIONS = {
   financial: {
     id: "financial",
     label: "Métriques Financières",
-    icon: Euro,
+    icon: TrendingUp, // Changé de Euro à TrendingUp (plus générique)
     color: "text-green-600",
     defaultEnabled: true,
     metrics: [
@@ -57,7 +57,7 @@ const METRIC_SECTIONS = {
   sales: {
     id: "sales",
     label: "Analyse de Ventes",
-    icon: TrendingUp,
+    icon: BarChart3, // Changé de TrendingUp à BarChart3 pour différencier
     color: "text-purple-600",
     defaultEnabled: false,
     metrics: [

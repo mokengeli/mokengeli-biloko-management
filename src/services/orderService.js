@@ -197,6 +197,33 @@ const orderService = {
       throw error;
     }
   },
+  // Fonction pour récupérer la distribution quotidienne des commandes
+  getOrdersDailyDistribution: async (startDate, endDate, tenantCode) => {
+    try {
+      if (!startDate || !endDate || !tenantCode) {
+        throw new Error(
+          "Paramètres requis manquants pour récupérer la distribution quotidienne des commandes"
+        );
+      }
+      const response = await apiClient.get(
+        "/api/order/dashboard/orders/daily",
+        {
+          params: {
+            start: startDate,
+            end: endDate,
+            tenantCode,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching orders daily distribution:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
 
   countTablesByTenant: async (tenantCode) => {
     try {

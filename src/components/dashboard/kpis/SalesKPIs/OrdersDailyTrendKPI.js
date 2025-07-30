@@ -1,4 +1,4 @@
-// src/components/dashboard/kpis/SalesKPIs/DishesDailyTrendKPI.js
+// src/components/dashboard/kpis/SalesKPIs/OrdersDailyTrendKPI.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,6 +11,7 @@ import {
   Loader2,
   Info,
   Calendar,
+  ShoppingCart,
 } from "lucide-react";
 import {
   Tooltip,
@@ -31,15 +32,15 @@ import {
 } from "recharts";
 
 /**
- * Composant DishesDailyTrendKPI
- * Affiche la tendance quotidienne des plats préparés sur une période
+ * Composant OrdersDailyTrendKPI
+ * Affiche la tendance quotidienne des commandes sur une période
  *
  * @param {Object[]} data - Données de distribution quotidienne
  * @param {boolean} loading - État de chargement
  * @param {Date} startDate - Date de début
  * @param {Date} endDate - Date de fin
  */
-export const DishesDailyTrendKPI = ({
+export const OrdersDailyTrendKPI = ({
   data = [],
   loading = false,
   startDate,
@@ -71,13 +72,13 @@ export const DishesDailyTrendKPI = ({
         return {
           day: item.day,
           displayDay: formatShortDate(date),
-          dishes: item.dishesPrepared || 0,
+          orders: item.orders || 0,
           isWeekend,
         };
       });
 
       // Calculer les statistiques
-      const total = formattedData.reduce((sum, item) => sum + item.dishes, 0);
+      const total = formattedData.reduce((sum, item) => sum + item.orders, 0);
       const average = total / formattedData.length;
 
       // Trouver le pic et le creux
@@ -85,17 +86,17 @@ export const DishesDailyTrendKPI = ({
       let lowest = { day: null, value: Infinity };
 
       formattedData.forEach((item) => {
-        if (item.dishes > peak.value) {
+        if (item.orders > peak.value) {
           peak = {
             day: item.day,
-            value: item.dishes,
+            value: item.orders,
             displayDay: item.displayDay,
           };
         }
-        if (item.dishes < lowest.value) {
+        if (item.orders < lowest.value) {
           lowest = {
             day: item.day,
-            value: item.dishes,
+            value: item.orders,
             displayDay: item.displayDay,
           };
         }
@@ -107,7 +108,7 @@ export const DishesDailyTrendKPI = ({
       // Calculer l'écart-type
       const variance =
         formattedData.reduce(
-          (sum, item) => sum + Math.pow(item.dishes - average, 2),
+          (sum, item) => sum + Math.pow(item.orders - average, 2),
           0
         ) / formattedData.length;
       const stdDev = Math.sqrt(variance);
@@ -148,8 +149,8 @@ export const DishesDailyTrendKPI = ({
 
     const n = data.length;
     const sumX = data.reduce((sum, _, i) => sum + i, 0);
-    const sumY = data.reduce((sum, item) => sum + item.dishes, 0);
-    const sumXY = data.reduce((sum, item, i) => sum + i * item.dishes, 0);
+    const sumY = data.reduce((sum, item) => sum + item.orders, 0);
+    const sumXY = data.reduce((sum, item, i) => sum + i * item.orders, 0);
     const sumX2 = data.reduce((sum, _, i) => sum + i * i, 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
@@ -176,8 +177,8 @@ export const DishesDailyTrendKPI = ({
               month: "long",
             })}
           </p>
-          <p className="text-lg font-bold text-orange-600">
-            {data.dishes} plat(s)
+          <p className="text-lg font-bold text-blue-600">
+            {data.orders} commande(s)
           </p>
         </div>
       );
@@ -220,7 +221,7 @@ export const DishesDailyTrendKPI = ({
         cx={cx}
         cy={cy}
         r={4}
-        fill="#f97316"
+        fill="#8b5cf6"
         stroke="#fff"
         strokeWidth={2}
       />
@@ -243,14 +244,14 @@ export const DishesDailyTrendKPI = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.3 }}
+      transition={{ duration: 0.3, delay: 0.2 }}
       className="col-span-1 md:col-span-3"
     >
       <Card className="hover:shadow-md transition-shadow h-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Tendance Quotidienne des Plats
+              Tendance Quotidienne des Commandes
             </CardTitle>
             <Tooltip>
               <TooltipTrigger>
@@ -258,8 +259,8 @@ export const DishesDailyTrendKPI = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p className="max-w-xs text-xs">
-                  Évolution du nombre de plats préparés par jour. Permet
-                  d'identifier les tendances et patterns d'activité.
+                  Évolution du nombre de commandes par jour. Permet d'identifier
+                  les tendances et patterns d'activité.
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -285,7 +286,7 @@ export const DishesDailyTrendKPI = ({
                   <p className="text-lg font-bold">
                     {statistics.total.toLocaleString()}
                   </p>
-                  <p className="text-xs text-muted-foreground">plats</p>
+                  <p className="text-xs text-muted-foreground">commandes</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">Moyenne/jour</p>
@@ -307,7 +308,7 @@ export const DishesDailyTrendKPI = ({
                     {statistics.peak.displayDay}
                   </p>
                 </div>
-                <div className="bg-orange-50 rounded-lg p-3">
+                <div className="bg-purple-50 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">Tendance</p>
                   <p className={`text-lg font-bold ${trendColor}`}>
                     {statistics.trend > 0 ? "+" : ""}
@@ -354,7 +355,7 @@ export const DishesDailyTrendKPI = ({
                     {/* Zone au-dessus/en-dessous de la moyenne */}
                     <Area
                       type="monotone"
-                      dataKey="dishes"
+                      dataKey="orders"
                       stroke="none"
                       fill="#10b981"
                       fillOpacity={0.1}
@@ -363,8 +364,8 @@ export const DishesDailyTrendKPI = ({
                     {/* Ligne principale */}
                     <Line
                       type="monotone"
-                      dataKey="dishes"
-                      stroke="#f97316"
+                      dataKey="orders"
+                      stroke="#8b5cf6"
                       strokeWidth={2}
                       dot={<CustomDot />}
                       animationDuration={1500}
@@ -376,7 +377,7 @@ export const DishesDailyTrendKPI = ({
               {/* Légende */}
               <div className="flex items-center justify-center gap-6 mt-4 text-xs">
                 <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                   <span>Jour normal</span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -396,4 +397,4 @@ export const DishesDailyTrendKPI = ({
   );
 };
 
-export default DishesDailyTrendKPI;
+export default OrdersDailyTrendKPI;

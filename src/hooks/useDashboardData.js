@@ -19,8 +19,9 @@ const API_DEPENDENCIES = {
   topDishes: ["topDishes"],
   categoryBreakdown: ["categoryBreakdown"],
   hourlyDistribution: ["hourlyDistribution"],
-  dishesHourlyDistribution: ["dishesHourlyDistribution"], // NOUVEAU
-  dishesDailyTrend: ["dishesDailyTrend"], // NOUVEAU
+  dishesHourlyDistribution: ["dishesHourlyDistribution"],
+  dishesDailyTrend: ["dishesDailyTrend"],
+  ordersDailyTrend: ["ordersDailyTrend"], // NOUVEAU
 };
 
 // Fonction utilitaire pour formater les dates
@@ -42,8 +43,9 @@ export const useDashboardData = (
     categoryBreakdown: [],
     hourlyDistribution: [],
     topDishes: [],
-    dishesHourlyDistribution: [], // NOUVEAU
-    dishesDailyTrend: [], // NOUVEAU
+    dishesHourlyDistribution: [],
+    dishesDailyTrend: [],
+    ordersDailyTrend: [], // NOUVEAU
   });
 
   const [loading, setLoading] = useState({
@@ -51,8 +53,9 @@ export const useDashboardData = (
     categoryBreakdown: false,
     hourlyDistribution: false,
     topDishes: false,
-    dishesHourlyDistribution: false, // NOUVEAU
-    dishesDailyTrend: false, // NOUVEAU
+    dishesHourlyDistribution: false,
+    dishesDailyTrend: false,
+    ordersDailyTrend: false, // NOUVEAU
   });
 
   const [errors, setErrors] = useState({
@@ -60,8 +63,9 @@ export const useDashboardData = (
     categoryBreakdown: null,
     hourlyDistribution: null,
     topDishes: null,
-    dishesHourlyDistribution: null, // NOUVEAU
-    dishesDailyTrend: null, // NOUVEAU
+    dishesHourlyDistribution: null,
+    dishesDailyTrend: null,
+    ordersDailyTrend: null, // NOUVEAU
   });
 
   // État pour forcer le refetch
@@ -191,7 +195,7 @@ export const useDashboardData = (
     []
   );
 
-  // NOUVEAU: Fonction pour fetch les données horaires des plats
+  // Fonction pour fetch les données horaires des plats
   const fetchDishesHourlyData = useCallback(
     async (tenantCode, endDate, signal) => {
       const formattedEndDate = formatDateForAPI(endDate);
@@ -206,13 +210,30 @@ export const useDashboardData = (
     []
   );
 
-  // NOUVEAU: Fonction pour fetch les données quotidiennes des plats
+  // Fonction pour fetch les données quotidiennes des plats
   const fetchDishesDailyData = useCallback(
     async (tenantCode, startDate, endDate, signal) => {
       const formattedStartDate = formatDateForAPI(startDate);
       const formattedEndDate = formatDateForAPI(endDate);
 
       const data = await orderService.getDishesDailyDistribution(
+        formattedStartDate,
+        formattedEndDate,
+        tenantCode
+      );
+
+      return data;
+    },
+    []
+  );
+
+  // NOUVEAU: Fonction pour fetch les données quotidiennes des commandes
+  const fetchOrdersDailyData = useCallback(
+    async (tenantCode, startDate, endDate, signal) => {
+      const formattedStartDate = formatDateForAPI(startDate);
+      const formattedEndDate = formatDateForAPI(endDate);
+
+      const data = await orderService.getOrdersDailyDistribution(
         formattedStartDate,
         formattedEndDate,
         tenantCode
@@ -276,8 +297,9 @@ export const useDashboardData = (
           categoryBreakdown: null,
           hourlyDistribution: null,
           topDishes: null,
-          dishesHourlyDistribution: null, // NOUVEAU
-          dishesDailyTrend: null, // NOUVEAU
+          dishesHourlyDistribution: null,
+          dishesDailyTrend: null,
+          ordersDailyTrend: null, // NOUVEAU
         });
 
         // Créer les abort controllers
@@ -294,8 +316,9 @@ export const useDashboardData = (
           categoryBreakdown: false,
           hourlyDistribution: false,
           topDishes: false,
-          dishesHourlyDistribution: false, // NOUVEAU
-          dishesDailyTrend: false, // NOUVEAU
+          dishesHourlyDistribution: false,
+          dishesDailyTrend: false,
+          ordersDailyTrend: false, // NOUVEAU
         };
         const newData = { ...data };
 
@@ -397,7 +420,7 @@ export const useDashboardData = (
           );
         }
 
-        // 5. NOUVEAU: Dishes hourly distribution
+        // 5. Dishes hourly distribution
         if (requiredAPIs.includes("dishesHourlyDistribution")) {
           newLoading.dishesHourlyDistribution = true;
           fetchPromises.push(
@@ -422,7 +445,7 @@ export const useDashboardData = (
           );
         }
 
-        // 6. NOUVEAU: Dishes daily trend
+        // 6. Dishes daily trend
         if (requiredAPIs.includes("dishesDailyTrend")) {
           newLoading.dishesDailyTrend = true;
           fetchPromises.push(
@@ -448,6 +471,32 @@ export const useDashboardData = (
           );
         }
 
+        // 7. NOUVEAU: Orders daily trend
+        if (requiredAPIs.includes("ordersDailyTrend")) {
+          newLoading.ordersDailyTrend = true;
+          fetchPromises.push(
+            fetchOrdersDailyData(
+              tenantCode,
+              startDate,
+              endDate,
+              controllers.ordersDailyTrend?.signal
+            )
+              .then((result) => {
+                newData.ordersDailyTrend = result || [];
+                newLoading.ordersDailyTrend = false;
+              })
+              .catch((error) => {
+                if (error.name !== "AbortError") {
+                  setErrors((prev) => ({
+                    ...prev,
+                    ordersDailyTrend: error.message,
+                  }));
+                }
+                newLoading.ordersDailyTrend = false;
+              })
+          );
+        }
+
         // Mettre à jour l'état de chargement immédiatement
         setLoading(newLoading);
 
@@ -461,8 +510,9 @@ export const useDashboardData = (
           categoryBreakdown: false,
           hourlyDistribution: false,
           topDishes: false,
-          dishesHourlyDistribution: false, // NOUVEAU
-          dishesDailyTrend: false, // NOUVEAU
+          dishesHourlyDistribution: false,
+          dishesDailyTrend: false,
+          ordersDailyTrend: false, // NOUVEAU
         });
       }, 300); // Délai de debouncing
     };
@@ -481,16 +531,16 @@ export const useDashboardData = (
     startDate,
     endDate,
     selectedMetrics,
-    fetchTrigger, // Ajout du trigger pour forcer le refetch
-    // Les fonctions stables n'ont pas besoin d'être dans les dépendances
+    fetchTrigger,
     cancelPendingRequests,
     getRequiredAPIs,
     fetchRevenueData,
     fetchCategoryData,
     fetchHourlyData,
     fetchTopDishesData,
-    fetchDishesHourlyData, // NOUVEAU
-    fetchDishesDailyData, // NOUVEAU
+    fetchDishesHourlyData,
+    fetchDishesDailyData,
+    fetchOrdersDailyData, // NOUVEAU
   ]);
 
   // Fonction pour forcer le refresh

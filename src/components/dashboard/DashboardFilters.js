@@ -57,7 +57,7 @@ const METRIC_SECTIONS = {
   sales: {
     id: "sales",
     label: "Analyse de Ventes",
-    icon: BarChart3, // Changé de TrendingUp à BarChart3 pour différencier
+    icon: BarChart3,
     color: "text-purple-600",
     defaultEnabled: false,
     metrics: [
@@ -79,6 +79,11 @@ const METRIC_SECTIONS = {
       {
         id: "dishesHourlyDistribution",
         label: "Distribution Horaire Plats",
+        defaultEnabled: false,
+      },
+      {
+        id: "ordersDailyTrend",
+        label: "Tendance Quotidienne Commandes",
         defaultEnabled: false,
       },
       {

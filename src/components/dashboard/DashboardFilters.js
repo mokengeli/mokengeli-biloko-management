@@ -82,6 +82,11 @@ const METRIC_SECTIONS = {
         defaultEnabled: false,
       },
       {
+        id: "dishesStats",
+        label: "Vue Globale des Plats",
+        defaultEnabled: false,
+      },
+      {
         id: "ordersDailyTrend",
         label: "Tendance Quotidienne Commandes",
         defaultEnabled: false,

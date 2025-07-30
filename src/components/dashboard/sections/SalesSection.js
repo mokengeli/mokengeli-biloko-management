@@ -1,4 +1,4 @@
-// src/components/dashboard/sections/SalesSection.js (version mise à jour)
+// src/components/dashboard/sections/SalesSection.js
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
@@ -10,6 +10,8 @@ import CategoryBreakdownKPI from "../kpis/SalesKPIs/CategoryBreakdownKPI";
 import HourlyDistributionKPI from "../kpis/SalesKPIs/HourlyDistributionKPI";
 import DishesHourlyDistributionKPI from "../kpis/SalesKPIs/DishesHourlyDistributionKPI";
 import DishesDailyTrendKPI from "../kpis/SalesKPIs/DishesDailyTrendKPI";
+import OrdersDailyTrendKPI from "../kpis/SalesKPIs/OrdersDailyTrendKPI";
+import DishesStatsKPI from "../kpis/SalesKPIs/DishesStatsKPI";
 
 const SalesSection = ({
   tenantCode,
@@ -21,12 +23,15 @@ const SalesSection = ({
   dishesHourlyData,
   dishesDailyData,
   ordersDailyData,
+  dishesStatsData, // NOUVEAU
   loading = {
     categoryBreakdown: false,
     hourlyDistribution: false,
     topDishes: false,
     dishesHourlyDistribution: false,
     dishesDailyTrend: false,
+    ordersDailyTrend: false,
+    dishesStats: false, // NOUVEAU
   },
   visibleMetrics = {
     topDishes: false,
@@ -34,6 +39,8 @@ const SalesSection = ({
     hourlyDistribution: false,
     dishesHourlyDistribution: false,
     dishesDailyTrend: false,
+    ordersDailyTrend: false,
+    dishesStats: false, // NOUVEAU
   },
   errors = {
     categoryBreakdown: null,
@@ -41,9 +48,11 @@ const SalesSection = ({
     topDishes: null,
     dishesHourlyDistribution: null,
     dishesDailyTrend: null,
+    ordersDailyTrend: null,
+    dishesStats: null, // NOUVEAU
   },
   defaultExpanded = true,
-  currencyCode = "€", // Garde ce prop pour CategoryBreakdown qui n'a pas encore la devise dans l'API
+  currencyCode = "€",
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -106,6 +115,17 @@ const SalesSection = ({
             </div>
           )}
 
+          {/* Vue globale des plats */}
+          {visibleMetrics.dishesStats && (
+            <div className="grid gap-4 md:grid-cols-1">
+              <DishesStatsKPI
+                data={dishesStatsData}
+                loading={loading.dishesStats}
+                error={errors.dishesStats}
+              />
+            </div>
+          )}
+
           {/* Graphiques - Réarrangés pour une meilleure disposition */}
           {(visibleMetrics.categoryBreakdown ||
             visibleMetrics.hourlyDistribution ||
@@ -125,7 +145,8 @@ const SalesSection = ({
                   />
                 </div>
               )}
-              {/* NOUVEAU: Tendance quotidienne des plats */}
+
+              {/* Tendance quotidienne des plats */}
               {visibleMetrics.dishesDailyTrend && (
                 <div className="grid gap-4 md:grid-cols-1">
                   <DishesDailyTrendKPI
@@ -138,7 +159,7 @@ const SalesSection = ({
                 </div>
               )}
 
-              {/* Ligne 1: Répartition par catégorie seule si elle est visible */}
+              {/* Répartition par catégorie */}
               {visibleMetrics.categoryBreakdown && (
                 <div className="grid gap-4 md:grid-cols-1">
                   <CategoryBreakdownKPI
@@ -150,11 +171,11 @@ const SalesSection = ({
                 </div>
               )}
 
-              {/* Ligne 2: Les deux distributions horaires côte à côte */}
+              {/* Les deux distributions horaires côte à côte */}
               {(visibleMetrics.hourlyDistribution ||
                 visibleMetrics.dishesHourlyDistribution) && (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {/* Graphique Distribution Horaire des Commandes */}
+                  {/* Distribution Horaire des Commandes */}
                   {visibleMetrics.hourlyDistribution && (
                     <HourlyDistributionKPI
                       data={hourlyData}
@@ -164,7 +185,7 @@ const SalesSection = ({
                     />
                   )}
 
-                  {/* NOUVEAU: Graphique Distribution Horaire des Plats */}
+                  {/* Distribution Horaire des Plats */}
                   {visibleMetrics.dishesHourlyDistribution && (
                     <DishesHourlyDistributionKPI
                       data={dishesHourlyData}
@@ -280,7 +301,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/lib/dashboardUtils";
-import OrdersDailyTrendKPI from "../kpis/SalesKPIs/OrdersDailyTrendKPI";
 
 // Fonction pour obtenir la couleur du rang
 const getRankColor = (index) => {

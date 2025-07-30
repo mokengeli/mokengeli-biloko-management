@@ -1,4 +1,4 @@
-// src/components/dashboard/DashboardMetrics.js (version optimisée)
+// src/components/dashboard/DashboardMetrics.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -64,7 +64,7 @@ export const DashboardMetrics = () => {
   // État pour les dates
   const [startDate, setStartDate] = useState(getThirtyDaysAgo());
   const [endDate, setEndDate] = useState(new Date());
-  console.log({ user });
+
   // Vérifier si l'utilisateur est admin
   const isAdmin = roles.includes("ROLE_ADMIN");
 
@@ -173,7 +173,7 @@ export const DashboardMetrics = () => {
         )}
       </motion.div>
 
-      {/* Nouveau composant de filtres */}
+      {/* Composant de filtres avec export intégré */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -185,6 +185,7 @@ export const DashboardMetrics = () => {
           onMetricsChange={handleMetricsChange}
           onApply={handleApplyFilters}
           loading={isLoading}
+          tenantCode={tenantCode}
         />
       </motion.div>
 

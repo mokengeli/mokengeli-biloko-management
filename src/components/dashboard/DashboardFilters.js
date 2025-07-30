@@ -22,13 +22,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import ExportMenu from "./ExportMenu";
 
 // Configuration des sections et métriques
 const METRIC_SECTIONS = {
   financial: {
     id: "financial",
     label: "Métriques Financières",
-    icon: TrendingUp, // Changé de Euro à TrendingUp (plus générique)
+    icon: TrendingUp,
     color: "text-green-600",
     defaultEnabled: true,
     metrics: [
@@ -226,6 +227,7 @@ export const DashboardFilters = ({
   onMetricsChange,
   loading = false,
   className,
+  tenantCode, // Nouveau prop pour l'export
 }) => {
   const [localStartDate, setLocalStartDate] = useState(startDate);
   const [localEndDate, setLocalEndDate] = useState(endDate);
@@ -441,23 +443,30 @@ export const DashboardFilters = ({
                 </div>
               </div>
 
-              <Button
-                onClick={handleApply}
-                disabled={loading}
-                className="min-w-[120px] h-10"
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Chargement
-                  </>
-                ) : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Appliquer
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleApply}
+                  disabled={loading}
+                  className="min-w-[120px] h-10"
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Chargement
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Appliquer
+                    </>
+                  )}
+                </Button>
+                <ExportMenu
+                  startDate={localStartDate}
+                  endDate={localEndDate}
+                  tenantCode={tenantCode}
+                />
+              </div>
             </div>
           </div>
         </CardContent>

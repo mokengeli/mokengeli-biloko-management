@@ -18,28 +18,29 @@ const SalesSection = ({
   categoryData,
   hourlyData,
   topDishesData,
-  dishesHourlyData, // NOUVEAU
-  dishesDailyData, // NOUVEAU
+  dishesHourlyData,
+  dishesDailyData,
+  ordersDailyData,
   loading = {
     categoryBreakdown: false,
     hourlyDistribution: false,
     topDishes: false,
-    dishesHourlyDistribution: false, // NOUVEAU
-    dishesDailyTrend: false, // NOUVEAU
+    dishesHourlyDistribution: false,
+    dishesDailyTrend: false,
   },
   visibleMetrics = {
     topDishes: false,
     categoryBreakdown: false,
     hourlyDistribution: false,
-    dishesHourlyDistribution: false, // NOUVEAU
-    dishesDailyTrend: false, // NOUVEAU
+    dishesHourlyDistribution: false,
+    dishesDailyTrend: false,
   },
   errors = {
     categoryBreakdown: null,
     hourlyDistribution: null,
     topDishes: null,
-    dishesHourlyDistribution: null, // NOUVEAU
-    dishesDailyTrend: null, // NOUVEAU
+    dishesHourlyDistribution: null,
+    dishesDailyTrend: null,
   },
   defaultExpanded = true,
   currencyCode = "€", // Garde ce prop pour CategoryBreakdown qui n'a pas encore la devise dans l'API
@@ -109,8 +110,21 @@ const SalesSection = ({
           {(visibleMetrics.categoryBreakdown ||
             visibleMetrics.hourlyDistribution ||
             visibleMetrics.dishesHourlyDistribution ||
+            visibleMetrics.ordersDailyTrend ||
             visibleMetrics.dishesDailyTrend) && (
             <div className="space-y-4">
+              {/* Tendance quotidienne des commandes */}
+              {visibleMetrics.ordersDailyTrend && (
+                <div className="grid gap-4 md:grid-cols-1">
+                  <OrdersDailyTrendKPI
+                    data={ordersDailyData}
+                    loading={loading.ordersDailyTrend}
+                    error={errors.ordersDailyTrend}
+                    startDate={startDate}
+                    endDate={endDate}
+                  />
+                </div>
+              )}
               {/* NOUVEAU: Tendance quotidienne des plats */}
               {visibleMetrics.dishesDailyTrend && (
                 <div className="grid gap-4 md:grid-cols-1">
@@ -266,6 +280,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/lib/dashboardUtils";
+import OrdersDailyTrendKPI from "../kpis/SalesKPIs/OrdersDailyTrendKPI";
 
 // Fonction pour obtenir la couleur du rang
 const getRankColor = (index) => {

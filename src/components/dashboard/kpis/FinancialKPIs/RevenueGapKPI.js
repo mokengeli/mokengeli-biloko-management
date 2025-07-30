@@ -15,7 +15,7 @@ import { formatCurrency } from "@/lib/dashboardUtils";
  */
 export const RevenueGapKPI = ({ data, loading = false }) => {
   // Extraire le code de devise
-  const currencyCode = data?.currency?.code || "€";
+  const currencyCode = data?.currency?.code || "$";
 
   // Calcul de l'écart entre revenus théoriques et réels
   const calculateGap = () => {

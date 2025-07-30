@@ -21,7 +21,7 @@ export const TheoreticalRevenueKPI = ({
 }) => {
   // Extraire la valeur et le code de devise
   const value = data?.theoreticalRevenue || 0;
-  const currencyCode = data?.currency?.code || "€";
+  const currencyCode = data?.currency?.code || "$";
 
   // Calcul du changement par rapport à la période précédente
   const calculateChange = () => {

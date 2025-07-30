@@ -193,13 +193,13 @@ const TopDishesKPIOptimized = ({ data, loading, error }) => {
                   </div>
                   <div className="text-right">
                     <div className="font-bold">
-                      {formatCurrency(dish.revenue, dish.currency?.code || "€")}
+                      {formatCurrency(dish.revenue, dish.currency?.code || "$")}
                     </div>
                     <div className="text-xs text-green-600 flex items-center justify-end">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       {formatCurrency(
                         Math.round((dish.revenue / dish.quantity) * 100) / 100,
-                        dish.currency?.code || "€"
+                        dish.currency?.code || "$"
                       )}{" "}
                       /unité
                     </div>

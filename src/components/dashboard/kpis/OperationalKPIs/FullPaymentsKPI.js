@@ -20,7 +20,7 @@ export const FullPaymentsKPI = ({
   previousData = null,
 }) => {
   // Extraire le code de devise
-  const currencyCode = data?.currency?.code || "€";
+  const currencyCode = data?.currency?.code || "$";
 
   // Calcul du montant des paiements complets
   const getCurrentFullPayments = () => {

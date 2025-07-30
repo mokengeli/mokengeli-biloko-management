@@ -236,7 +236,7 @@ export const DashboardMetrics = () => {
             hourlyDistribution: errors.hourlyDistribution,
             topDishes: errors.topDishes,
           }}
-          currencyCode={data.revenue?.currency?.code || "€"} // Passer la devise depuis revenue
+          currencyCode={data.revenue?.currency?.code || "$"} // Passer la devise depuis revenue
         />
       )}
     </div>

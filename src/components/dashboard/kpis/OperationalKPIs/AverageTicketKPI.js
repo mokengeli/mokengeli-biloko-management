@@ -20,7 +20,7 @@ export const AverageTicketKPI = ({
   previousData = null,
 }) => {
   // Extraire le code de devise
-  const currencyCode = data?.currency?.code || "€";
+  const currencyCode = data?.currency?.code || "$";
 
   // Calcul du ticket moyen actuel
   const calculateCurrentAverageTicket = () => {

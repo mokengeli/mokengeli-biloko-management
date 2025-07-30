@@ -9,6 +9,7 @@ import TopDishesKPI from "../kpis/SalesKPIs/TopDishesKPI";
 import CategoryBreakdownKPI from "../kpis/SalesKPIs/CategoryBreakdownKPI";
 import HourlyDistributionKPI from "../kpis/SalesKPIs/HourlyDistributionKPI";
 import DishesHourlyDistributionKPI from "../kpis/SalesKPIs/DishesHourlyDistributionKPI";
+import DishesDailyTrendKPI from "../kpis/SalesKPIs/DishesDailyTrendKPI";
 
 const SalesSection = ({
   tenantCode,
@@ -18,23 +19,27 @@ const SalesSection = ({
   hourlyData,
   topDishesData,
   dishesHourlyData, // NOUVEAU
+  dishesDailyData, // NOUVEAU
   loading = {
     categoryBreakdown: false,
     hourlyDistribution: false,
     topDishes: false,
     dishesHourlyDistribution: false, // NOUVEAU
+    dishesDailyTrend: false, // NOUVEAU
   },
   visibleMetrics = {
     topDishes: false,
     categoryBreakdown: false,
     hourlyDistribution: false,
     dishesHourlyDistribution: false, // NOUVEAU
+    dishesDailyTrend: false, // NOUVEAU
   },
   errors = {
     categoryBreakdown: null,
     hourlyDistribution: null,
     topDishes: null,
     dishesHourlyDistribution: null, // NOUVEAU
+    dishesDailyTrend: null, // NOUVEAU
   },
   defaultExpanded = true,
   currencyCode = "€", // Garde ce prop pour CategoryBreakdown qui n'a pas encore la devise dans l'API
@@ -103,8 +108,22 @@ const SalesSection = ({
           {/* Graphiques - Réarrangés pour une meilleure disposition */}
           {(visibleMetrics.categoryBreakdown ||
             visibleMetrics.hourlyDistribution ||
-            visibleMetrics.dishesHourlyDistribution) && (
+            visibleMetrics.dishesHourlyDistribution ||
+            visibleMetrics.dishesDailyTrend) && (
             <div className="space-y-4">
+              {/* NOUVEAU: Tendance quotidienne des plats */}
+              {visibleMetrics.dishesDailyTrend && (
+                <div className="grid gap-4 md:grid-cols-1">
+                  <DishesDailyTrendKPI
+                    data={dishesDailyData}
+                    loading={loading.dishesDailyTrend}
+                    error={errors.dishesDailyTrend}
+                    startDate={startDate}
+                    endDate={endDate}
+                  />
+                </div>
+              )}
+
               {/* Ligne 1: Répartition par catégorie seule si elle est visible */}
               {visibleMetrics.categoryBreakdown && (
                 <div className="grid gap-4 md:grid-cols-1">

@@ -217,6 +217,7 @@ export const DashboardMetrics = () => {
       )}
 
       {/* Section d'analyse des ventes */}
+      {/* Section d'analyse des ventes */}
       {visibleMetrics.sales.enabled && (
         <SalesSection
           tenantCode={tenantCode}
@@ -226,11 +227,13 @@ export const DashboardMetrics = () => {
           hourlyData={data.hourlyDistribution}
           topDishesData={data.topDishes}
           dishesHourlyData={data.dishesHourlyDistribution} // NOUVEAU
+          dishesDailyData={data.dishesDailyTrend} // NOUVEAU
           loading={{
             categoryBreakdown: loading.categoryBreakdown,
             hourlyDistribution: loading.hourlyDistribution,
             topDishes: loading.topDishes,
             dishesHourlyDistribution: loading.dishesHourlyDistribution, // NOUVEAU
+            dishesDailyTrend: loading.dishesDailyTrend, // NOUVEAU
           }}
           visibleMetrics={visibleMetrics.sales.metrics}
           errors={{
@@ -238,6 +241,7 @@ export const DashboardMetrics = () => {
             hourlyDistribution: errors.hourlyDistribution,
             topDishes: errors.topDishes,
             dishesHourlyDistribution: errors.dishesHourlyDistribution, // NOUVEAU
+            dishesDailyTrend: errors.dishesDailyTrend, // NOUVEAU
           }}
           currencyCode={data.revenue?.currency?.code || "$"} // Passer la devise depuis revenue
         />

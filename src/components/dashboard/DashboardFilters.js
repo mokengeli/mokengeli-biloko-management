@@ -81,6 +81,11 @@ const METRIC_SECTIONS = {
         label: "Distribution Horaire Plats",
         defaultEnabled: false,
       },
+      {
+        id: "dishesDailyTrend",
+        label: "Tendance Quotidienne Plats",
+        defaultEnabled: false,
+      },
     ],
   },
 };

@@ -15,18 +15,31 @@ const exportService = {
           end: endDate,
           tenantCode: tenantCode,
         },
-        responseType: "blob", // Important pour recevoir le fichier
+        responseType: "blob",
       });
 
-      // Créer un nom de fichier avec la date et le tenant
-      const fileName = `revenus_quotidiens_${tenantCode}_${startDate}_${endDate}.csv`;
+      // Extraire le nom du fichier depuis les headers de la réponse
+      const contentDisposition = response.headers["content-disposition"];
 
-      // Créer un blob et déclencher le téléchargement
+      let fileName = "export.csv"; // Nom par défaut
+
+      if (contentDisposition) {
+        // Extraire le nom du fichier depuis Content-Disposition
+        // Format attendu : attachment; filename="revenus_quotidiens_REST001_2024-01-01_2024-01-31.csv"
+        const fileNameMatch = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(
+          contentDisposition
+        );
+        if (fileNameMatch && fileNameMatch[1]) {
+          fileName = fileNameMatch[1].replace(/['"]/g, "");
+        }
+      }
+
+      // Créer et télécharger le fichier
       const blob = new Blob([response.data], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = fileName;
+      link.download = fileName; // Utiliser le nom fourni par le serveur
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -41,7 +54,6 @@ const exportService = {
       throw error;
     }
   },
-
   // Fonction pour récupérer la liste des exports disponibles
   // Pour l'instant, on retourne une liste statique, mais cela pourrait
   // venir d'une API dans le futur

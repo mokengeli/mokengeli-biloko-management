@@ -52,6 +52,7 @@ const getInitialMetricsConfig = () => ({
       dishesDailyTrend: false,
       ordersDailyTrend: false,
       dishesStats: false,
+      paymentStatusStats: false,
     },
   },
 });
@@ -233,6 +234,7 @@ export const DashboardMetrics = () => {
           dishesDailyData={data.dishesDailyTrend}
           ordersDailyData={data.ordersDailyTrend}
           dishesStatsData={data.dishesStats}
+          paymentStatusData={data.paymentStatusStats}
           loading={{
             categoryBreakdown: loading.categoryBreakdown,
             hourlyDistribution: loading.hourlyDistribution,
@@ -241,6 +243,7 @@ export const DashboardMetrics = () => {
             dishesDailyTrend: loading.dishesDailyTrend,
             ordersDailyTrend: loading.ordersDailyTrend,
             dishesStats: loading.dishesStats,
+            paymentStatusStats: loading.paymentStatusStats,
           }}
           visibleMetrics={visibleMetrics.sales.metrics}
           errors={{
@@ -251,6 +254,7 @@ export const DashboardMetrics = () => {
             dishesDailyTrend: errors.dishesDailyTrend,
             ordersDailyTrend: errors.ordersDailyTrend,
             dishesStats: errors.dishesStats,
+            paymentStatusStats: errors.paymentStatusStats,
           }}
           currencyCode={data.revenue?.currency?.code || "$"}
         />

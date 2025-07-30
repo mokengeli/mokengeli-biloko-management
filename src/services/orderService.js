@@ -170,7 +170,7 @@ const orderService = {
     }
   },
 
-  // NOUVEAU: Fonction pour récupérer la distribution quotidienne des plats
+  // Fonction pour récupérer la distribution quotidienne des plats
   getDishesDailyDistribution: async (startDate, endDate, tenantCode) => {
     try {
       if (!startDate || !endDate || !tenantCode) {
@@ -192,6 +192,34 @@ const orderService = {
     } catch (error) {
       console.error(
         "Error fetching dishes daily distribution:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  // Fonction pour récupérer les statistiques des états de paiement
+  getPaymentStatusStats: async (startDate, endDate, tenantCode) => {
+    try {
+      if (!startDate || !endDate || !tenantCode) {
+        throw new Error(
+          "Paramètres requis manquants pour récupérer les statistiques de paiement"
+        );
+      }
+      const response = await apiClient.get(
+        "/api/order/dashboard/orders/payment-status",
+        {
+          params: {
+            start: startDate,
+            end: endDate,
+            tenantCode,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching payment status stats:",
         error.response?.data || error.message
       );
       throw error;

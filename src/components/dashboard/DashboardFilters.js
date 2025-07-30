@@ -87,6 +87,11 @@ const METRIC_SECTIONS = {
         defaultEnabled: false,
       },
       {
+        id: "paymentStatusStats",
+        label: "État des Paiements",
+        defaultEnabled: false,
+      },
+      {
         id: "ordersDailyTrend",
         label: "Tendance Quotidienne Commandes",
         defaultEnabled: false,

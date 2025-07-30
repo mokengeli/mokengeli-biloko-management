@@ -108,9 +108,11 @@ const METRIC_SECTIONS = {
 
 // Fonction utilitaire pour formater les dates
 const formatDateForAPI = (date) => {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
-
 // Fonction pour obtenir des dates prédéfinies
 const getPresetDates = () => {
   const today = new Date();
@@ -123,10 +125,13 @@ const getPresetDates = () => {
   const last30Days = new Date(today);
   last30Days.setDate(last30Days.getDate() - 30);
 
+  // Ce mois : du 1er jour du mois au jour actuel
   const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const thisMonthEnd = new Date(today); // jour actuel
 
+  // Mois dernier : du 1er au dernier jour du mois précédent
   const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0); // Le jour 0 du mois actuel = dernier jour du mois précédent
 
   return {
     today,
@@ -134,6 +139,7 @@ const getPresetDates = () => {
     last7Days,
     last30Days,
     thisMonthStart,
+    thisMonthEnd,
     lastMonthStart,
     lastMonthEnd,
   };

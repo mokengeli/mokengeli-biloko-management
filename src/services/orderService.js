@@ -142,6 +142,34 @@ const orderService = {
       throw error;
     }
   },
+
+  // NOUVEAU: Fonction pour récupérer la distribution horaire des plats
+  getDishesHourlyDistribution: async (date, tenantCode) => {
+    try {
+      if (!date || !tenantCode) {
+        throw new Error(
+          "Paramètres requis manquants pour récupérer la distribution horaire des plats"
+        );
+      }
+      const response = await apiClient.get(
+        "/api/order/dashboard/dishes/hourly-distribution",
+        {
+          params: {
+            date,
+            tenantCode,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching dishes hourly distribution:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
   countTablesByTenant: async (tenantCode) => {
     try {
       const response = await apiClient.get("/api/order/table/count", {

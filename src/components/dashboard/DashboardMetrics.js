@@ -225,16 +225,19 @@ export const DashboardMetrics = () => {
           categoryData={data.categoryBreakdown}
           hourlyData={data.hourlyDistribution}
           topDishesData={data.topDishes}
+          dishesHourlyData={data.dishesHourlyDistribution} // NOUVEAU
           loading={{
             categoryBreakdown: loading.categoryBreakdown,
             hourlyDistribution: loading.hourlyDistribution,
             topDishes: loading.topDishes,
+            dishesHourlyDistribution: loading.dishesHourlyDistribution, // NOUVEAU
           }}
           visibleMetrics={visibleMetrics.sales.metrics}
           errors={{
             categoryBreakdown: errors.categoryBreakdown,
             hourlyDistribution: errors.hourlyDistribution,
             topDishes: errors.topDishes,
+            dishesHourlyDistribution: errors.dishesHourlyDistribution, // NOUVEAU
           }}
           currencyCode={data.revenue?.currency?.code || "$"} // Passer la devise depuis revenue
         />

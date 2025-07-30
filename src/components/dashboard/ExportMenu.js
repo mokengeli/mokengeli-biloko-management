@@ -9,7 +9,6 @@ import {
   TrendingUp,
   Clock,
   Grid,
-  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,10 +18,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import exportService from "@/services/exportService";
@@ -45,8 +40,25 @@ export default function ExportMenu({ startDate, endDate, tenantCode }) {
     return date.toISOString().split("T")[0];
   };
 
-  // Récupérer les exports disponibles organisés par catégories
-  const exportCategories = exportService.getAvailableExports();
+  // Récupérer tous les exports disponibles de manière aplatie
+  const getAllExports = () => {
+    const exportCategories = exportService.getAvailableExports();
+    const allExports = [];
+
+    Object.entries(exportCategories).forEach(([categoryKey, category]) => {
+      category.exports.forEach((exportConfig) => {
+        allExports.push({
+          ...exportConfig,
+          categoryLabel: category.label,
+          categoryIcon: category.icon,
+        });
+      });
+    });
+
+    return allExports;
+  };
+
+  const exports = getAllExports();
 
   // Gérer l'export
   const handleExport = async (exportConfig) => {
@@ -75,12 +87,6 @@ export default function ExportMenu({ startDate, endDate, tenantCode }) {
   // Si pas de tenant sélectionné, désactiver le bouton
   const isDisabled = !tenantCode || isExporting;
 
-  // Compter le nombre total d'exports disponibles
-  const totalExports = Object.values(exportCategories).reduce(
-    (total, category) => total + category.exports.length,
-    0
-  );
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -91,108 +97,51 @@ export default function ExportMenu({ startDate, endDate, tenantCode }) {
             <Download className="h-4 w-4" />
           )}
           Exporter
-          {totalExports > 1 && (
-            <span className="ml-1 text-xs text-muted-foreground">
-              ({totalExports})
-            </span>
-          )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-72">
+      <DropdownMenuContent className="w-80">
         <DropdownMenuLabel className="flex items-center gap-2">
           <Download className="h-4 w-4" />
           Exports disponibles
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {/* Si un seul export, affichage simple */}
-        {totalExports === 1
-          ? Object.entries(exportCategories).map(([categoryKey, category]) =>
-              category.exports.map((exportConfig) => {
-                const ExportIcon = iconMap[exportConfig.icon] || FileText;
-                return (
-                  <DropdownMenuItem
-                    key={exportConfig.id}
-                    className="cursor-pointer"
-                    onSelect={() => handleExport(exportConfig)}
-                    disabled={isExporting}
-                  >
-                    <div className="flex items-start gap-3 w-full">
-                      <ExportIcon className="h-4 w-4 mt-0.5 shrink-0" />
-                      <div className="flex-1">
-                        <div className="font-medium flex items-center gap-2">
-                          {exportConfig.name}
-                          <span className="text-xs text-muted-foreground">
-                            ({exportConfig.format})
-                          </span>
-                        </div>
-                        {exportConfig.description && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {exportConfig.description}
-                          </div>
-                        )}
-                      </div>
-                      {isExporting && exportingId === exportConfig.id && (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      )}
+        {/* Liste directe de tous les exports */}
+        {exports.map((exportConfig) => {
+          const ExportIcon = iconMap[exportConfig.icon] || FileText;
+          return (
+            <DropdownMenuItem
+              key={exportConfig.id}
+              className="cursor-pointer py-3"
+              onSelect={() => handleExport(exportConfig)}
+              disabled={isExporting}
+            >
+              <div className="flex items-start gap-3 w-full">
+                <ExportIcon className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                <div className="flex-1">
+                  <div className="font-medium">{exportConfig.name}</div>
+                  {exportConfig.description && (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {exportConfig.description}
                     </div>
-                  </DropdownMenuItem>
-                );
-              })
-            )
-          : /* Si plusieurs exports, organiser par catégories */
-            Object.entries(exportCategories).map(([categoryKey, category]) => {
-              const CategoryIcon = iconMap[category.icon] || FileText;
-
-              return (
-                <DropdownMenuSub key={categoryKey}>
-                  <DropdownMenuSubTrigger className="cursor-pointer">
-                    <CategoryIcon className="h-4 w-4 mr-2" />
-                    <span>{category.label}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      {category.exports.length}
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {exportConfig.categoryLabel}
                     </span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="w-64">
-                      {category.exports.map((exportConfig) => {
-                        const ExportIcon =
-                          iconMap[exportConfig.icon] || FileText;
-                        return (
-                          <DropdownMenuItem
-                            key={exportConfig.id}
-                            className="cursor-pointer"
-                            onSelect={() => handleExport(exportConfig)}
-                            disabled={isExporting}
-                          >
-                            <div className="flex items-start gap-3 w-full">
-                              <ExportIcon className="h-4 w-4 mt-0.5 shrink-0" />
-                              <div className="flex-1">
-                                <div className="font-medium flex items-center gap-2">
-                                  {exportConfig.name}
-                                  <span className="text-xs text-muted-foreground">
-                                    ({exportConfig.format})
-                                  </span>
-                                </div>
-                                {exportConfig.description && (
-                                  <div className="text-xs text-muted-foreground mt-0.5">
-                                    {exportConfig.description}
-                                  </div>
-                                )}
-                              </div>
-                              {isExporting &&
-                                exportingId === exportConfig.id && (
-                                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                                )}
-                            </div>
-                          </DropdownMenuItem>
-                        );
-                      })}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-              );
-            })}
+                    <span className="text-xs text-muted-foreground">•</span>
+                    <span className="text-xs text-muted-foreground">
+                      Format {exportConfig.format}
+                    </span>
+                  </div>
+                </div>
+                {isExporting && exportingId === exportConfig.id && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+              </div>
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );

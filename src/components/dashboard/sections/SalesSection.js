@@ -12,6 +12,7 @@ import DishesHourlyDistributionKPI from "../kpis/SalesKPIs/DishesHourlyDistribut
 import DishesDailyTrendKPI from "../kpis/SalesKPIs/DishesDailyTrendKPI";
 import OrdersDailyTrendKPI from "../kpis/SalesKPIs/OrdersDailyTrendKPI";
 import DishesStatsKPI from "../kpis/SalesKPIs/DishesStatsKPI";
+import PaymentStatusStatsKPI from "../kpis/SalesKPIs/PaymentStatusStatsKPI";
 
 const SalesSection = ({
   tenantCode,
@@ -23,7 +24,8 @@ const SalesSection = ({
   dishesHourlyData,
   dishesDailyData,
   ordersDailyData,
-  dishesStatsData, // NOUVEAU
+  dishesStatsData,
+  paymentStatusData, // NOUVEAU
   loading = {
     categoryBreakdown: false,
     hourlyDistribution: false,
@@ -31,7 +33,8 @@ const SalesSection = ({
     dishesHourlyDistribution: false,
     dishesDailyTrend: false,
     ordersDailyTrend: false,
-    dishesStats: false, // NOUVEAU
+    dishesStats: false,
+    paymentStatusStats: false, // NOUVEAU
   },
   visibleMetrics = {
     topDishes: false,
@@ -40,7 +43,8 @@ const SalesSection = ({
     dishesHourlyDistribution: false,
     dishesDailyTrend: false,
     ordersDailyTrend: false,
-    dishesStats: false, // NOUVEAU
+    dishesStats: false,
+    paymentStatusStats: false, // NOUVEAU
   },
   errors = {
     categoryBreakdown: null,
@@ -49,7 +53,8 @@ const SalesSection = ({
     dishesHourlyDistribution: null,
     dishesDailyTrend: null,
     ordersDailyTrend: null,
-    dishesStats: null, // NOUVEAU
+    dishesStats: null,
+    paymentStatusStats: null, // NOUVEAU
   },
   defaultExpanded = true,
   currencyCode = "€",
@@ -122,6 +127,17 @@ const SalesSection = ({
                 data={dishesStatsData}
                 loading={loading.dishesStats}
                 error={errors.dishesStats}
+              />
+            </div>
+          )}
+
+          {/* État des paiements */}
+          {visibleMetrics.paymentStatusStats && (
+            <div className="grid gap-4 md:grid-cols-1">
+              <PaymentStatusStatsKPI
+                data={paymentStatusData}
+                loading={loading.paymentStatusStats}
+                error={errors.paymentStatusStats}
               />
             </div>
           )}

@@ -1,4 +1,4 @@
-// src/components/dashboard/kpis/TheoreticalRevenueKPI.js
+// src/components/dashboard/kpis/FinancialKPIs/TheoreticalRevenueKPI.js
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,15 +10,19 @@ import { formatCurrency } from "@/lib/dashboardUtils";
  * Composant TheoreticalRevenueKPI
  * Affiche le chiffre d'affaires théorique (montant total sans remises)
  *
- * @param {number} value - Montant des revenus théoriques
+ * @param {Object} data - Données complètes du revenue dashboard incluant currency
  * @param {boolean} loading - État de chargement
  * @param {Object} previousData - Données de la période précédente pour le calcul de changement
  */
 export const TheoreticalRevenueKPI = ({
-  value,
+  data,
   loading = false,
   previousData = null,
 }) => {
+  // Extraire la valeur et le code de devise
+  const value = data?.theoreticalRevenue || 0;
+  const currencyCode = data?.currency?.code || "$";
+
   // Calcul du changement par rapport à la période précédente
   const calculateChange = () => {
     if (!previousData?.theoreticalRevenue || !value) return null;
@@ -55,7 +59,7 @@ export const TheoreticalRevenueKPI = ({
                 className="text-2xl font-bold mb-1"
                 title={value?.toString()}
               >
-                {formatCurrency(value || 0)}
+                {formatCurrency(value, currencyCode)}
               </div>
               {changePercentage !== null && (
                 <div

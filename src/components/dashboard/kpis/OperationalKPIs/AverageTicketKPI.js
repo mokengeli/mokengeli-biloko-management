@@ -1,4 +1,4 @@
-// src/components/dashboard/kpis/AverageTicketKPI.js
+// src/components/dashboard/kpis/OperationalKPIs/AverageTicketKPI.js
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { formatCurrency } from "@/lib/dashboardUtils";
  * Composant AverageTicketKPI
  * Affiche le ticket moyen (revenu réel divisé par le nombre de commandes)
  *
- * @param {Object} data - Données complètes du revenue dashboard
+ * @param {Object} data - Données complètes du revenue dashboard incluant currency
  * @param {boolean} loading - État de chargement
  * @param {Object} previousData - Données de la période précédente pour la comparaison
  */
@@ -19,6 +19,9 @@ export const AverageTicketKPI = ({
   loading = false,
   previousData = null,
 }) => {
+  // Extraire le code de devise
+  const currencyCode = data?.currency?.code || "$";
+
   // Calcul du ticket moyen actuel
   const calculateCurrentAverageTicket = () => {
     if (!data?.realRevenue || !data?.orders || data.orders.length === 0)
@@ -72,7 +75,7 @@ export const AverageTicketKPI = ({
           ) : (
             <>
               <div className="text-2xl font-bold mb-1">
-                {formatCurrency(averageTicket)}
+                {formatCurrency(averageTicket, currencyCode)}
               </div>
               {changePercentage !== null && (
                 <div

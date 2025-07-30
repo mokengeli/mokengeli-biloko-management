@@ -58,19 +58,19 @@ const FinancialSection = ({
           transition={{ duration: 0.3 }}
           className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
         >
-          {/* KPI Revenus Réels */}
+          {/* KPI Revenus Réels - Passer data complet au lieu de juste value */}
           {visibleMetrics.realRevenue && (
             <RealRevenueKPI
-              value={revenueData?.realRevenue}
+              data={revenueData}
               loading={loading}
               previousData={previousPeriodData}
             />
           )}
 
-          {/* KPI Revenus Théoriques */}
+          {/* KPI Revenus Théoriques - Passer data complet au lieu de juste value */}
           {visibleMetrics.theoreticalRevenue && (
             <TheoreticalRevenueKPI
-              value={revenueData?.theoreticalRevenue}
+              data={revenueData}
               loading={loading}
               previousData={previousPeriodData}
             />

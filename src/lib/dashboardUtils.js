@@ -1,7 +1,16 @@
 // src/lib/dashboardUtils.js
 
 // Utilitaires pour le formatage des données du dashboard
-export const formatCurrency = (value) => {
+export const formatCurrency = (value, currencyCode = "€") => {
+  // Si on a un code de devise, l'utiliser directement
+  if (currencyCode) {
+    return `${value.toLocaleString("fr-FR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })} ${currencyCode}`;
+  }
+
+  // Sinon, utiliser le format par défaut
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",

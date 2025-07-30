@@ -1,4 +1,4 @@
-// src/components/dashboard/kpis/TopDishesKPI.js
+// src/components/dashboard/kpis/SalesKPIs/TopDishesKPI.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -135,12 +135,15 @@ export const TopDishesKPI = ({ tenantCode, startDate, endDate, limit = 5 }) => {
                   </div>
                   <div className="text-right">
                     <div className="font-bold">
-                      {formatCurrency(dish.revenue)}
+                      {formatCurrency(dish.revenue, dish.currency?.code || "$")}
                     </div>
                     <div className="text-xs text-green-600 flex items-center justify-end">
                       <TrendingUp className="h-3 w-3 mr-1" />
-                      {Math.round((dish.revenue / dish.quantity) * 100) / 100} /
-                      unité
+                      {formatCurrency(
+                        Math.round((dish.revenue / dish.quantity) * 100) / 100,
+                        dish.currency?.code || "$"
+                      )}{" "}
+                      /unité
                     </div>
                   </div>
                 </motion.div>

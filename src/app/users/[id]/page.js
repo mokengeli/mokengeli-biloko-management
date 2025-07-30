@@ -161,7 +161,7 @@ export default function UserDetailPage() {
               Détails de l'utilisateur
             </motion.h1>
           </div>
-          <div className="flex gap-2">
+          {/**<div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => router.push(`/users/${employeeNumber}/edit`)}
@@ -170,6 +170,7 @@ export default function UserDetailPage() {
               Modifier
             </Button>
           </div>
+            */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

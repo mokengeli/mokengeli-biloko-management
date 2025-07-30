@@ -122,15 +122,15 @@ export const useAuth = () => {
       // Si nous avons déjà fait une vérification et que l'utilisateur est authentifié,
       // et que nous ne forçons pas une nouvelle vérification, ne rien faire
       if (initialCheckDoneRef.current && isAuthenticated && !force) {
-        console.log(
+        /**  console.log(
           "Initial auth check already done and user is authenticated"
-        );
+        );*/
         return { type: "skipped" };
       }
 
       // Si une vérification est déjà en cours, ne pas en lancer une nouvelle
       if (authCheckInProgressRef.current) {
-        console.log("Auth check already in progress");
+        //console.log("Auth check already in progress");
         return { type: "in-progress" };
       }
 

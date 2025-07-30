@@ -10,14 +10,14 @@ export function middleware(request) {
   const url = request.nextUrl.clone();
   const isLoginPage = url.pathname === "/auth/login";
 
-  console.log(
+  /** console.log(
     `Middleware: Path=${url.pathname}, isAuthenticated=${isAuthenticated}, isLoginPage=${isLoginPage}`
-  );
+  ); */
 
   // Si l'utilisateur est sur la page de login mais qu'il est déjà authentifié
   if (isLoginPage && isAuthenticated) {
     url.pathname = "/dashboard";
-    console.log(`Redirecting authenticated user from login to dashboard`);
+    // console.log(`Redirecting authenticated user from login to dashboard`);
     return NextResponse.redirect(url);
   }
 

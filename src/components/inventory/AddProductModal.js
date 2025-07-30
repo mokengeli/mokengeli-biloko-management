@@ -114,9 +114,6 @@ export default function AddProductModal({
     setError(null);
 
     try {
-      // Vérifier que categories est bien un tableau avant d'utiliser find
-      console.log("Categories:", categories);
-
       // Trouver l'objet catégorie complet à partir de son nom
       const selectedCategory = Array.isArray(categories)
         ? categories.find((cat) => cat.name === data.categories)
@@ -136,8 +133,6 @@ export default function AddProductModal({
           : null,
         tenantCode: tenantCode,
       };
-
-      console.log("Sending product data:", productData);
 
       // Créer le produit via l'API
       await inventoryService.createProduct(productData);

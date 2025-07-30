@@ -22,7 +22,6 @@ const clearAuthCookie = async () => {
       method: "POST",
       credentials: "include",
     });
-    console.log("Auth cookie cleared successfully");
   } catch (err) {
     console.error("Failed to clear auth cookie:", err);
   }

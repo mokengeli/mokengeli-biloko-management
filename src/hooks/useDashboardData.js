@@ -304,7 +304,6 @@ export const useDashboardData = (
     } else {
       // Vérifier si les paramètres ont vraiment changé
       if (lastFetchParams.current === currentParams && fetchTrigger === 0) {
-        console.log("Parameters unchanged, skipping fetch");
         return;
       }
       lastFetchParams.current = currentParams;
@@ -327,11 +326,8 @@ export const useDashboardData = (
         const requiredAPIs = getRequiredAPIs(selectedMetrics);
 
         if (requiredAPIs.length === 0) {
-          console.log("No metrics selected, skipping API calls");
           return;
         }
-
-        console.log("Required APIs:", requiredAPIs);
 
         // Réinitialiser les erreurs
         setErrors({
@@ -647,7 +643,6 @@ export const useDashboardData = (
 
   // Fonction pour forcer le refresh
   const refetch = useCallback(() => {
-    console.log("Manual refetch triggered");
     setFetchTrigger((prev) => prev + 1);
   }, []);
 

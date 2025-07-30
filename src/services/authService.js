@@ -12,7 +12,6 @@ const authService = {
         platformType,
       });
 
-      console.log("Login request completed successfully");
       return response.data;
     } catch (error) {
       console.error(
@@ -26,9 +25,7 @@ const authService = {
   // Fonction pour récupérer l'utilisateur courant
   getCurrentUser: async () => {
     try {
-      console.log("Starting getCurrentUser request");
       const response = await apiClient.get("/api/auth/me");
-      console.log("getCurrentUser request completed successfully");
       return response.data;
     } catch (error) {
       console.error(

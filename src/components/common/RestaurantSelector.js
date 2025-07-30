@@ -50,7 +50,7 @@ export default function RestaurantSelector({ value, onChange, className }) {
       if (restaurantsCache && cacheTimestamp) {
         const now = Date.now();
         if (now - cacheTimestamp < CACHE_DURATION) {
-          console.log("Using cached restaurants data");
+          //console.log("Using cached restaurants data");
           setRestaurants(restaurantsCache);
           return;
         }
@@ -61,7 +61,6 @@ export default function RestaurantSelector({ value, onChange, className }) {
       setError(null);
 
       try {
-        console.log("Fetching restaurants from API");
         const data = await userService.getAllTenants();
 
         if (!mountedRef.current) return;

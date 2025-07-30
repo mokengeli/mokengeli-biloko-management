@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import RestaurantSelector from "@/components/inventory/RestaurantSelector";
+import RestaurantSelector from "@/components/common/RestaurantSelector";
 import useInventory from "@/hooks/useInventory";
 import usePermissions from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";

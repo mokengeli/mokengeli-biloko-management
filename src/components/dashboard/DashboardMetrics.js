@@ -11,7 +11,7 @@ import DashboardFilters from "./DashboardFilters";
 import FinancialSection from "./sections/FinancialSection";
 import OperationalSection from "./sections/OperationalSection";
 import SalesSection from "./sections/SalesSection";
-import RestaurantSelector from "@/components/inventory/RestaurantSelector";
+import RestaurantSelector from "@/components/common/RestaurantSelector";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/useDashboardData";

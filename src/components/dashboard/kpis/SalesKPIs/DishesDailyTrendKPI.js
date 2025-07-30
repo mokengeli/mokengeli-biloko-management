@@ -166,10 +166,6 @@ export const DishesDailyTrendKPI = ({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const date = new Date(data.day);
-      const variation = (
-        ((data.dishes - statistics.average) / statistics.average) *
-        100
-      ).toFixed(1);
 
       return (
         <div className="bg-white p-3 border rounded shadow-sm">
@@ -181,15 +177,8 @@ export const DishesDailyTrendKPI = ({
             })}
           </p>
           <p className="text-lg font-bold text-orange-600">
-            {data.dishes} plats
+            {data.dishes} plat(s)
           </p>
-          <p className="text-xs text-muted-foreground">
-            {variation > 0 ? "+" : ""}
-            {variation}% vs moyenne
-          </p>
-          {data.isWeekend && (
-            <p className="text-xs text-blue-600 mt-1">Weekend</p>
-          )}
         </div>
       );
     }

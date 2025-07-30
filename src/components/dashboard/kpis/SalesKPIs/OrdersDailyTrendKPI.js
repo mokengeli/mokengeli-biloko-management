@@ -167,10 +167,6 @@ export const OrdersDailyTrendKPI = ({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const date = new Date(data.day);
-      const variation = (
-        ((data.orders - statistics.average) / statistics.average) *
-        100
-      ).toFixed(1);
 
       return (
         <div className="bg-white p-3 border rounded shadow-sm">
@@ -182,15 +178,8 @@ export const OrdersDailyTrendKPI = ({
             })}
           </p>
           <p className="text-lg font-bold text-blue-600">
-            {data.orders} commandes
+            {data.orders} commande(s)
           </p>
-          <p className="text-xs text-muted-foreground">
-            {variation > 0 ? "+" : ""}
-            {variation}% vs moyenne
-          </p>
-          {data.isWeekend && (
-            <p className="text-xs text-blue-600 mt-1">Weekend</p>
-          )}
         </div>
       );
     }

@@ -73,7 +73,17 @@ const METRIC_SECTIONS = {
       },
       {
         id: "hourlyDistribution",
-        label: "Distribution Horaire",
+        label: "Distribution Horaire Commandes",
+        defaultEnabled: false,
+      },
+      {
+        id: "dishesHourlyDistribution",
+        label: "Distribution Horaire Plats",
+        defaultEnabled: false,
+      },
+      {
+        id: "dishesDailyTrend",
+        label: "Tendance Quotidienne Plats",
         defaultEnabled: false,
       },
     ],

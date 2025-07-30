@@ -19,6 +19,8 @@ const API_DEPENDENCIES = {
   topDishes: ["topDishes"],
   categoryBreakdown: ["categoryBreakdown"],
   hourlyDistribution: ["hourlyDistribution"],
+  dishesHourlyDistribution: ["dishesHourlyDistribution"], // NOUVEAU
+  dishesDailyTrend: ["dishesDailyTrend"], // NOUVEAU
 };
 
 // Fonction utilitaire pour formater les dates
@@ -40,6 +42,8 @@ export const useDashboardData = (
     categoryBreakdown: [],
     hourlyDistribution: [],
     topDishes: [],
+    dishesHourlyDistribution: [], // NOUVEAU
+    dishesDailyTrend: [], // NOUVEAU
   });
 
   const [loading, setLoading] = useState({
@@ -47,6 +51,8 @@ export const useDashboardData = (
     categoryBreakdown: false,
     hourlyDistribution: false,
     topDishes: false,
+    dishesHourlyDistribution: false, // NOUVEAU
+    dishesDailyTrend: false, // NOUVEAU
   });
 
   const [errors, setErrors] = useState({
@@ -54,6 +60,8 @@ export const useDashboardData = (
     categoryBreakdown: null,
     hourlyDistribution: null,
     topDishes: null,
+    dishesHourlyDistribution: null, // NOUVEAU
+    dishesDailyTrend: null, // NOUVEAU
   });
 
   // État pour forcer le refetch
@@ -183,6 +191,38 @@ export const useDashboardData = (
     []
   );
 
+  // NOUVEAU: Fonction pour fetch les données horaires des plats
+  const fetchDishesHourlyData = useCallback(
+    async (tenantCode, endDate, signal) => {
+      const formattedEndDate = formatDateForAPI(endDate);
+
+      const data = await orderService.getDishesHourlyDistribution(
+        formattedEndDate,
+        tenantCode
+      );
+
+      return data;
+    },
+    []
+  );
+
+  // NOUVEAU: Fonction pour fetch les données quotidiennes des plats
+  const fetchDishesDailyData = useCallback(
+    async (tenantCode, startDate, endDate, signal) => {
+      const formattedStartDate = formatDateForAPI(startDate);
+      const formattedEndDate = formatDateForAPI(endDate);
+
+      const data = await orderService.getDishesDailyDistribution(
+        formattedStartDate,
+        formattedEndDate,
+        tenantCode
+      );
+
+      return data;
+    },
+    []
+  );
+
   // Effect pour fetch les données
   useEffect(() => {
     // Créer une clé unique pour les paramètres actuels
@@ -236,6 +276,8 @@ export const useDashboardData = (
           categoryBreakdown: null,
           hourlyDistribution: null,
           topDishes: null,
+          dishesHourlyDistribution: null, // NOUVEAU
+          dishesDailyTrend: null, // NOUVEAU
         });
 
         // Créer les abort controllers
@@ -252,6 +294,8 @@ export const useDashboardData = (
           categoryBreakdown: false,
           hourlyDistribution: false,
           topDishes: false,
+          dishesHourlyDistribution: false, // NOUVEAU
+          dishesDailyTrend: false, // NOUVEAU
         };
         const newData = { ...data };
 
@@ -353,6 +397,57 @@ export const useDashboardData = (
           );
         }
 
+        // 5. NOUVEAU: Dishes hourly distribution
+        if (requiredAPIs.includes("dishesHourlyDistribution")) {
+          newLoading.dishesHourlyDistribution = true;
+          fetchPromises.push(
+            fetchDishesHourlyData(
+              tenantCode,
+              endDate,
+              controllers.dishesHourlyDistribution?.signal
+            )
+              .then((result) => {
+                newData.dishesHourlyDistribution = result || [];
+                newLoading.dishesHourlyDistribution = false;
+              })
+              .catch((error) => {
+                if (error.name !== "AbortError") {
+                  setErrors((prev) => ({
+                    ...prev,
+                    dishesHourlyDistribution: error.message,
+                  }));
+                }
+                newLoading.dishesHourlyDistribution = false;
+              })
+          );
+        }
+
+        // 6. NOUVEAU: Dishes daily trend
+        if (requiredAPIs.includes("dishesDailyTrend")) {
+          newLoading.dishesDailyTrend = true;
+          fetchPromises.push(
+            fetchDishesDailyData(
+              tenantCode,
+              startDate,
+              endDate,
+              controllers.dishesDailyTrend?.signal
+            )
+              .then((result) => {
+                newData.dishesDailyTrend = result || [];
+                newLoading.dishesDailyTrend = false;
+              })
+              .catch((error) => {
+                if (error.name !== "AbortError") {
+                  setErrors((prev) => ({
+                    ...prev,
+                    dishesDailyTrend: error.message,
+                  }));
+                }
+                newLoading.dishesDailyTrend = false;
+              })
+          );
+        }
+
         // Mettre à jour l'état de chargement immédiatement
         setLoading(newLoading);
 
@@ -366,6 +461,8 @@ export const useDashboardData = (
           categoryBreakdown: false,
           hourlyDistribution: false,
           topDishes: false,
+          dishesHourlyDistribution: false, // NOUVEAU
+          dishesDailyTrend: false, // NOUVEAU
         });
       }, 300); // Délai de debouncing
     };
@@ -392,6 +489,8 @@ export const useDashboardData = (
     fetchCategoryData,
     fetchHourlyData,
     fetchTopDishesData,
+    fetchDishesHourlyData, // NOUVEAU
+    fetchDishesDailyData, // NOUVEAU
   ]);
 
   // Fonction pour forcer le refresh

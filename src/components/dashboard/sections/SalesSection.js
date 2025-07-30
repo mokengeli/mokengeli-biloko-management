@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import TopDishesKPI from "../kpis/SalesKPIs/TopDishesKPI";
 import CategoryBreakdownKPI from "../kpis/SalesKPIs/CategoryBreakdownKPI";
 import HourlyDistributionKPI from "../kpis/SalesKPIs/HourlyDistributionKPI";
+import DishesHourlyDistributionKPI from "../kpis/SalesKPIs/DishesHourlyDistributionKPI";
+import DishesDailyTrendKPI from "../kpis/SalesKPIs/DishesDailyTrendKPI";
 
 const SalesSection = ({
   tenantCode,
@@ -16,20 +18,28 @@ const SalesSection = ({
   categoryData,
   hourlyData,
   topDishesData,
+  dishesHourlyData, // NOUVEAU
+  dishesDailyData, // NOUVEAU
   loading = {
     categoryBreakdown: false,
     hourlyDistribution: false,
     topDishes: false,
+    dishesHourlyDistribution: false, // NOUVEAU
+    dishesDailyTrend: false, // NOUVEAU
   },
   visibleMetrics = {
     topDishes: false,
     categoryBreakdown: false,
     hourlyDistribution: false,
+    dishesHourlyDistribution: false, // NOUVEAU
+    dishesDailyTrend: false, // NOUVEAU
   },
   errors = {
     categoryBreakdown: null,
     hourlyDistribution: null,
     topDishes: null,
+    dishesHourlyDistribution: null, // NOUVEAU
+    dishesDailyTrend: null, // NOUVEAU
   },
   defaultExpanded = true,
   currencyCode = "€", // Garde ce prop pour CategoryBreakdown qui n'a pas encore la devise dans l'API
@@ -95,28 +105,61 @@ const SalesSection = ({
             </div>
           )}
 
-          {/* Graphiques */}
+          {/* Graphiques - Réarrangés pour une meilleure disposition */}
           {(visibleMetrics.categoryBreakdown ||
-            visibleMetrics.hourlyDistribution) && (
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Graphique Répartition par Catégorie */}
-              {visibleMetrics.categoryBreakdown && (
-                <CategoryBreakdownKPI
-                  data={categoryData}
-                  loading={loading.categoryBreakdown}
-                  error={errors.categoryBreakdown}
-                  currencyCode={currencyCode}
-                />
+            visibleMetrics.hourlyDistribution ||
+            visibleMetrics.dishesHourlyDistribution ||
+            visibleMetrics.dishesDailyTrend) && (
+            <div className="space-y-4">
+              {/* NOUVEAU: Tendance quotidienne des plats */}
+              {visibleMetrics.dishesDailyTrend && (
+                <div className="grid gap-4 md:grid-cols-1">
+                  <DishesDailyTrendKPI
+                    data={dishesDailyData}
+                    loading={loading.dishesDailyTrend}
+                    error={errors.dishesDailyTrend}
+                    startDate={startDate}
+                    endDate={endDate}
+                  />
+                </div>
               )}
 
-              {/* Graphique Distribution Horaire - avec la date */}
-              {visibleMetrics.hourlyDistribution && (
-                <HourlyDistributionKPI
-                  data={hourlyData}
-                  loading={loading.hourlyDistribution}
-                  error={errors.hourlyDistribution}
-                  date={endDate} // Passage de la date de fin utilisée pour l'API
-                />
+              {/* Ligne 1: Répartition par catégorie seule si elle est visible */}
+              {visibleMetrics.categoryBreakdown && (
+                <div className="grid gap-4 md:grid-cols-1">
+                  <CategoryBreakdownKPI
+                    data={categoryData}
+                    loading={loading.categoryBreakdown}
+                    error={errors.categoryBreakdown}
+                    currencyCode={currencyCode}
+                  />
+                </div>
+              )}
+
+              {/* Ligne 2: Les deux distributions horaires côte à côte */}
+              {(visibleMetrics.hourlyDistribution ||
+                visibleMetrics.dishesHourlyDistribution) && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Graphique Distribution Horaire des Commandes */}
+                  {visibleMetrics.hourlyDistribution && (
+                    <HourlyDistributionKPI
+                      data={hourlyData}
+                      loading={loading.hourlyDistribution}
+                      error={errors.hourlyDistribution}
+                      date={endDate}
+                    />
+                  )}
+
+                  {/* NOUVEAU: Graphique Distribution Horaire des Plats */}
+                  {visibleMetrics.dishesHourlyDistribution && (
+                    <DishesHourlyDistributionKPI
+                      data={dishesHourlyData}
+                      loading={loading.dishesHourlyDistribution}
+                      error={errors.dishesHourlyDistribution}
+                      date={endDate}
+                    />
+                  )}
+                </div>
               )}
             </div>
           )}

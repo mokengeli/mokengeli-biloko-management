@@ -1,24 +1,35 @@
-// src/components/dashboard/kpis/RealRevenueKPI.js
+// src/components/dashboard/kpis/FinancialKPIs/RealRevenueKPI.js
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Euro, Loader2 } from "lucide-react";
+import {
+  Banknote,
+  Coins,
+  Euro,
+  Loader2,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { formatCurrency } from "@/lib/dashboardUtils";
 
 /**
  * Composant RealRevenueKPI
  * Affiche le chiffre d'affaires réellement encaissé
  *
- * @param {number} value - Montant des revenus réels
+ * @param {Object} data - Données complètes du revenue dashboard incluant currency
  * @param {boolean} loading - État de chargement
  * @param {Object} previousData - Données de la période précédente pour le calcul de changement
  */
 export const RealRevenueKPI = ({
-  value,
+  data,
   loading = false,
   previousData = null,
 }) => {
+  // Extraire la valeur et le code de devise
+  const value = data?.realRevenue || 0;
+  const currencyCode = data?.currency?.code || "€";
+
   // Calcul du changement par rapport à la période précédente
   const calculateChange = () => {
     if (!previousData?.realRevenue || !value) return null;
@@ -40,7 +51,7 @@ export const RealRevenueKPI = ({
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Revenus Réels
           </CardTitle>
-          <Euro className="h-5 w-5 text-green-500" />
+          <Wallet className="h-5 w-5 text-green-500" />
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -53,7 +64,7 @@ export const RealRevenueKPI = ({
                 className="text-2xl font-bold mb-1"
                 title={value?.toString()}
               >
-                {formatCurrency(value || 0)}
+                {formatCurrency(value, currencyCode)}
               </div>
               {changePercentage !== null && (
                 <div

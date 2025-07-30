@@ -1,4 +1,4 @@
-// src/components/dashboard/kpis/FullPaymentsKPI.js
+// src/components/dashboard/kpis/OperationalKPIs/FullPaymentsKPI.js
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { formatCurrency } from "@/lib/dashboardUtils";
  * Composant FullPaymentsKPI
  * Affiche le montant total des paiements complets (sans remise)
  *
- * @param {Object} data - Données complètes du revenue dashboard
+ * @param {Object} data - Données complètes du revenue dashboard incluant currency
  * @param {boolean} loading - État de chargement
  * @param {Object} previousData - Données de la période précédente pour la comparaison
  */
@@ -19,6 +19,9 @@ export const FullPaymentsKPI = ({
   loading = false,
   previousData = null,
 }) => {
+  // Extraire le code de devise
+  const currencyCode = data?.currency?.code || "€";
+
   // Calcul du montant des paiements complets
   const getCurrentFullPayments = () => {
     if (!data?.breakdown?.fullPayments) return 0;
@@ -76,7 +79,7 @@ export const FullPaymentsKPI = ({
           ) : (
             <>
               <div className="text-2xl font-bold mb-1">
-                {formatCurrency(fullPayments)}
+                {formatCurrency(fullPayments, currencyCode)}
               </div>
               {changePercentage !== null && (
                 <div

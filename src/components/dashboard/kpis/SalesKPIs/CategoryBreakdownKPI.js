@@ -1,4 +1,4 @@
-// src/components/dashboard/kpis/CategoryBreakdownKPI.js
+// src/components/dashboard/kpis/SalesKPIs/CategoryBreakdownKPI.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,8 +26,13 @@ import {
  *
  * @param {Object[]} data - Données de répartition par catégorie
  * @param {boolean} loading - État de chargement
+ * @param {string} currencyCode - Code de la devise
  */
-export const CategoryBreakdownKPI = ({ data = [], loading = false }) => {
+export const CategoryBreakdownKPI = ({
+  data = [],
+  loading = false,
+  currencyCode = "€",
+}) => {
   // Palette de couleurs pour le graphique
   const COLORS = [
     "#3b82f6",
@@ -86,7 +91,7 @@ export const CategoryBreakdownKPI = ({ data = [], loading = false }) => {
         <div className="bg-white p-2 border rounded shadow-sm text-xs">
           <p className="font-semibold">{data.name}</p>
           <p>Quantité: {data.value}</p>
-          <p>{formatCurrency(data.revenue)}</p>
+          <p>{formatCurrency(data.revenue, currencyCode)}</p>
           <p>{((data.revenue / totalRevenue) * 100).toFixed(1)}% du CA</p>
         </div>
       );

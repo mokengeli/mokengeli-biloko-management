@@ -32,6 +32,7 @@ const SalesSection = ({
     topDishes: null,
   },
   defaultExpanded = true,
+  currencyCode = "€", // Garde ce prop pour CategoryBreakdown qui n'a pas encore la devise dans l'API
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -104,6 +105,7 @@ const SalesSection = ({
                   data={categoryData}
                   loading={loading.categoryBreakdown}
                   error={errors.categoryBreakdown}
+                  currencyCode={currencyCode}
                 />
               )}
 
@@ -191,12 +193,14 @@ const TopDishesKPIOptimized = ({ data, loading, error }) => {
                   </div>
                   <div className="text-right">
                     <div className="font-bold">
-                      {formatCurrency(dish.revenue)}
+                      {formatCurrency(dish.revenue, dish.currency?.code || "€")}
                     </div>
                     <div className="text-xs text-green-600 flex items-center justify-end">
                       <TrendingUp className="h-3 w-3 mr-1" />
-                      {Math.round((dish.revenue / dish.quantity) * 100) /
-                        100}{" "}
+                      {formatCurrency(
+                        Math.round((dish.revenue / dish.quantity) * 100) / 100,
+                        dish.currency?.code || "€"
+                      )}{" "}
                       /unité
                     </div>
                   </div>

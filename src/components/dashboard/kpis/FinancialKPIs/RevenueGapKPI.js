@@ -1,4 +1,4 @@
-// src/components/dashboard/kpis/RevenueGapKPI.js
+// src/components/dashboard/kpis/FinancialKPIs/RevenueGapKPI.js
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,13 @@ import { formatCurrency } from "@/lib/dashboardUtils";
  * Composant RevenueGapKPI
  * Affiche l'écart entre revenus théoriques et réels (montant des remises)
  *
- * @param {Object} data - Données complètes du revenue dashboard
+ * @param {Object} data - Données complètes du revenue dashboard incluant currency
  * @param {boolean} loading - État de chargement
  */
 export const RevenueGapKPI = ({ data, loading = false }) => {
+  // Extraire le code de devise
+  const currencyCode = data?.currency?.code || "€";
+
   // Calcul de l'écart entre revenus théoriques et réels
   const calculateGap = () => {
     if (!data?.theoreticalRevenue || !data?.realRevenue) return 0;
@@ -51,7 +54,7 @@ export const RevenueGapKPI = ({ data, loading = false }) => {
           ) : (
             <>
               <div className="text-2xl font-bold mb-1" title={gap.toString()}>
-                {formatCurrency(gap)}
+                {formatCurrency(gap, currencyCode)}
               </div>
               <div className="text-sm text-amber-600">
                 {discountPercentage}% du CA théorique

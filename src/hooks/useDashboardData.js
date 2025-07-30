@@ -21,7 +21,8 @@ const API_DEPENDENCIES = {
   hourlyDistribution: ["hourlyDistribution"],
   dishesHourlyDistribution: ["dishesHourlyDistribution"],
   dishesDailyTrend: ["dishesDailyTrend"],
-  ordersDailyTrend: ["ordersDailyTrend"], // NOUVEAU
+  ordersDailyTrend: ["ordersDailyTrend"],
+  dishesStats: ["dishesStats"], // NOUVEAU
 };
 
 // Fonction utilitaire pour formater les dates
@@ -45,7 +46,8 @@ export const useDashboardData = (
     topDishes: [],
     dishesHourlyDistribution: [],
     dishesDailyTrend: [],
-    ordersDailyTrend: [], // NOUVEAU
+    ordersDailyTrend: [],
+    dishesStats: null, // NOUVEAU
   });
 
   const [loading, setLoading] = useState({
@@ -55,7 +57,8 @@ export const useDashboardData = (
     topDishes: false,
     dishesHourlyDistribution: false,
     dishesDailyTrend: false,
-    ordersDailyTrend: false, // NOUVEAU
+    ordersDailyTrend: false,
+    dishesStats: false, // NOUVEAU
   });
 
   const [errors, setErrors] = useState({
@@ -65,7 +68,8 @@ export const useDashboardData = (
     topDishes: null,
     dishesHourlyDistribution: null,
     dishesDailyTrend: null,
-    ordersDailyTrend: null, // NOUVEAU
+    ordersDailyTrend: null,
+    dishesStats: null, // NOUVEAU
   });
 
   // État pour forcer le refetch
@@ -227,13 +231,30 @@ export const useDashboardData = (
     []
   );
 
-  // NOUVEAU: Fonction pour fetch les données quotidiennes des commandes
+  // Fonction pour fetch les données quotidiennes des commandes
   const fetchOrdersDailyData = useCallback(
     async (tenantCode, startDate, endDate, signal) => {
       const formattedStartDate = formatDateForAPI(startDate);
       const formattedEndDate = formatDateForAPI(endDate);
 
       const data = await orderService.getOrdersDailyDistribution(
+        formattedStartDate,
+        formattedEndDate,
+        tenantCode
+      );
+
+      return data;
+    },
+    []
+  );
+
+  // NOUVEAU: Fonction pour fetch les statistiques des plats
+  const fetchDishesStatsData = useCallback(
+    async (tenantCode, startDate, endDate, signal) => {
+      const formattedStartDate = formatDateForAPI(startDate);
+      const formattedEndDate = formatDateForAPI(endDate);
+
+      const data = await orderService.getDishesStats(
         formattedStartDate,
         formattedEndDate,
         tenantCode
@@ -299,7 +320,8 @@ export const useDashboardData = (
           topDishes: null,
           dishesHourlyDistribution: null,
           dishesDailyTrend: null,
-          ordersDailyTrend: null, // NOUVEAU
+          ordersDailyTrend: null,
+          dishesStats: null, // NOUVEAU
         });
 
         // Créer les abort controllers
@@ -318,7 +340,8 @@ export const useDashboardData = (
           topDishes: false,
           dishesHourlyDistribution: false,
           dishesDailyTrend: false,
-          ordersDailyTrend: false, // NOUVEAU
+          ordersDailyTrend: false,
+          dishesStats: false, // NOUVEAU
         };
         const newData = { ...data };
 
@@ -471,7 +494,7 @@ export const useDashboardData = (
           );
         }
 
-        // 7. NOUVEAU: Orders daily trend
+        // 7. Orders daily trend
         if (requiredAPIs.includes("ordersDailyTrend")) {
           newLoading.ordersDailyTrend = true;
           fetchPromises.push(
@@ -497,6 +520,32 @@ export const useDashboardData = (
           );
         }
 
+        // 8. NOUVEAU: Dishes stats
+        if (requiredAPIs.includes("dishesStats")) {
+          newLoading.dishesStats = true;
+          fetchPromises.push(
+            fetchDishesStatsData(
+              tenantCode,
+              startDate,
+              endDate,
+              controllers.dishesStats?.signal
+            )
+              .then((result) => {
+                newData.dishesStats = result || null;
+                newLoading.dishesStats = false;
+              })
+              .catch((error) => {
+                if (error.name !== "AbortError") {
+                  setErrors((prev) => ({
+                    ...prev,
+                    dishesStats: error.message,
+                  }));
+                }
+                newLoading.dishesStats = false;
+              })
+          );
+        }
+
         // Mettre à jour l'état de chargement immédiatement
         setLoading(newLoading);
 
@@ -512,7 +561,8 @@ export const useDashboardData = (
           topDishes: false,
           dishesHourlyDistribution: false,
           dishesDailyTrend: false,
-          ordersDailyTrend: false, // NOUVEAU
+          ordersDailyTrend: false,
+          dishesStats: false, // NOUVEAU
         });
       }, 300); // Délai de debouncing
     };
@@ -540,7 +590,8 @@ export const useDashboardData = (
     fetchTopDishesData,
     fetchDishesHourlyData,
     fetchDishesDailyData,
-    fetchOrdersDailyData, // NOUVEAU
+    fetchOrdersDailyData,
+    fetchDishesStatsData, // NOUVEAU
   ]);
 
   // Fonction pour forcer le refresh

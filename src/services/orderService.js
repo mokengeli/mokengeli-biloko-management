@@ -197,6 +197,35 @@ const orderService = {
       throw error;
     }
   },
+
+  // Fonction pour récupérer les statistiques globales des plats
+  getDishesStats: async (startDate, endDate, tenantCode) => {
+    try {
+      if (!startDate || !endDate || !tenantCode) {
+        throw new Error(
+          "Paramètres requis manquants pour récupérer les statistiques des plats"
+        );
+      }
+      const response = await apiClient.get(
+        "/api/order/dashboard/dishes/stats",
+        {
+          params: {
+            startDate,
+            endDate,
+            tenantCode,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching dishes stats:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
   // Fonction pour récupérer la distribution quotidienne des commandes
   getOrdersDailyDistribution: async (startDate, endDate, tenantCode) => {
     try {

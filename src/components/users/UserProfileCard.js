@@ -9,7 +9,17 @@ import {
 } from "@/components/ui/card";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { RoleBadge } from "@/components/common/RoleBadge";
-import { Mail, Calendar, Building, Badge, Clock, Contact } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Mail,
+  Calendar,
+  Building,
+  Badge as BadgeIcon,
+  Clock,
+  Contact,
+  ShieldCheck,
+  ShieldOff,
+} from "lucide-react";
 
 /**
  * Composant réutilisable pour afficher le profil d'un utilisateur
@@ -20,6 +30,7 @@ import { Mail, Calendar, Building, Badge, Clock, Contact } from "lucide-react";
  * @param {string} props.description - Description de la carte (optionnel)
  * @param {boolean} props.showAnimation - Activer les animations (défaut: true)
  * @param {boolean} props.showRoles - Afficher les badges des rôles (défaut: true)
+ * @param {boolean} props.showPinStatus - Afficher le statut PIN (défaut: false)
  * @param {function} props.formatDate - Fonction pour formater les dates (optionnel)
  * @param {React.ReactNode} props.footer - Contenu additionnel à afficher en bas de la carte (optionnel)
  */
@@ -29,6 +40,7 @@ export default function UserProfileCard({
   description = "Informations personnelles",
   showAnimation = true,
   showRoles = true,
+  showPinStatus = false,
   formatDate,
   footer,
 }) {
@@ -75,10 +87,33 @@ export default function UserProfileCard({
           </div>
         )}
 
+        {/* Indicateur de statut PIN */}
+        {showPinStatus && (
+          <div className="mt-3">
+            {user.hasValidationPin ? (
+              <Badge
+                variant="outline"
+                className="bg-green-50 text-green-700 border-green-200"
+              >
+                <ShieldCheck className="mr-1 h-3 w-3" />
+                PIN défini
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="bg-amber-50 text-amber-700 border-amber-200"
+              >
+                <ShieldOff className="mr-1 h-3 w-3" />
+                PIN non défini
+              </Badge>
+            )}
+          </div>
+        )}
+
         <div className="w-full mt-6 space-y-2">
           {user.employeeNumber && (
             <div className="flex items-center gap-2 text-sm py-1.5 border-t">
-              <Badge className="h-4 w-4 text-muted-foreground" />
+              <BadgeIcon className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Matricule:</span>
               <span className="font-medium ml-auto">{user.employeeNumber}</span>
             </div>

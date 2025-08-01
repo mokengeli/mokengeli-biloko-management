@@ -113,6 +113,7 @@ export default function ProfilePage() {
             title="Informations Utilisateur"
             description="Vos informations personnelles"
             formatDate={formatDate}
+            showPinStatus={canSeePinTab()}
           />
           {/* Contenu principal */}
           <motion.div

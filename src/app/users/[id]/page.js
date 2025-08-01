@@ -212,6 +212,7 @@ export default function UserDetailPage() {
             title="Profil Utilisateur"
             description="Informations personnelles"
             formatDate={formatDate}
+            showPinStatus={canManagePins()}
           />
 
           {/* Contenu principal */}

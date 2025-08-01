@@ -34,6 +34,9 @@ export function PinManagementSection({ user, isOwnProfile = true }) {
   const [showNewPin, setShowNewPin] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  // Utiliser hasValidationPin depuis l'utilisateur
+
   const [hasPinSet, setHasPinSet] = useState(false);
 
   // État pour la validation en temps réel

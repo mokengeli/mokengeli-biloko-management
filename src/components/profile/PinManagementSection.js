@@ -51,8 +51,8 @@ export function PinManagementSection({ user, isOwnProfile = true }) {
 
   // Vérifier si le formulaire est valide
   const isFormValid = () => {
-    // Si c'est son propre profil et qu'il a déjà un PIN, il faut le PIN actuel
-    if (isOwnProfile && hasPinSet && !currentPin) return false;
+    // Si c'est son propre profil, qu'il a déjà un PIN et qu'il n'a pas entré le PIN actuel
+    if (isOwnProfile && hasPinSet && currentPin && !currentPin) return false;
 
     // Le nouveau PIN doit être valide
     if (!newPin || pinValidationError) return false;
@@ -98,8 +98,11 @@ export function PinManagementSection({ user, isOwnProfile = true }) {
       // Déterminer si on modifie le PIN d'un autre utilisateur
       const targetEmployeeNumber = !isOwnProfile ? user.employeeNumber : null;
 
+      // Pour son propre profil, envoyer currentPin seulement s'il est rempli
+      const currentPinToSend = isOwnProfile && currentPin ? currentPin : null;
+
       await userService.updatePin(
-        hasPinSet && isOwnProfile ? currentPin : null,
+        currentPinToSend,
         newPin,
         targetEmployeeNumber
       );
@@ -159,8 +162,8 @@ export function PinManagementSection({ user, isOwnProfile = true }) {
           </Alert>
 
           <div className="space-y-3">
-            {/* PIN actuel - seulement pour son propre profil et si un PIN existe */}
-            {isOwnProfile && hasPinSet && (
+            {/* PIN actuel - toujours affiché pour son propre profil */}
+            {isOwnProfile && (
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="current-pin">PIN actuel</Label>
@@ -187,8 +190,13 @@ export function PinManagementSection({ user, isOwnProfile = true }) {
                   }
                   placeholder="••••"
                   maxLength={4}
-                  required={isOwnProfile && hasPinSet}
+                  required={hasPinSet}
                 />
+                <p className="text-xs text-muted-foreground">
+                  {hasPinSet
+                    ? "Entrez votre PIN actuel pour le modifier"
+                    : "Laissez vide si vous n'avez pas encore défini de PIN"}
+                </p>
               </div>
             )}
 

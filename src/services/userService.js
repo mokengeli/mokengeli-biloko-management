@@ -152,6 +152,32 @@ const userService = {
       throw error;
     }
   },
+  updatePin: async (currentPin, newPin, targetEmployeeNumber = null) => {
+    try {
+      const payload = {
+        newPin: parseInt(newPin, 10), // Conversion en int32 comme requis par l'API
+      };
+
+      // Ajouter currentPin seulement s'il est fourni
+      if (currentPin) {
+        payload.currentPin = currentPin;
+      }
+
+      // Ajouter targetEmployeeNumber seulement s'il est fourni (pour les managers)
+      if (targetEmployeeNumber) {
+        payload.targetEmployeeNumber = targetEmployeeNumber;
+      }
+
+      const response = await apiClient.put("/api/user/pin", payload);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error updating PIN:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
 };
 
 export default userService;

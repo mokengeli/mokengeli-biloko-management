@@ -40,8 +40,10 @@ import {
   Beer,
   Sofa,
   Crown,
+  ShieldCheck,
 } from "lucide-react";
 import { PasswordChangeSection } from "@/components/profile/PasswordChangeSection";
+import { PinManagementSection } from "@/components/profile/PinManagementSection";
 import UserProfileCard from "@/components/users/UserProfileCard";
 import UserPermissionsCard from "@/components/users/UserPermissionsCard";
 
@@ -110,10 +112,11 @@ export default function ProfilePage() {
               className="w-full"
             >
               <TabsList
-                className={`grid ${isAdmin() ? "grid-cols-3" : "grid-cols-2"}`}
+                className={`grid ${isAdmin() ? "grid-cols-4" : "grid-cols-3"}`}
               >
                 <TabsTrigger value="general">Général</TabsTrigger>
                 <TabsTrigger value="security">Sécurité</TabsTrigger>
+                <TabsTrigger value="pin">PIN</TabsTrigger>
                 {isAdmin() && (
                   <TabsTrigger value="permissions">Permissions</TabsTrigger>
                 )}
@@ -276,6 +279,10 @@ export default function ProfilePage() {
                     <PasswordChangeSection />
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="pin" className="mt-4 space-y-4">
+                <PinManagementSection user={user} isOwnProfile={true} />
               </TabsContent>
 
               {isAdmin() && (

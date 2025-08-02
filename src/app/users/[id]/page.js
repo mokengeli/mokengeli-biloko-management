@@ -27,21 +27,49 @@ import {
   ChevronLeft,
   Shield,
   Star,
+  ShieldCheck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import usePermissions from "@/hooks/usePermissions";
 import UserPermissionsCard from "@/components/users/UserPermissionsCard";
 import UserProfileCard from "@/components/users/UserProfileCard";
+import { PinManagementSection } from "@/components/profile/PinManagementSection";
 
 export default function UserDetailPage() {
   const { id: employeeNumber } = useParams();
   const router = useRouter();
   const { user: currentUser } = useAuth();
-  const { isAdmin } = usePermissions();
+  const { isAdmin, hasPermission } = usePermissions();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("general");
+
+  // Vérifier si l'utilisateur actuel peut gérer les PINs
+  const canManagePins = () => {
+    if (!currentUser || !user) return false;
+
+    // Admin peut tout faire
+    if (isAdmin()) return true;
+
+    // Manager peut gérer les PINs des utilisateurs de son restaurant
+    if (
+      currentUser.roles?.includes("ROLE_MANAGER") &&
+      currentUser.tenantCode === user.tenantCode
+    ) {
+      return true;
+    }
+
+    // Utilisateur avec permission ORDER_DEBT_VALIDATION peut gérer son propre PIN seulement
+    if (
+      hasPermission("ORDER_DEBT_VALIDATION") &&
+      currentUser.employeeNumber === user.employeeNumber
+    ) {
+      return true;
+    }
+
+    return false;
+  };
 
   // Récupérer les données de l'utilisateur
   useEffect(() => {
@@ -76,11 +104,19 @@ export default function UserDetailPage() {
       // Un admin peut voir tous les utilisateurs
       if (isAdmin()) return;
 
-      // Un utilisateur ne peut voir que les utilisateurs de son restaurant
-      if (currentUser.tenantCode !== user.tenantCode) {
-        toast.error("Vous n'avez pas accès à cet utilisateur");
-        router.push("/dashboard");
-      }
+      // Un manager peut voir les utilisateurs de son restaurant
+      if (
+        currentUser.roles?.includes("ROLE_MANAGER") &&
+        currentUser.tenantCode === user.tenantCode
+      )
+        return;
+
+      // Un utilisateur ne peut voir que son propre profil
+      if (currentUser.employeeNumber === user.employeeNumber) return;
+
+      // Sinon, pas d'accès
+      toast.error("Vous n'avez pas accès à cet utilisateur");
+      router.push("/dashboard");
     }
   }, [currentUser, user, router, isAdmin]);
 
@@ -140,6 +176,12 @@ export default function UserDetailPage() {
     );
   }
 
+  // Déterminer les onglets à afficher
+  const tabs = ["general", "permissions"];
+  if (canManagePins()) {
+    tabs.push("pin");
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -161,16 +203,6 @@ export default function UserDetailPage() {
               Détails de l'utilisateur
             </motion.h1>
           </div>
-          {/**<div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/users/${employeeNumber}/edit`)}
-              disabled={!isAdmin() && currentUser?.id !== user.id}
-            >
-              Modifier
-            </Button>
-          </div>
-            */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -180,6 +212,7 @@ export default function UserDetailPage() {
             title="Profil Utilisateur"
             description="Informations personnelles"
             formatDate={formatDate}
+            showPinStatus={canManagePins()}
           />
 
           {/* Contenu principal */}
@@ -195,9 +228,10 @@ export default function UserDetailPage() {
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid grid-cols-2">
+              <TabsList className={`grid grid-cols-${tabs.length}`}>
                 <TabsTrigger value="general">Général</TabsTrigger>
                 <TabsTrigger value="permissions">Permissions</TabsTrigger>
+                {canManagePins() && <TabsTrigger value="pin">PIN</TabsTrigger>}
               </TabsList>
 
               <TabsContent value="general" className="mt-4 space-y-4">
@@ -255,7 +289,7 @@ export default function UserDetailPage() {
                           {user.tenantName || "Non spécifié"}
                         </div>
                       </div>
-                      {isAdmin && (
+                      {isAdmin() && (
                         <div className="space-y-1">
                           <label className="text-sm font-medium">
                             Code du restaurant
@@ -275,11 +309,21 @@ export default function UserDetailPage() {
                   user={user}
                   title="Rôles et Permissions"
                   description="Liste des rôles et permissions de l'utilisateur"
-                  // Nous pouvons personnaliser certaines propriétés selon le contexte
                   showRoleDetails={true}
-                  showPermissionDetails={isAdmin()} // Afficher les permissions détaillées seulement pour les admins
+                  showPermissionDetails={isAdmin()}
                 />
               </TabsContent>
+
+              {canManagePins() && (
+                <TabsContent value="pin" className="mt-4 space-y-4">
+                  <PinManagementSection
+                    user={user}
+                    isOwnProfile={
+                      currentUser?.employeeNumber === user.employeeNumber
+                    }
+                  />
+                </TabsContent>
+              )}
             </Tabs>
           </motion.div>
         </div>

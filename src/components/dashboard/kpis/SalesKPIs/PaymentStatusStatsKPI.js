@@ -76,6 +76,14 @@ const STATUS_CONFIG = {
     icon: AlertCircle,
     description: "Payée malgré certains items rejetés",
   },
+  CLOSED_WITH_DEBT: {
+    label: "Fermé avec dette",
+    color: "#dc2626", // rouge foncé
+    bgColor: "bg-red-100",
+    textColor: "text-red-700",
+    icon: XCircle,
+    description: "Commande fermée avec une dette non payée",
+  },
 };
 
 /**
@@ -103,13 +111,20 @@ export const PaymentStatusStatsKPI = ({ data = [], loading = false }) => {
         const config = STATUS_CONFIG[item.status] || {
           label: item.status,
           color: "#6b7280",
+          bgColor: "bg-gray-50",
+          textColor: "text-gray-600",
+          icon: AlertCircle,
+          description: "Statut inconnu",
         };
         return {
           status: item.status,
           label: config.label,
           count: item.count || 0,
           color: config.color,
-          ...config,
+          bgColor: config.bgColor,
+          textColor: config.textColor,
+          icon: config.icon,
+          description: config.description,
         };
       });
 
@@ -121,9 +136,12 @@ export const PaymentStatusStatsKPI = ({ data = [], loading = false }) => {
       );
       const problematic = formattedData
         .filter((item) =>
-          ["UNPAID", "PARTIALLY_PAID", "PAID_WITH_REJECTED_ITEM"].includes(
-            item.status
-          )
+          [
+            "UNPAID",
+            "PARTIALLY_PAID",
+            "PAID_WITH_REJECTED_ITEM",
+            "CLOSED_WITH_DEBT",
+          ].includes(item.status)
         )
         .reduce((sum, item) => sum + item.count, 0);
 
@@ -155,10 +173,17 @@ export const PaymentStatusStatsKPI = ({ data = [], loading = false }) => {
       const percentage = statistics.total
         ? ((data.count / statistics.total) * 100).toFixed(1)
         : 0;
+      const IconComponent = data.icon;
+
       return (
         <div className="bg-white p-3 border rounded shadow-sm">
           <p className="font-semibold text-sm flex items-center gap-2">
-            <data.icon className="h-4 w-4" style={{ color: data.color }} />
+            {IconComponent && (
+              <IconComponent
+                className="h-4 w-4"
+                style={{ color: data.color }}
+              />
+            )}
             {data.label}
           </p>
           <p className="text-lg font-bold">{data.count} commandes</p>
@@ -263,7 +288,7 @@ export const PaymentStatusStatsKPI = ({ data = [], loading = false }) => {
                     {statistics.problemPayments}
                   </p>
                   <Badge variant="outline" className="text-xs mt-1">
-                    Non payé + Partiel + Rejet
+                    Non payé + Partiel + Rejet + Dette
                   </Badge>
                 </div>
               </div>
@@ -345,9 +370,11 @@ export const PaymentStatusStatsKPI = ({ data = [], loading = false }) => {
                       className={`flex items-center justify-between p-3 rounded-lg ${item.bgColor}`}
                     >
                       <div className="flex items-center gap-3">
-                        <IconComponent
-                          className={`h-5 w-5 ${item.textColor}`}
-                        />
+                        {IconComponent && (
+                          <IconComponent
+                            className={`h-5 w-5 ${item.textColor}`}
+                          />
+                        )}
                         <div>
                           <p className={`font-medium ${item.textColor}`}>
                             {item.label}

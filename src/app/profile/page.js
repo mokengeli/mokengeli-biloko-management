@@ -40,18 +40,36 @@ import {
   Beer,
   Sofa,
   Crown,
+  ShieldCheck,
 } from "lucide-react";
 import { PasswordChangeSection } from "@/components/profile/PasswordChangeSection";
+import { PinManagementSection } from "@/components/profile/PinManagementSection";
 import UserProfileCard from "@/components/users/UserProfileCard";
 import UserPermissionsCard from "@/components/users/UserPermissionsCard";
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const { isAdmin } = usePermissions();
+  const { isAdmin, hasPermission } = usePermissions();
   const [activeTab, setActiveTab] = useState("general");
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+
+  // Vérifier si l'utilisateur peut voir l'onglet PIN
+  const canSeePinTab = () => {
+    if (!user) return false;
+
+    // Admin peut voir
+    if (isAdmin()) return true;
+
+    // Manager peut voir
+    if (user.roles?.includes("ROLE_MANAGER")) return true;
+
+    // Utilisateur avec permission ORDER_DEBT_VALIDATION peut voir
+    if (hasPermission("ORDER_DEBT_VALIDATION")) return true;
+
+    return false;
+  };
 
   // Si aucun utilisateur n'est connecté, afficher un message
   if (!user) {
@@ -95,6 +113,7 @@ export default function ProfilePage() {
             title="Informations Utilisateur"
             description="Vos informations personnelles"
             formatDate={formatDate}
+            showPinStatus={canSeePinTab()}
           />
           {/* Contenu principal */}
           <motion.div
@@ -110,10 +129,17 @@ export default function ProfilePage() {
               className="w-full"
             >
               <TabsList
-                className={`grid ${isAdmin() ? "grid-cols-3" : "grid-cols-2"}`}
+                className={`grid ${
+                  isAdmin() && canSeePinTab()
+                    ? "grid-cols-4"
+                    : canSeePinTab() || isAdmin()
+                    ? "grid-cols-3"
+                    : "grid-cols-2"
+                }`}
               >
                 <TabsTrigger value="general">Général</TabsTrigger>
                 <TabsTrigger value="security">Sécurité</TabsTrigger>
+                {canSeePinTab() && <TabsTrigger value="pin">PIN</TabsTrigger>}
                 {isAdmin() && (
                   <TabsTrigger value="permissions">Permissions</TabsTrigger>
                 )}
@@ -277,6 +303,12 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {canSeePinTab() && (
+                <TabsContent value="pin" className="mt-4 space-y-4">
+                  <PinManagementSection user={user} isOwnProfile={true} />
+                </TabsContent>
+              )}
 
               {isAdmin() && (
                 <TabsContent value="permissions" className="mt-4 space-y-4">

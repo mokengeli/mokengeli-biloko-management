@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import RestaurantSelector from "@/components/common/RestaurantSelector";
 import useUsers from "@/hooks/useUsers";
@@ -39,7 +40,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { PrimaryRoleBadge } from "@/components/common/RoleBadge";
 import NotImplementedModal from "@/components/common/NotImplementedModal";
 import CreateUserModal from "@/components/users/CreateUserModal";
-import { Plus, Eye, Trash2, Search, X } from "lucide-react";
+import {
+  Plus,
+  Eye,
+  Trash2,
+  Search,
+  X,
+  ShieldCheck,
+  ShieldOff,
+} from "lucide-react";
 
 export default function UsersPage() {
   const router = useRouter();
@@ -52,7 +61,7 @@ export default function UsersPage() {
     changePage,
     changePageSize,
   } = useUsers();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, isAdmin } = usePermissions();
   const { user, roles } = useAuth();
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
@@ -60,15 +69,25 @@ export default function UsersPage() {
   const [alertAction, setAlertAction] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const isAdmin = roles.includes("ROLE_ADMIN");
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
+  const [usernameError, setUsernameError] = useState(null);
 
   // Vérifier si l'utilisateur a les permissions nécessaires pour gérer les utilisateurs
-  const canCreateUser = isAdmin || hasPermission("CREATE_USER");
-  const canViewUsers = isAdmin || hasPermission("VIEW_USERS");
+  const canCreateUser = isAdmin() || hasPermission("CREATE_USER");
+  const canViewUsers = isAdmin() || hasPermission("VIEW_USERS");
+
+  // Vérifier si l'utilisateur peut voir les statuts PIN
+  const canSeePinStatus = () => {
+    if (isAdmin()) return true;
+    if (user?.roles?.includes("ROLE_MANAGER")) return true;
+    if (hasPermission("ORDER_DEBT_VALIDATION")) return true;
+    return false;
+  };
 
   // Définir le restaurant par défaut lors du chargement initial
   useEffect(() => {
-    if (!isAdmin && user?.tenantCode) {
+    if (!isAdmin() && user?.tenantCode) {
       setSelectedRestaurant(user.tenantCode);
     }
   }, [isAdmin, user]);
@@ -283,7 +302,7 @@ export default function UsersPage() {
   };
 
   // Si l'utilisateur n'a pas la permission de voir les utilisateurs, rediriger
-  if (!canViewUsers && !isAdmin) {
+  if (!canViewUsers && !isAdmin()) {
     router.push("/dashboard");
     return null;
   }
@@ -301,7 +320,7 @@ export default function UsersPage() {
           </motion.h1>
 
           <div className="flex flex-col md:flex-row items-center gap-4">
-            {isAdmin && (
+            {isAdmin() && (
               <RestaurantSelector
                 value={selectedRestaurant}
                 onChange={handleRestaurantChange}
@@ -326,7 +345,7 @@ export default function UsersPage() {
         {!selectedRestaurant ? (
           <div className="p-8 text-center bg-gray-50 rounded-md border">
             <p className="text-gray-500">
-              {isAdmin
+              {isAdmin()
                 ? "Veuillez sélectionner un restaurant pour voir ses utilisateurs"
                 : "Chargement..."}
             </p>
@@ -391,6 +410,9 @@ export default function UsersPage() {
                         <TableHead>Nom</TableHead>
                         <TableHead>Prénom</TableHead>
                         <TableHead>Rôle</TableHead>
+                        {canSeePinStatus() && (
+                          <TableHead className="text-center">PIN</TableHead>
+                        )}
                         <TableHead className="hidden md:table-cell">
                           Date de création
                         </TableHead>
@@ -413,6 +435,11 @@ export default function UsersPage() {
                               <TableCell>
                                 <Skeleton className="h-5 w-24" />
                               </TableCell>
+                              {canSeePinStatus() && (
+                                <TableCell className="text-center">
+                                  <Skeleton className="h-5 w-20 mx-auto" />
+                                </TableCell>
+                              )}
                               <TableCell className="hidden md:table-cell">
                                 <Skeleton className="h-5 w-28" />
                               </TableCell>
@@ -427,7 +454,7 @@ export default function UsersPage() {
                       ) : users.length === 0 ? (
                         <TableRow>
                           <TableCell
-                            colSpan={5}
+                            colSpan={canSeePinStatus() ? 6 : 5}
                             className="text-center py-8 text-gray-500"
                           >
                             {searchTerm ? (
@@ -467,6 +494,27 @@ export default function UsersPage() {
                                 />
                               )}
                             </TableCell>
+                            {canSeePinStatus() && (
+                              <TableCell className="text-center">
+                                {user.hasValidationPin ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-green-50 text-green-700 border-green-200"
+                                  >
+                                    <ShieldCheck className="mr-1 h-3 w-3" />
+                                    Défini
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-amber-50 text-amber-700 border-amber-200"
+                                  >
+                                    <ShieldOff className="mr-1 h-3 w-3" />
+                                    Non défini
+                                  </Badge>
+                                )}
+                              </TableCell>
+                            )}
                             <TableCell className="hidden md:table-cell">
                               {formatDate(user.createdAt)}
                             </TableCell>

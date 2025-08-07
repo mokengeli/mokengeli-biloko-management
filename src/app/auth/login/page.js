@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [formError, setFormError] = useState(null);
   const { login, loading, error, clearError, isAuthenticated } = useAuth();
   const router = useRouter();
+  console.log("API = ", process.env.NEXT_PUBLIC_API_BASE_URL);
 
   // Si l'utilisateur est déjà authentifié, rediriger vers le dashboard
   useEffect(() => {

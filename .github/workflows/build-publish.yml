@@ -178,24 +178,3 @@ jobs:
           # curl -X POST -H 'Content-type: application/json' \
           #   --data '{"text":"🚀 Production deployment completed: version ${{ steps.version.outputs.version }}"}' \
           #   ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  # Job optionnel : Déploiement automatique (si souhaité)
-  auto-deploy:
-    needs: [determine-environment, build-and-publish]
-    runs-on: ubuntu-latest
-    if: needs.determine-environment.outputs.environment == 'preprod'  # Auto-deploy seulement pour preprod
-    environment:
-      name: ${{ needs.determine-environment.outputs.environment }}
-    steps:
-      - name: Deploy to server
-        run: |
-          echo "🚀 Auto-deploying to ${{ needs.determine-environment.outputs.environment }}..."
-          # Exemple de déploiement via SSH (nécessite configuration des secrets)
-          # - uses: appleboy/ssh-action@v0.1.5
-          #   with:
-          #     host: ${{ secrets.DEPLOY_HOST }}
-          #     username: deploy
-          #     key: ${{ secrets.DEPLOY_SSH_KEY }}
-          #     script: |
-          #       cd ~/projects/mokengeli-biloko-infra
-          #       ./deploy.sh ${{ needs.determine-environment.outputs.environment }} update

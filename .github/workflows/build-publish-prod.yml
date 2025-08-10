@@ -3,6 +3,8 @@ name: PROD - Build & Publish Web
 on:
   push:
     branches: [ master ]
+    tags:
+      - 'v*.*.*'  # Déclenche aussi sur les tags de version
 
 permissions:
   contents: read
@@ -12,13 +14,15 @@ jobs:
   build-publish:
     runs-on: ubuntu-latest
     environment:
-        name: general
+      name: production  # Environnement spécifique production
     env:
       NEXT_PUBLIC_API_BASE_URL: ${{ vars.PROD_API_BASE_URL }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Nécessaire pour récupérer tous les tags
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -33,6 +37,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
+      - name: Get version
+        id: version
+        run: |
+          # Si c'est un tag, utilise le tag, sinon utilise le SHA court
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(git rev-parse --short HEAD)
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          fi
+          echo "Building version: $VERSION"
+
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
@@ -42,13 +59,30 @@ jobs:
 
       - name: Build & tag Docker image
         run: |
+          # Build avec les tags production
           docker build \
             --build-arg API_BASE_URL=${{ vars.PROD_API_BASE_URL }} \
-            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ github.sha }} \
-            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:latest \
+            --build-arg BUILD_ENV=production \
+            --build-arg VERSION=${{ steps.version.outputs.VERSION }} \
+            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:prod-latest \
+            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:prod-${{ github.sha }} \
+            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:prod-${{ steps.version.outputs.VERSION }} \
             .
 
-      - name: Push Docker image
+      - name: Push Docker images
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:latest
+          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:prod-latest
+          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:prod-${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:prod-${{ steps.version.outputs.VERSION }}
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Production Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Tags Created:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`prod-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`prod-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`prod-${{ steps.version.outputs.VERSION }}\`" >> $GITHUB_STEP_SUMMARY

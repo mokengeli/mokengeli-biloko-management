@@ -12,9 +12,9 @@ jobs:
   build-publish:
     runs-on: ubuntu-latest
     environment:
-        name: general
+      name: preprod  # Environnement spécifique preprod
     env:
-      NEXT_PUBLIC_API_BASE_URL: ${{ vars.API_BASE_URL }}
+      NEXT_PUBLIC_API_BASE_URL: ${{ vars.PREPROD_API_BASE_URL }}
 
     steps:
       - name: Checkout code
@@ -33,6 +33,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
+      - name: Get short SHA
+        id: sha
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
@@ -42,13 +46,30 @@ jobs:
 
       - name: Build & tag Docker image
         run: |
+          # Build avec les tags preprod
           docker build \
-            --build-arg API_BASE_URL=${{ vars.API_BASE_URL }} \
-            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ github.sha }} \
-            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:latest \
+            --build-arg API_BASE_URL=${{ vars.PREPROD_API_BASE_URL }} \
+            --build-arg BUILD_ENV=preprod \
+            --build-arg VERSION=${{ steps.sha.outputs.SHORT_SHA }} \
+            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:preprod-latest \
+            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:preprod-${{ github.sha }} \
+            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:preprod-${{ steps.sha.outputs.SHORT_SHA }} \
             .
 
-      - name: Push Docker image
+      - name: Push Docker images
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:latest
+          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:preprod-latest
+          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:preprod-${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:preprod-${{ steps.sha.outputs.SHORT_SHA }}
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🧪 Preprod Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Short SHA:** ${{ steps.sha.outputs.SHORT_SHA }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Tags Created:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`preprod-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`preprod-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`preprod-${{ steps.sha.outputs.SHORT_SHA }}\`" >> $GITHUB_STEP_SUMMARY

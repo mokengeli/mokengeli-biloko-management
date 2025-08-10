@@ -1,4 +1,4 @@
-name: Build & Publish Web
+name: PREPROD - Build & Publish Web
 
 on:
   push:

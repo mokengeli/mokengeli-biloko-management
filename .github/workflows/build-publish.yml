@@ -1,0 +1,180 @@
+name: Build & Publish - Multi Environment
+
+on:
+  push:
+    branches: [ master, develop ]
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # Job pour déterminer l'environnement
+  determine-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      tag-prefix: ${{ steps.set-env.outputs.tag-prefix }}
+      is-production: ${{ steps.set-env.outputs.is-production }}
+    steps:
+      - name: Determine environment from branch
+        id: set-env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]] || [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "tag-prefix=prod" >> $GITHUB_OUTPUT
+            echo "is-production=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=preprod" >> $GITHUB_OUTPUT
+            echo "tag-prefix=preprod" >> $GITHUB_OUTPUT
+            echo "is-production=false" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+            echo "tag-prefix=dev" >> $GITHUB_OUTPUT
+            echo "is-production=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Display environment info
+        run: |
+          echo "🎯 Detected Environment: ${{ steps.set-env.outputs.environment }}"
+          echo "🏷️ Tag Prefix: ${{ steps.set-env.outputs.tag-prefix }}"
+          echo "📍 Branch/Tag: ${{ github.ref }}"
+
+  # Job principal de build et publication
+  build-and-publish:
+    needs: determine-environment
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.determine-environment.outputs.environment }}
+    env:
+      TAG_PREFIX: ${{ needs.determine-environment.outputs.tag-prefix }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Generate version info
+        id: version
+        run: |
+          # SHA court pour tous les environnements
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "short-sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          
+          # Si c'est un tag de version, l'utiliser
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is-release=true" >> $GITHUB_OUTPUT
+          else
+            # Sinon, utiliser le SHA court
+            echo "version=$SHORT_SHA" >> $GITHUB_OUTPUT
+            echo "is-release=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Timestamp pour les tags uniques
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          
+          echo "📌 Version: $(cat $GITHUB_OUTPUT | grep version | cut -d'=' -f2)"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          # Variables d'environnement depuis GitHub Environment
+          # API_BASE_URL est maintenant défini dans chaque environnement GitHub
+          docker build \
+            --build-arg API_BASE_URL=${{ vars.API_BASE_URL }} \
+            --build-arg BUILD_ENV=${{ needs.determine-environment.outputs.environment }} \
+            --build-arg VERSION=${{ steps.version.outputs.version }} \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VCS_REF=${{ github.sha }} \
+            --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
+            --label "org.opencontainers.image.version=${{ steps.version.outputs.version }}" \
+            --label "org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ env.TAG_PREFIX }}-latest \
+            -t ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ env.TAG_PREFIX }}-${{ steps.version.outputs.short-sha }} \
+            .
+          
+          # Ajouter le tag de version si c'est une release
+          if [[ "${{ steps.version.outputs.is-release }}" == "true" ]]; then
+            docker tag \
+              ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ env.TAG_PREFIX }}-latest \
+              ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ env.TAG_PREFIX }}-${{ steps.version.outputs.version }}
+          fi
+
+      - name: Push Docker images
+        run: |
+          # Push les tags de base
+          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ env.TAG_PREFIX }}-latest
+          docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ env.TAG_PREFIX }}-${{ steps.version.outputs.short-sha }}
+          
+          # Push le tag de version si c'est une release
+          if [[ "${{ steps.version.outputs.is-release }}" == "true" ]]; then
+            docker push ghcr.io/${{ github.repository_owner }}/mokengeli-biloko-management:${{ env.TAG_PREFIX }}-${{ steps.version.outputs.version }}
+          fi
+
+      - name: Create deployment summary
+        run: |
+          ENV_NAME="${{ needs.determine-environment.outputs.environment }}"
+          ENV_EMOJI="🧪"
+          if [[ "$ENV_NAME" == "production" ]]; then
+            ENV_EMOJI="🚀"
+          fi
+          
+          echo "## $ENV_EMOJI ${ENV_NAME^} Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Build Information" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | \`$ENV_NAME\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch/Tag** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`${{ steps.version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **SHA** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **API URL** | \`${{ vars.API_BASE_URL }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🐳 Docker Tags Created" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.TAG_PREFIX }}-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.TAG_PREFIX }}-${{ steps.version.outputs.short-sha }}\`" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ steps.version.outputs.is-release }}" == "true" ]]; then
+            echo "- \`${{ env.TAG_PREFIX }}-${{ steps.version.outputs.version }}\` *(Release)*" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "Deploy using: \`./deploy.sh ${{ needs.determine-environment.outputs.environment }} update\`" >> $GITHUB_STEP_SUMMARY
+
+      # Notification optionnelle pour la production
+      - name: Send notification for production deployment
+        if: needs.determine-environment.outputs.is-production == 'true'
+        run: |
+          echo "🚨 Production deployment completed!"
+          # Ici vous pouvez ajouter une notification Slack, Discord, email, etc.
+          # Par exemple avec Slack :
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"🚀 Production deployment completed: version ${{ steps.version.outputs.version }}"}' \
+          #   ${{ secrets.SLACK_WEBHOOK_URL }}

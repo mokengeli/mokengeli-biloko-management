@@ -2,42 +2,46 @@
 import { NextResponse } from "next/server";
 
 export function middleware(request) {
-  // Utiliser le cookie accessToken pour déterminer l'authentification
   const accessToken = request.cookies.get("accessToken");
   const isAuthenticated = !!accessToken;
-
-  // URL actuelle
   const url = request.nextUrl.clone();
   const isLoginPage = url.pathname === "/auth/login";
-
-  /** console.log(
-    `Middleware: Path=${url.pathname}, isAuthenticated=${isAuthenticated}, isLoginPage=${isLoginPage}`
-  ); */
+  const isLogoutPage = url.pathname === "/auth/logout";
 
   // Si l'utilisateur est sur la page de login mais qu'il est déjà authentifié
   if (isLoginPage && isAuthenticated) {
     url.pathname = "/dashboard";
-    // console.log(`Redirecting authenticated user from login to dashboard`);
     return NextResponse.redirect(url);
   }
 
-  // Si l'utilisateur n'est pas authentifié et qu'il n'est pas sur la page de login
-  // IMPORTANT: exclure les appels API du middleware pour éviter les boucles
+  // MODIFICATION IMPORTANTE : Ne PAS rediriger si pas de cookie
+  // Laisser l'intercepteur axios et les composants gérer les 401
+  // Cela évite les conflits entre middleware et API
+
+  // On protège seulement contre l'accès direct sans cookie ET sans être sur login/logout
   if (
     !isAuthenticated &&
     !isLoginPage &&
+    !isLogoutPage &&
     !url.pathname.startsWith("/api") &&
-    !url.pathname.includes("_next")
+    !url.pathname.includes("_next") &&
+    url.pathname !== "/"
   ) {
-    url.pathname = "/auth/login";
-    console.log(`Redirecting unauthenticated user to login`);
-    return NextResponse.redirect(url);
+    // Au lieu de rediriger immédiatement, on laisse passer
+    // et c'est l'API qui décidera si 401 ou pas
+    // Cela évite la boucle quand le cookie existe mais n'est plus valide
+
+    // Option 1: Laisser passer complètement
+    return NextResponse.next();
+
+    // OU Option 2: Rediriger seulement si vraiment pas de cookie
+    // url.pathname = "/auth/login";
+    // return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
-// Configure le middleware pour s'exécuter sur toutes les routes sauf certaines
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

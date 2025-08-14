@@ -77,22 +77,22 @@ export const useAuth = () => {
   };
 
   const logoutUserNormal = async () => {
-    // Évite les déconnexions multiples simultanées
     if (isLoggingOut) return;
 
     try {
-      // Utiliser l'action asynchrone pour gérer la déconnexion
+      // Marquer la déconnexion comme en cours
+      sessionStorage.setItem("logout_pending", "true");
+
       await dispatch(logoutUser());
 
-      // Réinitialiser l'état de vérification
-      initialCheckDoneRef.current = false;
+      // Nettoyer le flag si succès
+      sessionStorage.removeItem("logout_pending");
 
-      // Rediriger vers la page de login
+      initialCheckDoneRef.current = false;
       router.push("/auth/login");
     } catch (error) {
       console.error("Error during logout:", error);
-
-      // Même en cas d'erreur, rediriger vers la page de login
+      // Le flag reste, sera nettoyé au prochain chargement
       router.push("/auth/login");
     }
   };

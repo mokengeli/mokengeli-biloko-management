@@ -9,9 +9,9 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000, // 30 secondes
 });
 
-// Flag global pour éviter les redirections multiples
 let isRedirecting = false;
 
 const clearAuthCookie = async () => {
@@ -25,61 +25,69 @@ const clearAuthCookie = async () => {
   }
 };
 
-// Intercepteur de réponse amélioré
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // MODIFICATION 1: Éviter les redirections multiples
     if (isRedirecting) {
       return Promise.reject(error);
     }
 
-    // MODIFICATION 2: Vérifier qu'on n'est pas déjà sur la page de login
-    const isOnLoginPage =
+    const isOnAuthPage =
       typeof window !== "undefined" &&
-      (window.location.pathname === "/auth/login" ||
-        window.location.pathname.includes("/auth/"));
+      window.location.pathname.includes("/auth/");
 
-    // MODIFICATION 3: Ne rediriger que pour 401/429 ET si pas déjà sur login
-    if (
+    // AJOUT : Nettoyer le cookie sur plus d'erreurs
+    const shouldClearAuth =
       error.response &&
-      (error.response.status === 401 || error.response.status === 429) &&
-      !isOnLoginPage
-    ) {
+      (error.response.status === 401 ||
+        error.response.status === 429 ||
+        error.response.status === 403 || // AJOUT
+        (error.response.status >= 500 &&
+          window.location.pathname !== "/auth/login")); // AJOUT : Erreurs serveur
+
+    // AJOUT : Gérer les timeouts et erreurs réseau
+    const isNetworkError =
+      !error.response &&
+      (error.code === "ECONNABORTED" || // Timeout
+        error.message.includes("Network Error") ||
+        error.message.includes("timeout"));
+
+    // Si erreur d'auth ET pas déjà sur une page auth
+    if (shouldClearAuth && !isOnAuthPage) {
+      isRedirecting = true;
       console.error(
-        `Received ${error.response.status} error:`,
-        error.response.data
+        `Auth error ${error.response?.status}:`,
+        error.response?.data
       );
 
-      // Marquer qu'on est en train de rediriger
-      isRedirecting = true;
-
-      // Effacer le cookie d'authentification
       await clearAuthCookie();
 
-      // Stocker le message d'erreur approprié
       if (typeof window !== "undefined") {
-        if (error.response.status === 401) {
-          localStorage.setItem(
-            "auth_error",
-            "Votre session a expiré. Veuillez vous reconnecter."
-          );
-        } else if (error.response.status === 429) {
-          localStorage.setItem(
-            "auth_error",
-            "Trop de requêtes. Veuillez réessayer plus tard."
-          );
-        }
+        const errorMessage =
+          error.response?.status === 401
+            ? "Votre session a expiré"
+            : error.response?.status === 429
+            ? "Trop de requêtes"
+            : error.response?.status === 403
+            ? "Accès non autorisé"
+            : "Erreur de connexion au serveur";
 
-        // MODIFICATION 4: Utiliser replace et délai pour éviter les conflits
+        localStorage.setItem("auth_error", errorMessage);
+
         setTimeout(() => {
           window.location.replace("/auth/login");
-          // Réinitialiser le flag après un délai
           setTimeout(() => {
             isRedirecting = false;
           }, 2000);
         }, 100);
       }
+    }
+
+    // AJOUT : Pour les erreurs réseau critiques sur pages protégées
+    if (isNetworkError && !isOnAuthPage && window.location.pathname !== "/") {
+      console.warn("Network error detected:", error.message);
+      // Optionnel : Vous pouvez décider de nettoyer le cookie ou pas
+      // await clearAuthCookie();
     }
 
     return Promise.reject(error);

@@ -40,30 +40,38 @@ const authService = {
   // Fonction de déconnexion côté client
   logout: async () => {
     try {
-      // 1. Appeler l'endpoint backend décrit dans le contrat
-      await apiClient.post("/api/auth/logout");
-
-      // 2. Appeler notre API locale pour s'assurer que le cookie est supprimé côté client
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      return { success: true };
-    } catch (error) {
-      console.error("Logout error:", error);
-
-      // Même en cas d'erreur dans l'API backend, tenter de supprimer le cookie localement
+      // IMPORTANT : Toujours tenter de nettoyer le cookie local en premier
       try {
         await fetch("/api/auth/logout", {
           method: "POST",
           credentials: "include",
         });
-      } catch (clientError) {
-        console.error("Failed to clean client cookie:", clientError);
+      } catch (localError) {
+        console.error("Failed to clear local cookie:", localError);
       }
 
-      // On propage l'erreur pour la gestion dans useAuth
+      // Puis informer le backend (mais ne pas bloquer si ça échoue)
+      try {
+        await apiClient.post("/api/auth/logout");
+      } catch (backendError) {
+        console.error("Backend logout failed:", backendError);
+        // On continue quand même, le cookie local est supprimé
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      // En cas d'erreur, forcer quand même le nettoyage local
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch (e) {
+        console.error("Emergency cookie cleanup failed:", e);
+      }
+
       throw error;
     }
   },

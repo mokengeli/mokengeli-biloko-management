@@ -15,7 +15,7 @@ import {
   Home,
   X,
   Utensils,
-  Store
+  Store,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -29,8 +29,11 @@ export default function Sidebar({ onClose }) {
   const [openMenus, setOpenMenus] = useState({});
 
   const isAdmin = user && user.roles && user.roles.includes("ROLE_ADMIN");
-  const canViewInventory = hasPermission("VIEW_INVENTORY") || isAdmin;
-  const canViewUsers = hasPermission("VIEW_USERS") || isAdmin;
+  const isManager = user && user.roles && user.roles.includes("ROLE_MANAGER");
+  const canViewInventory = isAdmin || isManager;
+  const canViewMenu = isAdmin || isManager;
+  const canViewDashboard = isAdmin || isManager;
+  const canViewUsers = hasPermission("VIEW_USERS") || isAdmin || isManager;
   const canViewTenants = hasPermission("VIEW_TENANTS") || isAdmin;
 
   // Définir les menus à ouvrir en fonction de la page actuelle
@@ -86,16 +89,18 @@ export default function Sidebar({ onClose }) {
       <div className="flex-1 overflow-auto p-3">
         <nav className="flex flex-col gap-2">
           {/* 1. Tableau de bord */}
-          <Link
-            href="/dashboard"
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
-              isActive("/dashboard") && "bg-primary text-primary-foreground"
-            )}
-          >
-            <Home className="h-5 w-5" />
-            <span>Tableau de bord</span>
-          </Link>
+          {canViewDashboard && (
+            <Link
+              href="/dashboard"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:bg-accent",
+                isActive("/dashboard") && "bg-primary text-primary-foreground"
+              )}
+            >
+              <Home className="h-5 w-5" />
+              <span>Tableau de bord</span>
+            </Link>
+          )}
 
           {/* 2. Restaurants */}
           {canViewTenants && (
@@ -159,7 +164,7 @@ export default function Sidebar({ onClose }) {
                     className={cn(
                       "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
                       isActive("/inventory/categories") &&
-                      "bg-primary/10 font-medium"
+                        "bg-primary/10 font-medium"
                     )}
                   >
                     Catégories
@@ -169,7 +174,7 @@ export default function Sidebar({ onClose }) {
                     className={cn(
                       "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
                       isActive("/inventory/products") &&
-                      "bg-primary/10 font-medium"
+                        "bg-primary/10 font-medium"
                     )}
                   >
                     Produits
@@ -180,62 +185,61 @@ export default function Sidebar({ onClose }) {
           )}
 
           {/* 5. Menu */}
-          <div className="space-y-1">
-            <Button
-              variant="ghost"
-              className={cn(
-                "flex w-full items-center justify-between px-3 py-2",
-                openMenus.menu && "font-medium"
-              )}
-              onClick={() => toggleMenu("menu")}
-            >
-              <div className="flex items-center gap-2">
-                <Utensils className="h-5 w-5" />
-                <span>Menu</span>
-              </div>
-              {openMenus.menu ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-            {openMenus.menu && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="ml-4 mt-1 flex flex-col space-y-1"
+          {canViewMenu && (
+            <div className="space-y-1">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "flex w-full items-center justify-between px-3 py-2",
+                  openMenus.menu && "font-medium"
+                )}
+                onClick={() => toggleMenu("menu")}
               >
-                <Link
-                  href="/menu/categories"
-                  className={cn(
-                    "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
-                    isActive("/menu/categories") && "bg-primary/10 font-medium"
-                  )}
+                <div className="flex items-center gap-2">
+                  <Utensils className="h-5 w-5" />
+                  <span>Menu</span>
+                </div>
+                {openMenus.menu ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+              {openMenus.menu && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-4 mt-1 flex flex-col space-y-1"
                 >
-                  Catégories
-                </Link>
-                <Link
-                  href="/menu/dishes"
-                  className={cn(
-                    "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
-                    isActive("/menu/dishes") && "bg-primary/10 font-medium"
-                  )}
-                >
-                  Plats
-                </Link>
-              </motion.div>
-            )}
-          </div>
+                  <Link
+                    href="/menu/categories"
+                    className={cn(
+                      "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
+                      isActive("/menu/categories") &&
+                        "bg-primary/10 font-medium"
+                    )}
+                  >
+                    Catégories
+                  </Link>
+                  <Link
+                    href="/menu/dishes"
+                    className={cn(
+                      "rounded-md px-3 py-1.5 text-sm hover:bg-accent",
+                      isActive("/menu/dishes") && "bg-primary/10 font-medium"
+                    )}
+                  >
+                    Plats
+                  </Link>
+                </motion.div>
+              )}
+            </div>
+          )}
         </nav>
       </div>
       <div className="mt-auto p-4">
-        <Button
-          variant="destructive"
-          className="w-full"
-          onClick={handleLogout}
-        >
+        <Button variant="destructive" className="w-full" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           Déconnexion
         </Button>

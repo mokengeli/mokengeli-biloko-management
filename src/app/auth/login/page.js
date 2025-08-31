@@ -17,22 +17,23 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getRedirectPathByRole } from "@/lib/redirectUtils";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
-  const { login, loading, error, clearError, isAuthenticated } = useAuth();
+  const { login, loading, error, clearError, isAuthenticated, user } = useAuth();
   const router = useRouter();
-  console.log("API = ", process.env.NEXT_PUBLIC_API_BASE_URL);
 
-  // Si l'utilisateur est déjà authentifié, rediriger vers le dashboard
+  // Si l'utilisateur est déjà authentifié, rediriger selon son rôle
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/dashboard");
+    if (isAuthenticated && user && user.roles) {
+      const redirectPath = getRedirectPathByRole(user.roles);
+      router.push(redirectPath);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   // Vérifier si un message d'erreur a été stocké dans le localStorage après une redirection
   useEffect(() => {

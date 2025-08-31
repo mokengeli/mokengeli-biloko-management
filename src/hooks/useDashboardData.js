@@ -1,6 +1,7 @@
 // src/hooks/useDashboardData.js
 import { useState, useEffect, useRef, useCallback } from "react";
 import orderService from "@/services/orderService";
+import waiterService from "@/services/waiterService";
 
 // Mapping des métriques vers les dépendances API
 const API_DEPENDENCIES = {
@@ -24,6 +25,9 @@ const API_DEPENDENCIES = {
   ordersDailyTrend: ["ordersDailyTrend"],
   dishesStats: ["dishesStats"],
   paymentStatusStats: ["paymentStatusStats"], // NOUVEAU
+
+  // Métriques du personnel
+  topWaiters: ["waiterPerformance"],
 };
 
 // Fonction utilitaire pour formater les dates - CORRIGÉE
@@ -53,6 +57,7 @@ export const useDashboardData = (
     ordersDailyTrend: [],
     dishesStats: null,
     paymentStatusStats: [], // NOUVEAU
+    waiterPerformance: null, // NOUVEAU - Données de performance des serveurs
   });
 
   const [loading, setLoading] = useState({
@@ -65,6 +70,7 @@ export const useDashboardData = (
     ordersDailyTrend: false,
     dishesStats: false,
     paymentStatusStats: false, // NOUVEAU
+    waiterPerformance: false, // NOUVEAU
   });
 
   const [errors, setErrors] = useState({
@@ -77,6 +83,7 @@ export const useDashboardData = (
     ordersDailyTrend: null,
     dishesStats: null,
     paymentStatusStats: null, // NOUVEAU
+    waiterPerformance: null, // NOUVEAU
   });
 
   // État pour forcer le refetch
@@ -279,6 +286,23 @@ export const useDashboardData = (
       const formattedEndDate = formatDateForAPI(endDate);
 
       const data = await orderService.getPaymentStatusStats(
+        formattedStartDate,
+        formattedEndDate,
+        tenantCode
+      );
+
+      return data;
+    },
+    []
+  );
+
+  // NOUVEAU: Fonction pour fetch les performances des serveurs
+  const fetchWaiterPerformanceData = useCallback(
+    async (tenantCode, startDate, endDate, signal) => {
+      const formattedStartDate = formatDateForAPI(startDate);
+      const formattedEndDate = formatDateForAPI(endDate);
+
+      const data = await waiterService.getWaiterPerformance(
         formattedStartDate,
         formattedEndDate,
         tenantCode
@@ -594,6 +618,32 @@ export const useDashboardData = (
           );
         }
 
+        // 9. NOUVEAU: Waiter performance
+        if (requiredAPIs.includes("waiterPerformance")) {
+          newLoading.waiterPerformance = true;
+          fetchPromises.push(
+            fetchWaiterPerformanceData(
+              tenantCode,
+              startDate,
+              endDate,
+              controllers.waiterPerformance?.signal
+            )
+              .then((result) => {
+                newData.waiterPerformance = result || null;
+                newLoading.waiterPerformance = false;
+              })
+              .catch((error) => {
+                if (error.name !== "AbortError") {
+                  setErrors((prev) => ({
+                    ...prev,
+                    waiterPerformance: error.message,
+                  }));
+                }
+                newLoading.waiterPerformance = false;
+              })
+          );
+        }
+
         // Mettre à jour l'état de chargement immédiatement
         setLoading(newLoading);
 
@@ -612,6 +662,7 @@ export const useDashboardData = (
           ordersDailyTrend: false,
           dishesStats: false,
           paymentStatusStats: false, // NOUVEAU
+          waiterPerformance: false, // NOUVEAU
         });
       }, 300); // Délai de debouncing
     };
@@ -642,6 +693,7 @@ export const useDashboardData = (
     fetchOrdersDailyData,
     fetchDishesStatsData,
     fetchPaymentStatusData, // NOUVEAU
+    fetchWaiterPerformanceData, // NOUVEAU
   ]);
 
   // Fonction pour forcer le refresh

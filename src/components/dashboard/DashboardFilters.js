@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   BarChart3,
   RotateCcw,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,6 +103,16 @@ const METRIC_SECTIONS = {
         label: "Tendance Quotidienne Plats",
         defaultEnabled: false,
       },
+    ],
+  },
+  staff: {
+    id: "staff",
+    label: "Performance du Personnel",
+    icon: Users,
+    color: "text-indigo-600",
+    defaultEnabled: false,
+    metrics: [
+      { id: "topWaiters", label: "Top 5 des Serveurs", defaultEnabled: false },
     ],
   },
 };

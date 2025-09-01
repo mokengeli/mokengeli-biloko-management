@@ -197,7 +197,7 @@ const SalesSection = ({
                       data={hourlyData}
                       loading={loading.hourlyDistribution}
                       error={errors.hourlyDistribution}
-                      date={endDate}
+                      date={startDate}
                     />
                   )}
 
@@ -207,7 +207,7 @@ const SalesSection = ({
                       data={dishesHourlyData}
                       loading={loading.dishesHourlyDistribution}
                       error={errors.dishesHourlyDistribution}
-                      date={endDate}
+                      date={startDate}
                     />
                   )}
                 </div>

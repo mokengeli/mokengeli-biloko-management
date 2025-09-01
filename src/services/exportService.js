@@ -9,10 +9,18 @@ const exportService = {
         throw new Error("Paramètres requis manquants pour l'export");
       }
 
+      // Formater les dates si ce sont des objets Date
+      const formattedStartDate = startDate instanceof Date 
+        ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`
+        : startDate;
+      const formattedEndDate = endDate instanceof Date 
+        ? `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`
+        : endDate;
+
       const response = await apiClient.get("/api/order/reports/daily-revenue", {
         params: {
-          start: startDate,
-          end: endDate,
+          start: formattedStartDate,
+          end: formattedEndDate,
           tenantCode: tenantCode,
         },
         responseType: "blob",
@@ -59,12 +67,20 @@ const exportService = {
         throw new Error("Paramètres requis manquants pour l'export");
       }
 
+      // Formater les dates si ce sont des objets Date
+      const formattedStartDate = startDate instanceof Date 
+        ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`
+        : startDate;
+      const formattedEndDate = endDate instanceof Date 
+        ? `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`
+        : endDate;
+
       const response = await apiClient.get(
         "/api/order/reports/daily-hourly-matrix",
         {
           params: {
-            start: startDate,
-            end: endDate,
+            start: formattedStartDate,
+            end: formattedEndDate,
             tenantCode: tenantCode,
           },
           responseType: "blob",
@@ -112,16 +128,21 @@ const exportService = {
         throw new Error("Paramètres requis manquants pour l'export");
       }
 
+      // Formater la date si c'est un objet Date
+      const formattedDate = date instanceof Date 
+        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+        : date;
+
       const response = await apiClient.get("/api/order/reports/daily-dish-report", {
         params: {
-          date: date, // Format: YYYY-MM-DD
+          date: formattedDate, // Format: YYYY-MM-DD
           tenantCode: tenantCode,
         },
         responseType: "blob",
       });
 
       // Extraire le nom du fichier depuis les headers
-      let fileName = `rapport_plats_${date}.csv`;
+      let fileName = `rapport_plats_${formattedDate}.csv`;
 
       const contentDisposition = response.headers["content-disposition"];
       if (contentDisposition) {

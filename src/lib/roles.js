@@ -57,6 +57,15 @@ export const ROLES = {
     textColor: "text-red-800",
     icon: "ChefHat",
   },
+  ROLE_CASHIER: {
+    id: "ROLE_CASHIER",
+    name: "Caissier",
+    description: "Caissier",
+    color: "indigo",
+    bgColor: "bg-indigo-100",
+    textColor: "text-indigo-800",
+    icon: "CreditCard",
+  },
 };
 
 /**
@@ -83,6 +92,7 @@ export function getPrimaryRole(userRoles) {
     "ROLE_WAREHOUSE_OPERATOR",
     "ROLE_COOK",
     "ROLE_SERVER",
+    "ROLE_CASHIER",
     "ROLE_USER",
   ];
 
@@ -114,6 +124,7 @@ export function getAvatarColorClass(userRoles) {
     ROLE_WAREHOUSE_OPERATOR: "bg-amber-500",
     ROLE_COOK: "bg-red-500",
     ROLE_SERVER: "bg-green-500",
+    ROLE_CASHIER: "bg-indigo-500",
     ROLE_USER: "bg-gray-500",
   };
 

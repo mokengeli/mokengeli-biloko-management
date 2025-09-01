@@ -184,11 +184,11 @@ export const useDashboardData = (
   );
 
   // Fonction pour fetch les données horaires
-  const fetchHourlyData = useCallback(async (tenantCode, endDate, signal) => {
-    const formattedEndDate = formatDateForAPI(endDate);
+  const fetchHourlyData = useCallback(async (tenantCode, startDate, signal) => {
+    const formattedStartDate = formatDateForAPI(startDate);
 
     const data = await orderService.getHourlyDistribution(
-      formattedEndDate,
+      formattedStartDate,
       tenantCode
     );
 
@@ -215,11 +215,11 @@ export const useDashboardData = (
 
   // Fonction pour fetch les données horaires des plats
   const fetchDishesHourlyData = useCallback(
-    async (tenantCode, endDate, signal) => {
-      const formattedEndDate = formatDateForAPI(endDate);
+    async (tenantCode, startDate, signal) => {
+      const formattedStartDate = formatDateForAPI(startDate);
 
       const data = await orderService.getDishesHourlyDistribution(
-        formattedEndDate,
+        formattedStartDate,
         tenantCode
       );
 
@@ -447,7 +447,7 @@ export const useDashboardData = (
           fetchPromises.push(
             fetchHourlyData(
               tenantCode,
-              endDate,
+              startDate,
               controllers.hourlyDistribution?.signal
             )
               .then((result) => {
@@ -495,7 +495,7 @@ export const useDashboardData = (
           fetchPromises.push(
             fetchDishesHourlyData(
               tenantCode,
-              endDate,
+              startDate,
               controllers.dishesHourlyDistribution?.signal
             )
               .then((result) => {

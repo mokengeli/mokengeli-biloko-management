@@ -3,10 +3,11 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { getRedirectPathByRole } from "@/lib/redirectUtils";
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, checkAuthStatus, loading } = useAuth();
+  const { isAuthenticated, checkAuthStatus, loading, user } = useAuth();
   useEffect(() => {
     // Vérifier s'il y a un flag de déconnexion en cours
     const logoutPending = sessionStorage.getItem("logout_pending");
@@ -27,14 +28,21 @@ export default function Home() {
     const initAuth = async () => {
       try {
         await checkAuthStatus();
-        router.push("/dashboard");
       } catch (error) {
         router.push("/auth/login");
       }
     };
 
     initAuth();
-  }, [checkAuthStatus, router, isAuthenticated]);
+  }, [checkAuthStatus, router]);
+
+  // Effet séparé pour gérer la redirection une fois les données utilisateur chargées
+  useEffect(() => {
+    if (isAuthenticated && user && user.roles) {
+      const redirectPath = getRedirectPathByRole(user.roles);
+      router.push(redirectPath);
+    }
+  }, [isAuthenticated, user, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

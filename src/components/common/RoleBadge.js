@@ -85,6 +85,7 @@ export function PrimaryRoleBadge({ roles = [], ...props }) {
     "ROLE_WAREHOUSE_OPERATOR",
     "ROLE_COOK",
     "ROLE_SERVER",
+    "ROLE_CASHIER",
     "ROLE_USER",
   ];
 

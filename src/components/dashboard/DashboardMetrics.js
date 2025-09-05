@@ -11,6 +11,7 @@ import DashboardFilters from "./DashboardFilters";
 import FinancialSection from "./sections/FinancialSection";
 import OperationalSection from "./sections/OperationalSection";
 import SalesSection from "./sections/SalesSection";
+import StaffSection from "./sections/StaffSection";
 import RestaurantSelector from "@/components/common/RestaurantSelector";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -53,6 +54,12 @@ const getInitialMetricsConfig = () => ({
       ordersDailyTrend: false,
       dishesStats: false,
       paymentStatusStats: false,
+    },
+  },
+  staff: {
+    enabled: false,
+    metrics: {
+      topWaiters: false,
     },
   },
 });
@@ -258,6 +265,20 @@ export const DashboardMetrics = () => {
             paymentStatusStats: errors.paymentStatusStats,
           }}
           currencyCode={data.revenue?.currency?.code || "$"}
+        />
+      )}
+
+      {/* Section de performance du personnel */}
+      {visibleMetrics.staff.enabled && (
+        <StaffSection
+          data={data}
+          enabledMetrics={visibleMetrics}
+          loading={{
+            waiterPerformance: loading.waiterPerformance,
+          }}
+          errors={{
+            waiterPerformance: errors.waiterPerformance,
+          }}
         />
       )}
     </div>
